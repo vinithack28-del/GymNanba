@@ -1,0 +1,295 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+:root {
+    --app-bg: #09111f;
+    --app-bg-accent: radial-gradient(circle at top left, #1d2f4a 0%, #0b1424 42%, #050914 100%);
+    --app-panel: rgba(15, 23, 42, 0.78);
+    --app-panel-strong: rgba(2, 6, 23, 0.82);
+    --app-border: rgba(255, 255, 255, 0.1);
+    --app-text: #f8fafc;
+    --app-text-muted: #94a3b8;
+    --app-brand: #f97316;
+    --app-brand-soft: rgba(249, 115, 22, 0.15);
+    --app-success: #34d399;
+    --app-info: #38bdf8;
+}
+
+[data-theme='light'] {
+    --app-bg: #eef4fb;
+    --app-bg-accent: radial-gradient(circle at top left, #ffffff 0%, #edf4ff 48%, #dfeaf8 100%);
+    --app-panel: rgba(255, 255, 255, 0.88);
+    --app-panel-strong: rgba(248, 250, 252, 0.96);
+    --app-border: rgba(15, 23, 42, 0.08);
+    --app-text: #0f172a;
+    --app-text-muted: #475569;
+    --app-brand: #ea580c;
+    --app-brand-soft: rgba(234, 88, 12, 0.12);
+    --app-success: #059669;
+    --app-info: #0284c7;
+}
+
+body {
+    background: var(--app-bg);
+    color: var(--app-text);
+}
+
+.app-theme-shell {
+    background: var(--app-bg-accent);
+    color: var(--app-text);
+}
+
+.app-topbar {
+    background: color-mix(in srgb, var(--app-panel) 92%, transparent);
+    border-color: var(--app-border);
+    color: var(--app-text);
+}
+
+.app-sidebar,
+.app-panel {
+    background: var(--app-panel);
+    border-color: var(--app-border);
+    color: var(--app-text);
+}
+
+.app-panel-strong,
+.app-table-head {
+    background: var(--app-panel-strong);
+    border-color: var(--app-border);
+}
+
+.app-muted {
+    color: var(--app-text-muted);
+}
+
+.app-brand-text {
+    color: var(--app-brand);
+}
+
+.app-brand-soft {
+    background: var(--app-brand-soft);
+}
+
+.app-toggle-thumb {
+    transition: transform 160ms ease;
+}
+
+[data-theme='light'] .app-toggle-thumb {
+    transform: translateX(1.4rem);
+}
+
+.app-theme-shell input:not([type='checkbox']):not([type='radio']),
+.app-theme-shell select,
+.app-theme-shell textarea {
+    background: var(--app-panel-strong);
+    border-color: var(--app-border);
+    color: var(--app-text);
+}
+
+.app-theme-shell input::placeholder,
+.app-theme-shell textarea::placeholder {
+    color: var(--app-text-muted);
+}
+
+[data-theme='light'] .app-theme-shell .text-slate-200,
+[data-theme='light'] .app-theme-shell .text-slate-300 {
+    color: var(--app-text) !important;
+}
+
+[data-theme='light'] .app-theme-shell .text-slate-400,
+[data-theme='light'] .app-theme-shell .text-slate-500 {
+    color: var(--app-text-muted) !important;
+}
+
+[data-theme='light'] .app-theme-shell .text-white {
+    color: var(--app-text) !important;
+}
+
+[data-theme='light'] .app-theme-shell .text-emerald-200 {
+    color: #065f46 !important;
+}
+
+[data-theme='light'] .app-theme-shell .text-red-200 {
+    color: #991b1b !important;
+}
+
+.tenant-nav-heading {
+    color: var(--app-text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+}
+
+.tenant-nav-block + .tenant-nav-block {
+    border-top: 1px solid color-mix(in srgb, var(--app-border) 90%, transparent);
+    padding-top: 1.5rem;
+}
+
+.tenant-nav-item,
+.tenant-nav-item-active {
+    align-items: center;
+    color: var(--app-text);
+    display: flex;
+    min-height: 3rem;
+    position: relative;
+    width: 100%;
+}
+
+.tenant-nav-item {
+    border: 1px solid transparent;
+}
+
+.tenant-nav-item:hover {
+    background: color-mix(in srgb, var(--app-brand-soft) 42%, transparent);
+    border-color: color-mix(in srgb, var(--app-brand) 16%, var(--app-border));
+}
+
+.tenant-nav-item-active {
+    background: color-mix(in srgb, var(--app-brand-soft) 78%, var(--app-panel-strong));
+    border: 1px solid color-mix(in srgb, var(--app-brand) 26%, var(--app-border));
+    box-shadow: inset 4px 0 0 var(--app-brand);
+}
+
+.tenant-nav-icon-wrap {
+    align-items: center;
+    background: color-mix(in srgb, var(--app-brand-soft) 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-border) 80%, transparent);
+    border-radius: 0.85rem;
+    display: inline-flex;
+    flex: none;
+    height: 2rem;
+    justify-content: center;
+    width: 2rem;
+}
+
+.app-nav-icon {
+    color: inherit;
+    display: inline-flex;
+    flex: none;
+    line-height: 0;
+}
+
+.app-nav-icon svg {
+    display: block;
+    fill: none;
+    height: 100%;
+    overflow: visible;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    width: 100%;
+}
+
+.tenant-nav-item-active .tenant-nav-icon-wrap {
+    background: color-mix(in srgb, var(--app-brand-soft) 70%, transparent);
+    border-color: color-mix(in srgb, var(--app-brand) 24%, var(--app-border));
+}
+
+.tenant-nav-icon {
+    color: var(--app-text);
+    display: inline-flex;
+    height: 1.15rem;
+    width: 1.15rem;
+}
+
+.tenant-nav-label {
+    font-size: 0.97rem;
+    font-weight: 500;
+}
+
+.tenant-nav-badge {
+    align-items: center;
+    background: color-mix(in srgb, var(--app-brand-soft) 88%, var(--app-panel));
+    border: 1px solid color-mix(in srgb, var(--app-brand) 12%, var(--app-border));
+    border-radius: 999px;
+    color: var(--app-brand);
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    justify-content: center;
+    line-height: 1;
+    min-width: 2rem;
+    padding: 0.3rem 0.45rem;
+}
+
+.tenant-nav-children {
+    margin-left: 3.25rem;
+    margin-top: 0.35rem;
+}
+
+.tenant-nav-child {
+    border-radius: 1rem;
+    color: color-mix(in srgb, var(--app-text) 92%, var(--app-text-muted));
+    display: block;
+    font-size: 0.93rem;
+    margin-top: 0.15rem;
+    padding: 0.5rem 0.75rem;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.tenant-nav-child:hover,
+.tenant-nav-child-active {
+    background: color-mix(in srgb, var(--app-brand-soft) 38%, transparent);
+}
+
+.tenant-nav-child:hover {
+    color: var(--app-text);
+}
+
+.tenant-nav-child-active {
+    color: var(--app-brand);
+    font-weight: 600;
+}
+
+[data-theme='light'] .app-theme-shell .bg-slate-950\/70,
+[data-theme='light'] .app-theme-shell .bg-slate-950\/80,
+[data-theme='light'] .app-theme-shell .bg-slate-950\/60,
+[data-theme='light'] .app-theme-shell .bg-slate-950\/50,
+[data-theme='light'] .app-theme-shell .bg-slate-900,
+[data-theme='light'] .app-theme-shell .bg-slate-900\/80,
+[data-theme='light'] .app-theme-shell .bg-white\/5 {
+    background: var(--app-panel-strong) !important;
+}
+
+[data-theme='light'] .app-theme-shell .border-white\/10 {
+    border-color: var(--app-border) !important;
+}
+
+[data-theme='light'] .app-theme-shell .bg-emerald-500\/10 {
+    background: rgba(16, 185, 129, 0.12) !important;
+}
+
+[data-theme='light'] .app-theme-shell .border-emerald-400\/20 {
+    border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+[data-theme='light'] .app-theme-shell .bg-red-500\/10 {
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+[data-theme='light'] .app-theme-shell .border-red-400\/20 {
+    border-color: rgba(239, 68, 68, 0.22) !important;
+}
+
+[data-theme='light'] .app-theme-shell table,
+[data-theme='light'] .app-theme-shell th,
+[data-theme='light'] .app-theme-shell td,
+[data-theme='light'] .app-theme-shell label,
+[data-theme='light'] .app-theme-shell p,
+[data-theme='light'] .app-theme-shell span,
+[data-theme='light'] .app-theme-shell h1,
+[data-theme='light'] .app-theme-shell h2,
+[data-theme='light'] .app-theme-shell h3,
+[data-theme='light'] .app-theme-shell h4 {
+    color: inherit;
+}
