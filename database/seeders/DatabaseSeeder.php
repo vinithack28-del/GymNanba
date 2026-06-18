@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             SuperAdminUserSeeder::class,
             PlatformLanguageSeeder::class,
             PhaseOneDemoSeeder::class,
+            MembersSeeder::class,
+            BranchesSeeder::class,
+            StaffSeeder::class,
         ]);
     }
 }

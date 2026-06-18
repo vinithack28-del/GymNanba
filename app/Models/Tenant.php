@@ -12,32 +12,31 @@ class Tenant extends Model
     use HasFactory;
 
     protected $fillable = [
-        'gym_name',
-        'business_type',
-        'owner_name',
-        'owner_email',
-        'phone',
-        'city',
-        'state',
-        'address',
-        'gst_number',
-        'subdomain',
-        'domain_mode',
-        'custom_domain',
-        'database_mode',
-        'database_name',
-        'owner_user_id',
-        'status',
-        'default_language',
-        'members_count',
-        'last_owner_login_at',
-        'notes',
+        'gym_name', 'business_type', 'owner_name', 'owner_email', 'phone',
+        'city', 'state', 'address', 'address2', 'pin', 'email', 'website',
+        'gst_number', 'gstin', 'pan', 'reg_number',
+        'logo_url', 'cover_photo_url', 'social_links', 'about', 'operating_hours',
+        'subdomain', 'domain_mode', 'custom_domain', 'database_mode', 'database_name',
+        'owner_user_id', 'status', 'default_language', 'members_count',
+        'last_owner_login_at', 'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'last_owner_login_at' => 'datetime',
+            'social_links'        => 'array',
+            'operating_hours'     => 'array',
+        ];
+    }
+
+    public static function defaultOperatingHours(): array
+    {
+        $standard = ['open' => '06:00', 'close' => '22:00', 'closed' => false];
+        return [
+            'mon' => $standard, 'tue' => $standard, 'wed' => $standard,
+            'thu' => $standard, 'fri' => $standard, 'sat' => $standard,
+            'sun' => ['open' => '06:00', 'close' => '22:00', 'closed' => true],
         ];
     }
 
@@ -49,6 +48,16 @@ class Tenant extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(TenantPayment::class);
+    }
+
+    public function branches(): HasMany
+    {
+        return $this->hasMany(Branch::class);
+    }
+
+    public function staff(): HasMany
+    {
+        return $this->hasMany(Staff::class);
     }
 
     public function ownerUser(): BelongsTo

@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'accepted'        => ':attribute అంగీకరించబడాలి.',
+    'after'           => ':attribute :date తర్వాత తేదీగా ఉండాలి.',
+    'before_or_equal' => ':attribute :date లేదా అంతకంటే ముందు తేదీగా ఉండాలి.',
+    'boolean'         => ':attribute విలువ నిజం లేదా అబద్ధంగా ఉండాలి.',
+    'confirmed'       => ':attribute నిర్ధారణ సరిపోలడం లేదు.',
+    'date'            => ':attribute చెల్లుబాటు అయ్యే తేదీ కాదు.',
+    'date_format'     => ':attribute :format ఆకృతిలో ఉండాలి.',
+    'email'           => ':attribute చెల్లుబాటు అయ్యే ఇమెయిల్ చిరునామాగా ఉండాలి.',
+    'exists'          => 'ఎంచుకున్న :attribute చెల్లదు.',
+    'file'            => ':attribute ఒక ఫైల్‌గా ఉండాలి.',
+    'image'           => ':attribute ఒక చిత్రంగా ఉండాలి.',
+    'in'              => 'ఎంచుకున్న :attribute చెల్లదు.',
+    'integer'         => ':attribute పూర్ణాంకంగా ఉండాలి.',
+    'max'             => ['numeric'=>':attribute :max కంటే ఎక్కువగా ఉండకూడదు.','string'=>':attribute :max అక్షరాల కంటే ఎక్కువగా ఉండకూడదు.','array'=>':attribute :max అంశాల కంటే ఎక్కువగా ఉండకూడదు.','file'=>':attribute :max కిలోబైట్ కంటే ఎక్కువగా ఉండకూడదు.'],
+    'mimes'           => ':attribute :values రకం ఫైల్‌గా ఉండాలి.',
+    'min'             => ['numeric'=>':attribute కనీసం :min గా ఉండాలి.','string'=>':attribute కనీసం :min అక్షరాలు ఉండాలి.','array'=>':attribute కనీసం :min అంశాలు ఉండాలి.','file'=>':attribute కనీసం :min కిలోబైట్లు ఉండాలి.'],
+    'numeric'         => ':attribute ఒక సంఖ్యగా ఉండాలి.',
+    'regex'           => ':attribute ఆకృతి చెల్లదు.',
+    'required'        => ':attribute అవసరం.',
+    'required_if'     => ':other :value అయినప్పుడు :attribute అవసరం.',
+    'string'          => ':attribute ఒక స్ట్రింగ్‌గా ఉండాలి.',
+    'unique'          => ':attribute ఇప్పటికే తీసుకోబడింది.',
+    'attributes'      => ['name'=>'పేరు','email'=>'ఇమెయిల్','phone'=>'ఫోన్ నంబర్','password'=>'పాస్‌వర్డ్','role'=>'పాత్ర','branch_id'=>'శాఖ','join_date'=>'చేరిన తేదీ'],
+];

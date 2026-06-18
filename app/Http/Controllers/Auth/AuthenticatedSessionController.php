@@ -30,7 +30,14 @@ class AuthenticatedSessionController extends Controller
     {
         $this->authenticationService->login($request);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = $request->user();
+
+        $target = match (true) {
+            $user->role === 'super_admin'  => route('admin.dashboard', absolute: false),
+            default                        => route('tenant.dashboard', absolute: false),
+        };
+
+        return redirect()->intended($target);
     }
 
     /**

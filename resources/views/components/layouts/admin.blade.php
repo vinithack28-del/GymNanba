@@ -24,6 +24,23 @@
 
     $currentTenantSlug = request()->route('slug');
     $tenantRoute = static fn (string $slug): string => route('tenant.coming-soon', $slug);
+
+    // Renewals sidebar badge: expired + today + 7-day count
+    $renewalBadge = null;
+    $lowStockBadge = null;
+    if (!$isSuperAdmin && $user?->tenant) {
+        $today = now()->toDateString();
+        $renewalBadge = \App\Models\Member::forTenant($user->tenant->id)
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '<=', now()->addDays(7)->toDateString())
+            ->count();
+        $renewalBadge = $renewalBadge > 0 ? (string) $renewalBadge : null;
+
+        $lowStockCount = \App\Models\PosProduct::forTenant($user->tenant->id)
+            ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
+            ->count();
+        $lowStockBadge = $lowStockCount > 0 ? (string) $lowStockCount : null;
+    }
     $isTenantItemActive = static function (?string $slug, array $children = []) use ($currentTenantSlug): bool {
         if ($slug && $currentTenantSlug === $slug) {
             return true;
@@ -37,7 +54,7 @@
             'heading' => null,
             'items' => [
                 [
-                    'label' => 'Dashboard',
+                    'label' => __('common.tenant_nav.dashboard'),
                     'route' => route('tenant.dashboard'),
                     'icon' => 'grid',
                     'active' => request()->routeIs('tenant.dashboard'),
@@ -45,117 +62,151 @@
             ],
         ],
         [
-            'heading' => 'Members',
+            'heading' => __('common.tenant_nav.section_members'),
             'items' => [
-                ['label' => 'Members', 'slug' => 'members', 'route' => $tenantRoute('members'), 'icon' => 'users'],
-                ['label' => 'Memberships / plans', 'slug' => 'memberships-plans', 'route' => $tenantRoute('memberships-plans'), 'icon' => 'card'],
-                ['label' => 'Renewals due', 'slug' => 'renewals-due', 'route' => $tenantRoute('renewals-due'), 'icon' => 'clock', 'badge' => '12'],
-                [
-                    'label' => 'Attendance',
-                    'slug' => 'attendance',
-                    'route' => $tenantRoute('attendance'),
-                    'icon' => 'scan',
-                    'children' => [
-                        ['label' => 'Check-in log', 'slug' => 'check-in-log', 'route' => $tenantRoute('check-in-log')],
-                        ['label' => 'Walk-ins', 'slug' => 'walk-ins', 'route' => $tenantRoute('walk-ins')],
-                    ],
-                ],
+                ['label' => __('common.tenant_nav.members'), 'slug' => 'members', 'route' => route('tenant.members.index'), 'icon' => 'users', 'active' => request()->routeIs('tenant.members.*')],
+                ['label' => __('common.tenant_nav.memberships_plans'), 'slug' => 'memberships-plans', 'route' => route('tenant.plans.index'), 'icon' => 'card', 'active' => request()->routeIs('tenant.plans.*')],
+                ['label' => __('common.tenant_nav.renewals_due'), 'route' => route('tenant.renewals.index'), 'icon' => 'clock', 'active' => request()->routeIs('tenant.renewals.*'), 'badge' => $renewalBadge],
+                ['label' => __('common.tenant_nav.attendance'), 'slug' => 'attendance', 'route' => route('tenant.attendance.checkins'), 'icon' => 'scan', 'active' => request()->routeIs('tenant.attendance.checkins')],
+                ['label' => __('common.tenant_nav.walk_ins'), 'slug' => 'walk-ins', 'route' => route('tenant.attendance.walkins'), 'icon' => 'walkin', 'active' => request()->routeIs('tenant.attendance.walkins')],
             ],
         ],
         [
-            'heading' => 'Operations',
+            'heading' => __('common.tenant_nav.section_operations'),
             'items' => [
                 [
-                    'label' => 'Classes & schedules',
+                    'label' => __('common.tenant_nav.classes_schedules'),
                     'slug' => 'classes-schedules',
-                    'route' => $tenantRoute('classes-schedules'),
+                    'route' => route('tenant.classes.timetable'),
                     'icon' => 'calendar',
+                    'active' => request()->routeIs('tenant.classes.*'),
                     'children' => [
-                        ['label' => 'Timetable', 'slug' => 'timetable', 'route' => $tenantRoute('timetable')],
-                        ['label' => 'Book a class', 'slug' => 'book-a-class', 'route' => $tenantRoute('book-a-class')],
-                        ['label' => 'Trainers', 'slug' => 'trainers', 'route' => $tenantRoute('trainers')],
+                        ['label' => __('common.tenant_nav.timetable'), 'slug' => 'timetable', 'route' => route('tenant.classes.timetable'), 'active' => request()->routeIs('tenant.classes.timetable')],
+                        ['label' => __('common.tenant_nav.book_a_class'), 'slug' => 'book-a-class', 'route' => route('tenant.classes.book'), 'active' => request()->routeIs('tenant.classes.book')],
+                        ['label' => __('common.tenant_nav.trainers'), 'slug' => 'trainers', 'route' => route('tenant.classes.trainers'), 'active' => request()->routeIs('tenant.classes.trainers')],
                     ],
                 ],
-                ['label' => 'Branches', 'slug' => 'branches', 'route' => $tenantRoute('branches'), 'icon' => 'office'],
+                ['label' => __('common.tenant_nav.branches'), 'slug' => 'branches', 'route' => route('tenant.branches.index'), 'icon' => 'office', 'active' => request()->routeIs('tenant.branches.*')],
                 [
-                    'label' => 'Staff',
+                    'label' => __('common.tenant_nav.staff'),
                     'slug' => 'staff',
-                    'route' => $tenantRoute('staff'),
+                    'route' => route('tenant.staff.index'),
                     'icon' => 'team',
+                    'active' => request()->routeIs('tenant.staff.index', 'tenant.staff.create', 'tenant.staff.edit', 'tenant.staff.show'),
                     'children' => [
-                        ['label' => 'All staff', 'slug' => 'all-staff', 'route' => $tenantRoute('all-staff')],
-                        ['label' => 'Roles & permissions', 'slug' => 'roles-permissions', 'route' => $tenantRoute('roles-permissions')],
-                        ['label' => 'Attendance', 'slug' => 'staff-attendance', 'route' => $tenantRoute('staff-attendance')],
+                        ['label' => __('common.tenant_nav.all_staff'), 'slug' => 'all-staff', 'route' => route('tenant.staff.index'), 'active' => request()->routeIs('tenant.staff.index', 'tenant.staff.create', 'tenant.staff.edit', 'tenant.staff.show')],
+                        ['label' => __('common.tenant_nav.roles_permissions'), 'slug' => 'roles-permissions', 'route' => route('tenant.staff.roles'), 'active' => request()->routeIs('tenant.staff.roles')],
+                        ['label' => __('common.tenant_nav.staff_attendance'), 'slug' => 'staff-attendance', 'route' => route('tenant.staff.attendance'), 'active' => request()->routeIs('tenant.staff.attendance')],
                     ],
                 ],
             ],
         ],
         [
-            'heading' => 'Finance',
+            'heading' => __('common.tenant_nav.section_finance'),
             'items' => [
                 [
-                    'label' => 'Payments',
+                    'label' => __('common.tenant_nav.payments'),
                     'slug' => 'payments',
-                    'route' => $tenantRoute('payments'),
+                    'route' => route('tenant.payments.history'),
                     'icon' => 'wallet',
-                    'badge' => '3',
                     'children' => [
-                        ['label' => 'Collect fee', 'slug' => 'collect-fee', 'route' => $tenantRoute('collect-fee')],
-                        ['label' => 'Payment history', 'slug' => 'payment-history', 'route' => $tenantRoute('payment-history')],
-                        ['label' => 'Pending dues', 'slug' => 'pending-dues', 'route' => $tenantRoute('pending-dues')],
+                        ['label' => __('common.tenant_nav.collect_fee'), 'slug' => 'collect-fee', 'route' => route('tenant.payments.collect')],
+                        ['label' => __('common.tenant_nav.payment_history'), 'slug' => 'payment-history', 'route' => route('tenant.payments.history')],
+                        ['label' => __('common.tenant_nav.pending_dues'), 'slug' => 'pending-dues', 'route' => route('tenant.payments.dues')],
                     ],
                 ],
-                ['label' => 'Invoices', 'slug' => 'invoices', 'route' => $tenantRoute('invoices'), 'icon' => 'receipt'],
+                ['label' => __('common.tenant_nav.invoices'), 'slug' => 'invoices', 'route' => route('tenant.invoices.index'), 'icon' => 'receipt'],
                 [
-                    'label' => 'POS / store',
+                    'label' => __('common.tenant_nav.pos_store'),
                     'slug' => 'pos-store',
-                    'route' => $tenantRoute('pos-store'),
+                    'route' => route('tenant.pos.sales'),
                     'icon' => 'cart',
+                    'active' => request()->routeIs('tenant.pos.*'),
+                    'badge' => $lowStockBadge,
                     'children' => [
-                        ['label' => 'Products', 'slug' => 'products', 'route' => $tenantRoute('products')],
-                        ['label' => 'Sales', 'slug' => 'sales', 'route' => $tenantRoute('sales')],
-                        ['label' => 'Stock', 'slug' => 'stock', 'route' => $tenantRoute('stock')],
+                        ['label' => __('common.tenant_nav.products'), 'slug' => 'products', 'route' => route('tenant.pos.products'), 'active' => request()->routeIs('tenant.pos.products', 'tenant.pos.products.create', 'tenant.pos.products.edit')],
+                        ['label' => __('common.tenant_nav.sales'), 'slug' => 'sales', 'route' => route('tenant.pos.sales'), 'active' => request()->routeIs('tenant.pos.sales', 'tenant.pos.sales.show')],
+                        ['label' => __('common.tenant_nav.stock'), 'slug' => 'stock', 'route' => route('tenant.pos.stock'), 'active' => request()->routeIs('tenant.pos.stock')],
                     ],
                 ],
-                ['label' => 'Expenses', 'slug' => 'expenses', 'route' => $tenantRoute('expenses'), 'icon' => 'doc'],
+                ['label' => __('common.tenant_nav.expenses'), 'slug' => 'expenses', 'route' => route('tenant.expenses.index'), 'icon' => 'doc', 'active' => request()->routeIs('tenant.expenses.*')],
             ],
         ],
         [
-            'heading' => 'Insights',
+            'heading' => __('common.tenant_nav.section_insights'),
             'items' => [
                 [
-                    'label' => 'Reports',
+                    'label' => __('common.tenant_nav.reports'),
                     'slug' => 'reports',
-                    'route' => $tenantRoute('reports'),
+                    'route' => route('tenant.reports.index'),
                     'icon' => 'chart',
+                    'active' => request()->routeIs('tenant.reports.*'),
                     'children' => [
-                        ['label' => 'Revenue report', 'slug' => 'revenue-report', 'route' => $tenantRoute('revenue-report')],
-                        ['label' => 'Member report', 'slug' => 'member-report', 'route' => $tenantRoute('member-report')],
-                        ['label' => 'Attendance report', 'slug' => 'attendance-report', 'route' => $tenantRoute('attendance-report')],
-                        ['label' => 'Staff report', 'slug' => 'staff-report', 'route' => $tenantRoute('staff-report')],
+                        ['label' => __('common.tenant_nav.revenue_report'), 'slug' => 'revenue-report', 'route' => route('tenant.reports.revenue'), 'active' => request()->routeIs('tenant.reports.revenue')],
+                        ['label' => __('common.tenant_nav.member_report'), 'slug' => 'member-report', 'route' => route('tenant.reports.members'), 'active' => request()->routeIs('tenant.reports.members')],
+                        ['label' => __('common.tenant_nav.attendance_report'), 'slug' => 'attendance-report', 'route' => route('tenant.reports.attendance'), 'active' => request()->routeIs('tenant.reports.attendance')],
+                        ['label' => __('common.tenant_nav.staff_report'), 'slug' => 'staff-report', 'route' => route('tenant.reports.staff'), 'active' => request()->routeIs('tenant.reports.staff')],
                     ],
                 ],
             ],
         ],
         [
-            'heading' => 'Configuration',
+            'heading' => __('common.tenant_nav.section_config'),
             'items' => [
-                ['label' => 'Notifications', 'slug' => 'notifications', 'route' => $tenantRoute('notifications'), 'icon' => 'bell'],
+                ['label' => __('common.tenant_nav.notifications'), 'slug' => 'notifications', 'route' => $tenantRoute('notifications'), 'icon' => 'bell'],
                 [
-                    'label' => 'Settings',
-                    'slug' => 'settings',
-                    'route' => $tenantRoute('settings'),
-                    'icon' => 'settings',
+                    'label'  => __('common.tenant_nav.settings'),
+                    'slug'   => 'settings',
+                    'route'  => route('tenant.settings.profile'),
+                    'icon'   => 'settings',
+                    'active' => request()->routeIs('tenant.settings.*'),
                     'children' => [
-                        ['label' => 'Gym profile', 'slug' => 'gym-profile', 'route' => $tenantRoute('gym-profile')],
-                        ['label' => 'My account', 'slug' => 'my-account', 'route' => $tenantRoute('my-account')],
-                        ['label' => 'Integrations', 'slug' => 'integrations', 'route' => $tenantRoute('integrations')],
-                        ['label' => 'Language', 'slug' => 'language', 'route' => $tenantRoute('language')],
+                        ['label' => __('settings.nav.profile'),      'slug' => 'settings-profile',      'route' => route('tenant.settings.profile'),      'active' => request()->routeIs('tenant.settings.profile')],
+                        ['label' => __('settings.nav.account'),      'slug' => 'settings-account',      'route' => route('tenant.settings.account'),      'active' => request()->routeIs('tenant.settings.account')],
+                        ['label' => __('settings.nav.integrations'), 'slug' => 'settings-integrations', 'route' => route('tenant.settings.integrations'), 'active' => request()->routeIs('tenant.settings.integrations')],
+                        ['label' => __('settings.nav.language'),     'slug' => 'settings-language',     'route' => route('tenant.settings.language'),     'active' => request()->routeIs('tenant.settings.language')],
+                        ['label' => __('settings.nav.subscription'), 'slug' => 'settings-subscription', 'route' => route('tenant.settings.subscription'), 'active' => request()->routeIs('tenant.settings.subscription')],
+                        ['label' => __('settings.nav.data'),         'slug' => 'settings-data',         'route' => route('tenant.settings.data'),         'active' => request()->routeIs('tenant.settings.data')],
                     ],
                 ],
             ],
         ],
     ];
+
+    if (!$isSuperAdmin && $user?->role === 'pos') {
+        foreach ($tenantSections as &$section) {
+            if (($section['heading'] ?? null) === __('common.tenant_nav.section_finance')) {
+                foreach ($section['items'] as &$item) {
+                    if (($item['slug'] ?? null) === 'pos-store') {
+                        $item['children'] = array_values(array_filter(
+                            $item['children'] ?? [],
+                            fn (array $child): bool => in_array($child['slug'] ?? null, ['sales', 'stock'], true)
+                        ));
+                    }
+                }
+                unset($item);
+            }
+        }
+        unset($section);
+    }
+
+    // Branch switcher data (tenant users only)
+    $tenantBranches   = collect();
+    $selectedBranchId = null;
+    $selectedBranch   = null;
+    if (!$isSuperAdmin && $user?->tenant) {
+        $tenantBranches   = \App\Models\Branch::forTenant($user->tenant->id)
+            ->active()
+            ->orderByRaw('is_primary DESC, name ASC')
+            ->get();
+        $selectedBranchId = session('gymos_selected_branch_id');
+        $selectedBranch   = $tenantBranches->find($selectedBranchId);
+        // Clear stale session value if branch no longer exists/active
+        if ($selectedBranchId && !$selectedBranch) {
+            session()->forget('gymos_selected_branch_id');
+            $selectedBranchId = null;
+        }
+    }
 
     $icon = static function (string $name): string {
         return match ($name) {
@@ -195,6 +246,24 @@
         </script>
 
         @vite(['resources/css/app.css'])
+        @stack('styles')
+        <style>
+        /* Branch switcher */
+        .bs-trigger { align-items: center; background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.75rem; color: var(--app-text); cursor: pointer; display: inline-flex; font-size: 0.82rem; font-weight: 500; gap: 0.4rem; padding: 0.4rem 0.65rem; transition: background 140ms; white-space: nowrap; }
+        .bs-trigger:hover { background: color-mix(in srgb, var(--app-border) 60%, transparent); }
+        .bs-icon { align-items: center; color: var(--app-brand); display: inline-flex; flex: none; }
+        .bs-icon svg { height: 1rem; width: 1rem; }
+        .bs-label { max-width: 10rem; overflow: hidden; text-overflow: ellipsis; }
+        .bs-chevron { flex: none; height: 0.85rem; opacity: 0.5; width: 0.85rem; }
+        .bs-dropdown { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.22); min-width: 210px; padding: 0.35rem; position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 50; }
+        .bs-dropdown-heading { color: var(--app-text-muted); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; padding: 0.4rem 0.65rem 0.3rem; text-transform: uppercase; }
+        .bs-option { align-items: center; border-radius: 0.6rem; color: var(--app-text-muted); cursor: pointer; display: flex; font-size: 0.82rem; gap: 0.5rem; padding: 0.45rem 0.6rem; transition: background 120ms, color 120ms; width: 100%; background: transparent; border: none; }
+        .bs-option:hover { background: color-mix(in srgb, var(--app-border) 55%, transparent); color: var(--app-text); }
+        .bs-option-active { color: var(--app-text); background: color-mix(in srgb, var(--app-brand-soft) 55%, transparent); }
+        .bs-option-icon { align-items: center; display: inline-flex; flex: none; opacity: 0.6; }
+        .bs-option-icon svg { height: 0.9rem; width: 0.9rem; }
+        .bs-primary-tag { background: color-mix(in srgb, var(--app-brand-soft) 80%, transparent); border-radius: 999px; color: var(--app-brand); font-size: 0.6rem; font-weight: 700; margin-left: 0.25rem; padding: 0.05rem 0.35rem; text-transform: uppercase; vertical-align: middle; }
+        </style>
     </head>
     <body class="min-h-screen">
         <div class="app-theme-shell min-h-screen">
@@ -235,12 +304,111 @@
                                 <span class="app-toggle-thumb inline-flex h-5 w-5 rounded-full bg-[var(--app-brand)] shadow"></span>
                             </span>
                         </button>
+
+                        {{-- Branch switcher (tenant users with branches) --}}
+                        @if (!$isSuperAdmin && $tenantBranches->count() > 0)
+                        <div class="relative" id="branch-sw-wrap">
+                            <button
+                                type="button"
+                                id="branch-sw-btn"
+                                class="bs-trigger"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                <span class="bs-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
+                                </span>
+                                <span class="bs-label hidden md:inline">
+                                    {{ $selectedBranch ? $selectedBranch->name : 'All branches' }}
+                                </span>
+                                <svg class="bs-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+
+                            <div id="branch-sw-dropdown" class="bs-dropdown hidden" role="menu">
+                                <p class="bs-dropdown-heading">Switch branch</p>
+
+                                <form method="POST" action="{{ route('tenant.switch-branch') }}">
+                                    @csrf
+                                    <input type="hidden" name="branch_id" value="all">
+                                    <button type="submit" class="bs-option {{ !$selectedBranchId ? 'bs-option-active' : '' }}" role="menuitem">
+                                        <span class="bs-option-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                                        </span>
+                                        <span class="flex-1 text-left">All branches</span>
+                                        @if (!$selectedBranchId)
+                                            <svg class="h-3.5 w-3.5 text-[var(--app-brand)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                        @endif
+                                    </button>
+                                </form>
+
+                                @foreach ($tenantBranches as $b)
+                                    <form method="POST" action="{{ route('tenant.switch-branch') }}">
+                                        @csrf
+                                        <input type="hidden" name="branch_id" value="{{ $b->id }}">
+                                        <button type="submit" class="bs-option {{ $selectedBranchId === $b->id ? 'bs-option-active' : '' }}" role="menuitem">
+                                            <span class="bs-option-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
+                                            </span>
+                                            <span class="flex-1 text-left">
+                                                {{ $b->name }}
+                                                @if ($b->is_primary)
+                                                    <span class="bs-primary-tag">Primary</span>
+                                                @endif
+                                            </span>
+                                            @if ($selectedBranchId === $b->id)
+                                                <svg class="h-3.5 w-3.5 text-[var(--app-brand)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- User profile dropdown --}}
+                        <div class="relative" id="user-menu-wrap">
+                            <button
+                                type="button"
+                                id="user-menu-btn"
+                                class="flex items-center gap-2.5 rounded-2xl border border-[var(--app-border)] px-3 py-2 text-sm transition hover:opacity-90 app-panel-strong"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                <span class="app-brand-soft app-brand-text inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold">
+                                    {{ strtoupper(substr($user?->name ?? 'U', 0, 1)) }}
+                                </span>
+                                <span class="hidden font-medium md:inline">{{ $user?->name }}</span>
+                                <svg class="h-3.5 w-3.5 app-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+
+                            <div
+                                id="user-menu-dropdown"
+                                class="app-panel-strong absolute right-0 top-full z-50 mt-2 hidden w-56 rounded-2xl border border-[var(--app-border)] p-1 shadow-xl"
+                                role="menu"
+                            >
+                                <div class="px-3 py-2.5 border-b border-[var(--app-border)] mb-1">
+                                    <p class="text-sm font-semibold truncate">{{ $user?->name }}</p>
+                                    <p class="text-xs app-muted mt-0.5 truncate">{{ $user?->email }}</p>
+                                </div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button
+                                        type="submit"
+                                        class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition hover:bg-red-500/10 hover:text-red-400"
+                                        role="menuitem"
+                                    >
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        {{ __('common.logout') }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
 
             <div class="flex min-h-[calc(100vh-76px)] w-full flex-col lg:flex-row">
-                <aside class="app-sidebar border-b px-5 py-6 backdrop-blur lg:min-h-[calc(100vh-76px)] lg:w-[320px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+                <aside class="app-sidebar border-b px-4 py-4 backdrop-blur lg:min-h-[calc(100vh-76px)] lg:w-[280px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
                     @if ($isSuperAdmin)
                         <nav class="mt-8 grid gap-2 text-sm">
                             @foreach ($adminLinks as $link)
@@ -249,49 +417,74 @@
                                     class="{{ request()->routeIs($link['route']) ? 'bg-[var(--app-brand)] text-slate-950' : 'app-panel-strong hover:opacity-90' }} flex items-center gap-3 rounded-2xl border px-4 py-3 font-medium transition"
                                 >
                                     <span class="inline-flex h-8 w-8 items-center justify-center rounded-full {{ request()->routeIs($link['route']) ? 'bg-slate-950/15' : 'app-brand-soft app-brand-text' }}">
-                                        <span class="app-nav-icon h-4 w-4" aria-hidden="true">{!! $icon($link['icon']) !!}</span>
+                                        <span class="h-4 w-4">{!! $icon($link['icon']) !!}</span>
                                     </span>
                                     <span>{{ $link['label'] }}</span>
                                 </a>
                             @endforeach
                         </nav>
                     @else
-                        <nav class="tenant-nav mt-3 text-sm">
+                        <nav class="tenant-nav mt-2 text-sm">
                             @foreach ($tenantSections as $section)
-                                <div class="tenant-nav-block {{ $loop->first ? '' : 'mt-6' }}">
+                                <div class="tenant-nav-block {{ $loop->first ? '' : '' }}">
                                     @if ($section['heading'])
                                         <p class="tenant-nav-heading">{{ $section['heading'] }}</p>
                                     @endif
 
-                                    <div class="grid gap-1.5">
+                                    <div class="grid gap-0.5">
                                         @foreach ($section['items'] as $item)
                                             @php
                                                 $childItems = $item['children'] ?? [];
-                                                $active = $item['active'] ?? $isTenantItemActive($item['slug'] ?? null, $childItems);
+                                                $hasChildren = !empty($childItems);
+                                                $childActive = collect($childItems)->contains(fn (array $child): bool => ($child['active'] ?? false) || (($child['slug'] ?? null) === $currentTenantSlug));
+                                                $active = ($item['active'] ?? false) || $childActive || $isTenantItemActive($item['slug'] ?? null, $childItems);
                                             @endphp
                                             <div class="tenant-nav-entry">
-                                                <a
-                                                    href="{{ $item['route'] }}"
-                                                    class="{{ $active ? 'tenant-nav-item-active' : 'tenant-nav-item' }} flex items-center gap-3 rounded-2xl px-4 py-3 transition"
-                                                >
-                                                    <span class="tenant-nav-icon-wrap">
-                                                        <span class="tenant-nav-icon app-nav-icon" aria-hidden="true">
-                                                            {!! $icon($item['icon']) !!}
+                                                @if ($hasChildren)
+                                                    <button
+                                                        type="button"
+                                                        data-nav-toggle
+                                                        aria-expanded="{{ $active ? 'true' : 'false' }}"
+                                                        class="{{ $active ? 'tenant-nav-item-active' : 'tenant-nav-item' }} flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition"
+                                                    >
+                                                        <span class="tenant-nav-icon-wrap">
+                                                            <span class="tenant-nav-icon app-nav-icon" aria-hidden="true">
+                                                                {!! $icon($item['icon']) !!}
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                    <span class="tenant-nav-label flex-1">{{ $item['label'] }}</span>
-                                                    @if (!empty($item['badge']))
-                                                        <span class="tenant-nav-badge">{{ $item['badge'] }}</span>
-                                                    @endif
-                                                </a>
+                                                        <span class="tenant-nav-label flex-1">{{ $item['label'] }}</span>
+                                                        @if (!empty($item['badge']))
+                                                            <span class="tenant-nav-badge">{{ $item['badge'] }}</span>
+                                                        @endif
+                                                        <span class="tenant-nav-chevron" aria-hidden="true">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                                                        </span>
+                                                    </button>
+                                                @else
+                                                    <a
+                                                        href="{{ $item['route'] }}"
+                                                        class="{{ $active ? 'tenant-nav-item-active' : 'tenant-nav-item' }} flex items-center gap-2.5 rounded-xl px-3 py-2 transition"
+                                                    >
+                                                        <span class="tenant-nav-icon-wrap">
+                                                            <span class="tenant-nav-icon app-nav-icon" aria-hidden="true">
+                                                                {!! $icon($item['icon']) !!}
+                                                            </span>
+                                                        </span>
+                                                        <span class="tenant-nav-label flex-1">{{ $item['label'] }}</span>
+                                                        @if (!empty($item['badge']))
+                                                            <span class="tenant-nav-badge">{{ $item['badge'] }}</span>
+                                                        @endif
+                                                    </a>
+                                                @endif
 
-                                                @if (!empty($childItems))
-                                                    <div class="tenant-nav-children">
+                                                @if ($hasChildren)
+                                                    <div class="tenant-nav-children {{ $active ? 'tenant-nav-children-open' : '' }}">
                                                         @foreach ($childItems as $child)
                                                             <a
                                                                 href="{{ $child['route'] }}"
-                                                                class="{{ ($child['slug'] ?? null) === $currentTenantSlug ? 'tenant-nav-child-active' : 'tenant-nav-child' }}"
+                                                                class="{{ (($child['active'] ?? false) || ($child['slug'] ?? null) === $currentTenantSlug) ? 'tenant-nav-child-active' : 'tenant-nav-child' }}"
                                                             >
+                                                                <span class="tenant-nav-child-dot" aria-hidden="true"></span>
                                                                 {{ $child['label'] }}
                                                             </a>
                                                         @endforeach
@@ -305,45 +498,21 @@
                         </nav>
                     @endif
 
-                    <div class="app-panel-strong mt-8 rounded-3xl border p-4">
-                        <p class="text-xs uppercase tracking-[0.3em] text-[var(--app-success)]">{{ __('common.signed_in_as') }}</p>
-                        <p class="mt-3 text-lg font-semibold">{{ $user?->name }}</p>
-                        <p class="app-muted mt-1 break-all text-sm">{{ $user?->email }}</p>
-
-                        <form method="POST" action="{{ route('logout') }}" class="mt-4">
-                            @csrf
-                            <button
-                                type="submit"
-                                class="app-panel w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold transition hover:opacity-90"
-                            >
-                                {{ __('common.logout') }}
-                            </button>
-                        </form>
-                    </div>
                 </aside>
 
                 <main class="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-                    <header class="app-panel mb-8 flex flex-col gap-3 rounded-[2rem] border px-6 py-5 backdrop-blur lg:flex-row lg:items-end lg:justify-between">
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.38em] text-[var(--app-info)]">{{ $eyebrow }}</p>
-                            <h2 class="mt-3 text-3xl font-semibold tracking-tight">{{ $heading }}</h2>
-                            @if (!empty($subheading))
-                                <p class="app-muted mt-2 max-w-3xl text-sm leading-7">{{ $subheading }}</p>
-                            @endif
-                        </div>
-                        @isset($headerAction)
-                            <div>{{ $headerAction }}</div>
-                        @endisset
-                    </header>
+                    @isset($headerAction)
+                        <div class="mb-5 flex justify-end">{{ $headerAction }}</div>
+                    @endisset
 
                     @if (session('status'))
-                        <div class="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                        <div id="flash-status" class="flash-msg mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                             {{ session('status') }}
                         </div>
                     @endif
 
                     @if (session('error'))
-                        <div class="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                        <div id="flash-error" class="flash-msg mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                             {{ session('error') }}
                         </div>
                     @endif
@@ -363,6 +532,73 @@
                     localStorage.setItem('gymos-theme', nextTheme);
                 });
             }
+
+            // Branch switcher dropdown
+            const bsBtn      = document.getElementById('branch-sw-btn');
+            const bsDropdown = document.getElementById('branch-sw-dropdown');
+            if (bsBtn && bsDropdown) {
+                bsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = !bsDropdown.classList.contains('hidden');
+                    bsDropdown.classList.toggle('hidden', isOpen);
+                    bsBtn.setAttribute('aria-expanded', String(!isOpen));
+                    // Close user menu if open
+                    document.getElementById('user-menu-dropdown')?.classList.add('hidden');
+                });
+                document.addEventListener('click', () => {
+                    bsDropdown.classList.add('hidden');
+                    bsBtn.setAttribute('aria-expanded', 'false');
+                });
+                bsDropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            // User profile dropdown
+            const userMenuBtn = document.getElementById('user-menu-btn');
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            if (userMenuBtn && userMenuDropdown) {
+                userMenuBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close branch switcher if open
+                    document.getElementById('branch-sw-dropdown')?.classList.add('hidden');
+                    const isOpen = !userMenuDropdown.classList.contains('hidden');
+                    userMenuDropdown.classList.toggle('hidden', isOpen);
+                    userMenuBtn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                document.addEventListener('click', () => {
+                    userMenuDropdown.classList.add('hidden');
+                    userMenuBtn.setAttribute('aria-expanded', 'false');
+                });
+                userMenuDropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            // Auto-dismiss flash messages after 10 s with a fade-out
+            document.querySelectorAll('.flash-msg').forEach(el => {
+                el.style.maxHeight = el.scrollHeight + 'px'; // capture current height for collapse animation
+                const DELAY = 10000;
+                const FADE  = 400;
+                const timer = setTimeout(() => {
+                    el.style.transition = `opacity ${FADE}ms ease, margin-bottom ${FADE}ms ease, max-height ${FADE}ms ease`;
+                    el.style.opacity        = '0';
+                    el.style.marginBottom   = '0';
+                    el.style.maxHeight      = '0';
+                    el.style.overflow       = 'hidden';
+                    setTimeout(() => el.remove(), FADE);
+                }, DELAY);
+                // Cancel auto-dismiss if user hovers (they're reading it)
+                el.addEventListener('mouseenter', () => clearTimeout(timer));
+            });
+
+            document.querySelectorAll('[data-nav-toggle]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const expanded = btn.getAttribute('aria-expanded') === 'true';
+                    const children = btn.nextElementSibling;
+                    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    if (children) {
+                        children.classList.toggle('tenant-nav-children-open', !expanded);
+                    }
+                });
+            });
         </script>
+        @stack('scripts')
     </body>
 </html>

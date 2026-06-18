@@ -6,7 +6,7 @@ use App\Models\PlatformLanguage;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class PlatformLanguageSeeder extends Seeder
+class php extends Seeder
 {
     use WithoutModelEvents;
 

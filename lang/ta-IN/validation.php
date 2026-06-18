@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'accepted'        => ':attribute ஏற்கப்பட வேண்டும்.',
+    'after'           => ':attribute :date க்கு பிறகான தேதியாக இருக்க வேண்டும்.',
+    'before_or_equal' => ':attribute :date அல்லது அதற்கு முந்தைய தேதியாக இருக்க வேண்டும்.',
+    'boolean'         => ':attribute இன் மதிப்பு சரி அல்லது தவறாக இருக்க வேண்டும்.',
+    'confirmed'       => ':attribute உறுதிப்படுத்தல் பொருந்தவில்லை.',
+    'date'            => ':attribute செல்லுபடியான தேதியாக இல்லை.',
+    'date_format'     => ':attribute :format வடிவமைப்பில் இருக்க வேண்டும்.',
+    'email'           => ':attribute செல்லுபடியான மின்னஞ்சல் முகவரியாக இருக்க வேண்டும்.',
+    'exists'          => 'தேர்ந்தெடுக்கப்பட்ட :attribute தவறானது.',
+    'file'            => ':attribute ஒரு கோப்பாக இருக்க வேண்டும்.',
+    'image'           => ':attribute ஒரு படமாக இருக்க வேண்டும்.',
+    'in'              => 'தேர்ந்தெடுக்கப்பட்ட :attribute தவறானது.',
+    'integer'         => ':attribute ஒரு முழு எண்ணாக இருக்க வேண்டும்.',
+    'max'             => ['numeric'=>':attribute :max ஐ விட அதிகமாக இருக்கக்கூடாது.','string'=>':attribute :max எழுத்துகளுக்கு மேல் இருக்கக்கூடாது.','array'=>':attribute :max உருப்படிகளுக்கு மேல் இருக்கக்கூடாது.','file'=>':attribute :max கிலோபைட்டுகளுக்கு மேல் இருக்கக்கூடாது.'],
+    'mimes'           => ':attribute :values வகை கோப்பாக இருக்க வேண்டும்.',
+    'min'             => ['numeric'=>':attribute குறைந்தது :min ஆக இருக்க வேண்டும்.','string'=>':attribute குறைந்தது :min எழுத்துகள் இருக்க வேண்டும்.','array'=>':attribute குறைந்தது :min உருப்படிகள் இருக்க வேண்டும்.','file'=>':attribute குறைந்தது :min கிலோபைட்டுகள் இருக்க வேண்டும்.'],
+    'numeric'         => ':attribute ஒரு எண்ணாக இருக்க வேண்டும்.',
+    'regex'           => ':attribute வடிவமைப்பு தவறானது.',
+    'required'        => ':attribute தேவை.',
+    'required_if'     => ':other என்பது :value ஆக இருக்கும்போது :attribute தேவை.',
+    'string'          => ':attribute ஒரு சரமாக இருக்க வேண்டும்.',
+    'unique'          => ':attribute ஏற்கனவே எடுக்கப்பட்டது.',
+    'attributes'      => ['name'=>'பெயர்','email'=>'மின்னஞ்சல்','phone'=>'தொலைபேசி எண்','password'=>'கடவுச்சொல்','role'=>'பாத்திரம்','branch_id'=>'கிளை','join_date'=>'சேர்ந்த தேதி'],
+];
