@@ -32,7 +32,7 @@ class StaffController extends Controller
 
         return view('tenant.staff.form', [
             'branches'         => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
-            'roles'            => Staff::ROLES,
+            'roles'            => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes'       => Staff::ID_PROOF_TYPES,
             'selectedBranchId' => session('gymos_selected_branch_id'),
         ]);
@@ -66,7 +66,7 @@ class StaffController extends Controller
         return view('tenant.staff.form', [
             'staff' => $staff->load('branch'),
             'branches' => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
-            'roles' => Staff::ROLES,
+            'roles' => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes' => Staff::ID_PROOF_TYPES,
         ]);
     }
@@ -154,9 +154,12 @@ class StaffController extends Controller
     {
         abort_unless($this->staffService->canManage($request->user()), 403);
 
+        $roleRow = $this->staffService->singleRolePermission($request->user(), $role);
+
         return view('tenant.staff.roles-form', [
-            'roleRow'        => $this->staffService->singleRolePermission($request->user(), $role),
-            'defaultModules' => $this->staffService->defaultPermissionModules(),
+            'roleRow'        => $roleRow,
+            'defaultModules' => $this->staffService->permissionModulesForRole($role),
+            'staffCount'     => $this->staffService->staffCountsByRole($request->user())[$roleRow->role] ?? 0,
         ]);
     }
 
@@ -167,7 +170,7 @@ class StaffController extends Controller
         $permissions = $request->input('permissions', []);
         $this->staffService->updateRolePermissions($request->user(), $role, $permissions);
 
-        return redirect()->route('tenant.staff.roles.edit', $role)->with('status', 'Permissions saved.');
+        return redirect()->route('tenant.staff.roles')->with('status', 'Permissions saved.');
     }
 
     public function resetRolePermissions(Request $request, string $role): RedirectResponse
@@ -176,7 +179,7 @@ class StaffController extends Controller
 
         $this->staffService->resetRolePermissions($request->user(), $role);
 
-        return redirect()->route('tenant.staff.roles.edit', $role)->with('status', 'Permissions reset to defaults.');
+        return redirect()->route('tenant.staff.roles')->with('status', 'Permissions reset to defaults.');
     }
 
     public function destroyRole(Request $request, string $role): RedirectResponse
@@ -237,7 +240,7 @@ class StaffController extends Controller
                 Rule::unique('staff')->where('tenant_id', $tenantId)->ignore($staff?->id),
                 Rule::unique('users', 'email')->ignore($staff?->user_id),
             ],
-            'role' => ['required', Rule::in(Staff::ROLES)],
+            'role' => ['required', Rule::in($this->staffService->assignableRoleSlugs($tenantId))],
             'branch_id' => ['required', Rule::exists('branches', 'id')->where('tenant_id', $tenantId)],
             'salary_paise' => ['nullable', 'integer', 'min:1'],
             'join_date' => ['required', 'date', 'before_or_equal:today'],

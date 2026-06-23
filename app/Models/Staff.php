@@ -11,14 +11,6 @@ class Staff extends Model
 {
     use SoftDeletes;
 
-    public const ROLES = [
-        'receptionist',
-        'trainer',
-        'accountant',
-        'pos',
-        'branch_manager',
-    ];
-
     public const STATUSES = [
         'active',
         'inactive',

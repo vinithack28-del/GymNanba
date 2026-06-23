@@ -2,7 +2,7 @@
 
 return [
     'title'       => 'Membership Plans',
-    'create_plan' => '+ Create plan',
+    'create_plan' => 'Create plan',
     'edit_plan'   => 'Edit plan',
 
     'filters' => [

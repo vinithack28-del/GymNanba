@@ -1,17 +1,37 @@
 @php
-    $editing     = isset($branch);
-    $formAction  = $editing ? route('tenant.branches.update', $branch) : route('tenant.branches.store');
-    $pageTitle   = $editing ? 'Edit branch' : 'Add branch';
-    $pageSub     = $editing ? "Update details for {$branch->name}." : 'Set up a new location for your gym.';
+    $editing    = isset($branch);
+    $formAction = $editing ? route('tenant.branches.update', $branch) : route('tenant.branches.store');
+    $pageTitle  = $editing ? 'Edit Branch' : 'Add Branch';
+    $pageSub    = $editing ? "Update details for {$branch->name}." : 'Set up a new location for your gym.';
 
     $amenityIcons = ['pool'=>'🏊','steam'=>'💨','parking'=>'🅿','locker'=>'🔒','cafeteria'=>'☕','ac'=>'❄','wifi'=>'📶'];
     $days = ['mon'=>'Monday','tue'=>'Tuesday','wed'=>'Wednesday','thu'=>'Thursday','fri'=>'Friday','sat'=>'Saturday','sun'=>'Sunday'];
 
-    $defaultHours = collect(['mon','tue','wed','thu','fri'])->mapWithKeys(fn($d) => [$d => ['open'=>'06:00','close'=>'22:00','closed'=>false]])
+    $defaultHours = collect(['mon','tue','wed','thu','fri'])
+        ->mapWithKeys(fn($d) => [$d => ['open'=>'06:00','close'=>'22:00','closed'=>false]])
         ->merge(['sat'=>['open'=>'07:00','close'=>'20:00','closed'=>false],'sun'=>['open'=>'08:00','close'=>'14:00','closed'=>false]])
         ->toArray();
 
     $savedHours = $editing ? ($branch->operating_hours ?? $defaultHours) : $defaultHours;
+
+    $wizardSteps = [
+        1 => ['title' => 'Basic Info',      'desc' => 'Name, contact & status'],
+        2 => ['title' => 'Address',         'desc' => 'Location & PIN code'],
+        3 => ['title' => 'Amenities',       'desc' => 'Facilities available'],
+        4 => ['title' => 'Operating Hours', 'desc' => 'Daily open & close times'],
+    ];
+
+    // Determine which step to open after a server validation error
+    $initialStep = (int) old('_wizard_step', 1);
+    if ($errors->any()) {
+        if ($errors->hasAny(['name','phone','email','manager_name','gst_number','status'])) {
+            $initialStep = 1;
+        } elseif ($errors->hasAny(['address1','address2','city','pin','state'])) {
+            $initialStep = 2;
+        } elseif ($errors->has('amenities')) {
+            $initialStep = 3;
+        }
+    }
 @endphp
 
 <x-layouts.admin
@@ -20,273 +40,433 @@
     heading="{{ $pageTitle }}"
     subheading="{{ $pageSub }}"
 >
-@slot('headerAction')
-    <a href="{{ route('tenant.branches.index') }}" class="bf-back-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        Back to branches
-    </a>
-@endslot
+    <x-slot:headerAction>
+        <a
+            href="{{ route('tenant.branches.index') }}"
+            class="app-panel-strong inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
+        >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Back to Branches
+        </a>
+    </x-slot:headerAction>
 
-<form method="POST" action="{{ $formAction }}">
-    @csrf
-    @if ($editing) @method('PUT') @endif
+    <form method="POST" action="{{ $formAction }}" id="branch-wizard-form" class="app-panel rounded-[2rem] border">
+        @csrf
+        @if ($editing) @method('PUT') @endif
+        <input type="hidden" name="_wizard_step" id="wizard_step_field" value="{{ $initialStep }}">
 
-    {{-- Validation errors --}}
-    @if ($errors->any())
-        <div class="bf-error-box mb-6">
-            @foreach ($errors->all() as $e)
-                <p class="text-sm">{{ $e }}</p>
-            @endforeach
+        {{-- ── Step indicator ──────────────────────────────────────────── --}}
+        <div class="border-b border-[var(--app-border)] px-6 py-4">
+            <nav class="flex items-start justify-center gap-0" aria-label="Wizard steps">
+                @foreach ($wizardSteps as $num => $step)
+                    {{-- Step button --}}
+                    <button
+                        type="button"
+                        class="wizard-step-btn flex flex-col items-center gap-1.5 rounded-2xl px-3 py-2 transition-all"
+                        data-step="{{ $num }}"
+                        data-editing="{{ $editing ? 'true' : 'false' }}"
+                    >
+                        <span class="wizard-step-num inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all"
+                              data-step="{{ $num }}">
+                            <span class="step-num-text">{{ $num }}</span>
+                            <svg class="step-check hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        </span>
+                        <span class="wizard-step-label text-[11px] font-semibold leading-tight transition-all">{{ $step['title'] }}</span>
+                    </button>
+
+                    {{-- Connector arrow (not after last) --}}
+                    @if ($num < 4)
+                        <svg class="wizard-connector mx-1 mt-3 h-4 w-4 shrink-0 transition-colors" data-after="{{ $num }}"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    @endif
+                @endforeach
+            </nav>
         </div>
-    @endif
 
-    <div class="bf-layout">
-
-        {{-- ── LEFT: Main fields ─────────────────────────────────────────── --}}
-        <div class="bf-main">
-
-            {{-- Basic information --}}
-            <div class="bf-card">
-                <h3 class="bf-card-title">Basic information</h3>
-
-                <div class="bf-field">
-                    <label class="bf-label" for="f-name">Branch name <span class="bf-req">*</span></label>
-                    <input id="f-name" type="text" name="name"
-                        value="{{ old('name', $branch->name ?? '') }}"
-                        placeholder="e.g. OMR Branch"
-                        class="bf-input" required maxlength="80">
+        {{-- ── Form body ─────────────────────────────────────────────────── --}}
+        <div class="p-6">
+            @if ($errors->any())
+                <div class="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                    {{ $errors->first() }}
                 </div>
+            @endif
 
-                <div class="bf-row">
-                    <div class="bf-field">
-                        <label class="bf-label" for="f-phone">Phone <span class="bf-req">*</span></label>
-                        <input id="f-phone" type="tel" name="phone"
+            {{-- ── Step 1: Basic Info ─────────────────────────────────── --}}
+            <section id="branch-step-1" class="wizard-step-section space-y-5">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">Branch Name <span class="text-red-400">*</span></label>
+                        <input type="text" name="name"
+                            value="{{ old('name', $branch->name ?? '') }}"
+                            placeholder="e.g. OMR Branch"
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            required maxlength="80">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Phone <span class="text-red-400">*</span></label>
+                        <input type="tel" name="phone"
                             value="{{ old('phone', $branch->phone ?? '') }}"
                             placeholder="+91 44 2200 0000"
-                            class="bf-input" required maxlength="20">
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            required maxlength="20">
                     </div>
-                    <div class="bf-field">
-                        <label class="bf-label" for="f-email">Email</label>
-                        <input id="f-email" type="email" name="email"
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Email <span class="app-muted font-normal">(optional)</span></label>
+                        <input type="email" name="email"
                             value="{{ old('email', $branch->email ?? '') }}"
                             placeholder="branch@yourgym.in"
-                            class="bf-input" maxlength="255">
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            maxlength="255">
                     </div>
-                </div>
-
-                <div class="bf-field">
-                    <label class="bf-label" for="f-manager">Branch manager</label>
-                    <input id="f-manager" type="text" name="manager_name"
-                        value="{{ old('manager_name', $branch->manager_name ?? '') }}"
-                        placeholder="Manager name (optional)"
-                        class="bf-input" maxlength="100">
-                </div>
-
-                <div class="bf-row">
-                    <div class="bf-field">
-                        <label class="bf-label" for="f-gst">GST number</label>
-                        <input id="f-gst" type="text" name="gst_number"
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Branch Manager <span class="app-muted font-normal">(optional)</span></label>
+                        <input type="text" name="manager_name"
+                            value="{{ old('manager_name', $branch->manager_name ?? '') }}"
+                            placeholder="Manager name"
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            maxlength="100">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">GST Number <span class="app-muted font-normal">(optional)</span></label>
+                        <input type="text" name="gst_number"
                             value="{{ old('gst_number', $branch->gst_number ?? '') }}"
-                            placeholder="15-char GSTIN (optional)"
-                            maxlength="15" class="bf-input">
+                            placeholder="15-char GSTIN"
+                            maxlength="15"
+                            class="w-full rounded-2xl border px-4 py-3 font-mono outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]">
                     </div>
-                    <div class="bf-field">
-                        <label class="bf-label">Status <span class="bf-req">*</span></label>
-                        <div class="flex gap-5 mt-2">
-                            <label class="bf-radio">
-                                <input type="radio" name="status" value="active" class="bf-checkbox"
-                                    {{ old('status', $branch->status ?? 'active') === 'active' ? 'checked' : '' }}>
-                                <span style="color:#1D9E75;font-size:0.875rem">● Active</span>
-                            </label>
-                            <label class="bf-radio">
-                                <input type="radio" name="status" value="inactive" class="bf-checkbox"
-                                    {{ old('status', $branch->status ?? '') === 'inactive' ? 'checked' : '' }}>
-                                <span class="app-muted" style="font-size:0.875rem">● Inactive</span>
-                            </label>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">Status <span class="text-red-400">*</span></label>
+                        <div class="flex gap-3">
+                            @foreach (['active' => 'Active', 'inactive' => 'Inactive'] as $val => $lbl)
+                                @php $checked = old('status', $branch->status ?? 'active') === $val; @endphp
+                                <label class="flex flex-1 cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition {{ $checked ? 'border-[var(--app-brand)] bg-[color-mix(in_srgb,var(--app-brand)_8%,transparent)]' : 'app-panel-strong hover:opacity-90' }}">
+                                    <input type="radio" name="status" value="{{ $val }}" class="accent-[var(--app-brand)]" {{ $checked ? 'checked' : '' }}>
+                                    <span class="text-sm font-medium">{{ $lbl }}</span>
+                                </label>
+                            @endforeach
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            {{-- Address --}}
-            <div class="bf-card">
-                <h3 class="bf-card-title">Address</h3>
+            {{-- ── Step 2: Address ────────────────────────────────────── --}}
+            <section id="branch-step-2" class="wizard-step-section hidden space-y-5">
 
-                <div class="bf-field">
-                    <label class="bf-label" for="f-addr1">Address line 1 <span class="bf-req">*</span></label>
-                    <input id="f-addr1" type="text" name="address1"
-                        value="{{ old('address1', $branch->address1 ?? '') }}"
-                        placeholder="Street, area, landmark"
-                        class="bf-input" required maxlength="100">
-                </div>
-
-                <div class="bf-field">
-                    <label class="bf-label" for="f-addr2">Address line 2</label>
-                    <input id="f-addr2" type="text" name="address2"
-                        value="{{ old('address2', $branch->address2 ?? '') }}"
-                        placeholder="Floor, building, near landmark (optional)"
-                        class="bf-input" maxlength="100">
-                </div>
-
-                <div class="bf-row">
-                    <div class="bf-field">
-                        <label class="bf-label" for="f-city">City <span class="bf-req">*</span></label>
-                        <input id="f-city" type="text" name="city"
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">Address Line 1 <span class="text-red-400">*</span></label>
+                        <input type="text" name="address1"
+                            value="{{ old('address1', $branch->address1 ?? '') }}"
+                            placeholder="Street, area, landmark"
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            required maxlength="100">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">Address Line 2 <span class="app-muted font-normal">(optional)</span></label>
+                        <input type="text" name="address2"
+                            value="{{ old('address2', $branch->address2 ?? '') }}"
+                            placeholder="Floor, building, near landmark"
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            maxlength="100">
+                    </div>
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">City <span class="text-red-400">*</span></label>
+                        <input type="text" name="city"
                             value="{{ old('city', $branch->city ?? '') }}"
                             placeholder="City"
-                            class="bf-input" required maxlength="50">
+                            class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            required maxlength="50">
                     </div>
-                    <div class="bf-field">
-                        <label class="bf-label" for="f-pin">PIN code <span class="bf-req">*</span></label>
-                        <input id="f-pin" type="text" name="pin"
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">PIN Code <span class="text-red-400">*</span></label>
+                        <input type="text" name="pin"
                             value="{{ old('pin', $branch->pin ?? '') }}"
                             placeholder="6 digits"
                             maxlength="6" pattern="\d{6}"
-                            class="bf-input" required>
+                            class="w-full rounded-2xl border px-4 py-3 font-mono outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]"
+                            required>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">State <span class="text-red-400">*</span></label>
+                        <select name="state" class="w-full rounded-2xl border px-4 py-3 outline-none transition focus:ring-1 focus:ring-[var(--app-brand)]" required>
+                            <option value="">Select state…</option>
+                            @foreach ($states as $state)
+                                <option value="{{ $state }}" @selected(old('state', $branch->state ?? '') === $state)>{{ $state }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
+            </section>
 
-                <div class="bf-field">
-                    <label class="bf-label" for="f-state">State <span class="bf-req">*</span></label>
-                    <select id="f-state" name="state" class="bf-input" required>
-                        <option value="">Select state…</option>
-                        @foreach ($states as $state)
-                            <option value="{{ $state }}"
-                                @selected(old('state', $branch->state ?? '') === $state)>{{ $state }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+            {{-- ── Step 3: Amenities ──────────────────────────────────── --}}
+            <section id="branch-step-3" class="wizard-step-section hidden space-y-5">
 
-            {{-- Amenities --}}
-            <div class="bf-card">
-                <h3 class="bf-card-title">Amenities</h3>
-                <div class="bf-amenity-grid">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     @foreach ($amenityOpts as $key => $label)
                         @php $checked = in_array($key, old('amenities', $branch->amenities ?? [])); @endphp
-                        <label class="bf-amenity-check {{ $checked ? 'bf-amenity-on' : '' }}">
+                        <label class="amenity-pill flex cursor-pointer items-center gap-2.5 rounded-2xl border px-4 py-3 transition {{ $checked ? 'border-[var(--app-brand)] bg-[color-mix(in_srgb,var(--app-brand)_10%,transparent)] text-[var(--app-brand)]' : 'app-panel-strong hover:opacity-90' }}">
                             <input type="checkbox" name="amenities[]" value="{{ $key }}"
-                                class="bf-checkbox" {{ $checked ? 'checked' : '' }}>
-                            <span>{{ $amenityIcons[$key] ?? '' }} {{ $label }}</span>
+                                class="sr-only" {{ $checked ? 'checked' : '' }}>
+                            <span class="text-base leading-none">{{ $amenityIcons[$key] ?? '✓' }}</span>
+                            <span class="text-sm font-medium">{{ $label }}</span>
                         </label>
                     @endforeach
                 </div>
-            </div>
+            </section>
 
-        </div>
+            {{-- ── Step 4: Operating Hours ────────────────────────────── --}}
+            <section id="branch-step-4" class="wizard-step-section hidden space-y-5">
 
-        {{-- ── RIGHT: Operating hours ────────────────────────────────────── --}}
-        <div class="bf-side">
-            <div class="bf-card bf-card-sticky">
-                <h3 class="bf-card-title">Operating hours</h3>
-                <div class="bf-hours-list">
+                <div class="app-panel-strong divide-y divide-[var(--app-border)] rounded-2xl border">
                     @foreach ($days as $key => $label)
                         @php
                             $dayClosed = (bool) old("hours_{$key}_closed", $savedHours[$key]['closed'] ?? false);
                             $dayOpen   = old("hours_{$key}_open",  $savedHours[$key]['open']  ?? '06:00');
                             $dayClose  = old("hours_{$key}_close", $savedHours[$key]['close'] ?? '22:00');
                         @endphp
-                        <div class="bf-hours-row">
-                            <span class="bf-hours-day">{{ substr($label, 0, 3) }}</span>
-                            <label class="bf-hours-toggle">
-                                <input type="checkbox" name="hours_{{ $key }}_closed"
-                                    value="1"
-                                    class="bf-checkbox bf-closed-cb"
+                        <div class="flex items-center gap-4 px-4 py-3">
+                            <span class="w-12 text-sm font-semibold">{{ substr($label, 0, 3) }}</span>
+
+                            <label class="flex cursor-pointer items-center gap-2">
+                                <input type="checkbox" name="hours_{{ $key }}_closed" value="1"
+                                    class="hours-closed-cb h-4 w-4 accent-[var(--app-brand)]"
                                     data-day="{{ $key }}"
                                     {{ $dayClosed ? 'checked' : '' }}>
-                                <span class="text-xs app-muted">Closed</span>
+                                <span class="app-muted text-xs">Closed</span>
                             </label>
-                            <div id="times-{{ $key }}" class="bf-hours-times {{ $dayClosed ? 'bf-hidden' : '' }}">
-                                <input type="time" name="hours_{{ $key }}_open"
-                                    value="{{ $dayOpen }}" class="bf-time-input">
-                                <span class="app-muted text-xs">–</span>
-                                <input type="time" name="hours_{{ $key }}_close"
-                                    value="{{ $dayClose }}" class="bf-time-input">
+
+                            <div id="times-{{ $key }}" class="ml-auto flex items-center gap-2 {{ $dayClosed ? 'hidden' : '' }}">
+                                <input type="time" name="hours_{{ $key }}_open" value="{{ $dayOpen }}"
+                                    class="rounded-xl border px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[var(--app-brand)]"
+                                    style="background:var(--app-panel);color:var(--app-text);border-color:var(--app-border)">
+                                <span class="app-muted text-xs">to</span>
+                                <input type="time" name="hours_{{ $key }}_close" value="{{ $dayClose }}"
+                                    class="rounded-xl border px-3 py-1.5 text-sm outline-none focus:ring-1 focus:ring-[var(--app-brand)]"
+                                    style="background:var(--app-panel);color:var(--app-text);border-color:var(--app-border)">
                             </div>
-                            <span id="closed-lbl-{{ $key }}" class="text-xs app-muted italic {{ $dayClosed ? '' : 'bf-hidden' }}">Closed</span>
+                            <span id="closed-lbl-{{ $key }}" class="app-muted ml-auto text-xs italic {{ $dayClosed ? '' : 'hidden' }}">Day off</span>
                         </div>
                     @endforeach
                 </div>
+            </section>
+
+            {{-- ── Step navigation bar ───────────────────────────────── --}}
+            <div class="mt-8 flex items-center justify-between border-t border-[var(--app-border)] pt-6">
+                {{-- Left: Cancel (step 1) or Back (steps 2-4) --}}
+                <div>
+                    <a id="wizard-cancel" href="{{ route('tenant.branches.index') }}"
+                       class="wizard-nav-btn app-panel-strong rounded-2xl border px-5 py-3 text-sm font-medium transition hover:opacity-80">
+                        Cancel
+                    </a>
+                    <button type="button" id="wizard-back"
+                            class="wizard-nav-btn hidden app-panel-strong rounded-2xl border px-5 py-3 text-sm font-medium transition hover:opacity-80">
+                        ← Back
+                    </button>
+                </div>
+
+                {{-- Right: Next or Save --}}
+                <div class="flex items-center gap-3">
+                    <span id="wizard-step-label" class="app-muted hidden text-xs sm:block"></span>
+                    <button type="button" id="wizard-next"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-[var(--app-brand)] px-6 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90">
+                        Next
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                    </button>
+                    <button type="submit" id="wizard-save"
+                            style="display:none"
+                            class="inline-flex items-center gap-2 rounded-2xl bg-[var(--app-brand)] px-6 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        {{ $editing ? 'Save Changes' : 'Create Branch' }}
+                    </button>
+                </div>
             </div>
         </div>
+    </form>
 
-    </div>
+    <script>
+    (function () {
+        const TOTAL_STEPS   = 4;
+        const isEditing     = {{ $editing ? 'true' : 'false' }};
+        let   currentStep   = {{ $initialStep }};
+        const completedSteps = new Set(isEditing ? [1,2,3,4] : []);
 
-    {{-- Form actions --}}
-    <div class="bf-footer">
-        <a href="{{ route('tenant.branches.index') }}" class="bf-btn-ghost">Cancel</a>
-        <button type="submit" class="bf-btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M20 6L9 17l-5-5"/></svg>
-            {{ $editing ? 'Save changes' : 'Create branch' }}
-        </button>
-    </div>
-</form>
+        // ── DOM refs ──────────────────────────────────────────────────
+        const sections    = () => document.querySelectorAll('.wizard-step-section');
+        const stepBtns    = () => document.querySelectorAll('.wizard-step-btn');
+        const connectors  = () => document.querySelectorAll('.wizard-connector');
+        const cancelBtn   = document.getElementById('wizard-cancel');
+        const backBtn     = document.getElementById('wizard-back');
+        const nextBtn     = document.getElementById('wizard-next');
+        const saveBtn     = document.getElementById('wizard-save');
+        const stepField   = document.getElementById('wizard_step_field');
+        const stepLabel   = document.getElementById('wizard-step-label');
 
-@push('styles')
-<style>
-.bf-back-btn { align-items: center; background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.75rem; color: var(--app-text-muted); display: inline-flex; font-size: 0.82rem; font-weight: 500; gap: 0.4rem; padding: 0.45rem 0.85rem; text-decoration: none; transition: background 140ms; }
-.bf-back-btn:hover { background: color-mix(in srgb, var(--app-border) 70%, transparent); color: var(--app-text); }
+        // ── Apply visual state for all steps ─────────────────────────
+        function applyStepStyles() {
+            stepBtns().forEach(btn => {
+                const n     = parseInt(btn.dataset.step);
+                const num   = btn.querySelector('.wizard-step-num');
+                const label = btn.querySelector('.wizard-step-label');
+                const check = btn.querySelector('.step-check');
+                const numTxt= btn.querySelector('.step-num-text');
 
-.bf-error-box { background: rgba(226,75,74,0.1); border: 1px solid rgba(226,75,74,0.3); border-radius: 0.75rem; color: #E24B4A; padding: 0.85rem 1rem; }
+                const isActive    = n === currentStep;
+                const isCompleted = completedSteps.has(n) && n !== currentStep;
+                const canClick    = isEditing || isCompleted || n === currentStep;
 
-.bf-layout { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
-@media (min-width: 900px) { .bf-layout { grid-template-columns: 1fr 340px; } }
+                // Number badge
+                num.className = 'wizard-step-num inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all';
+                if (isActive) {
+                    num.style.background = 'var(--app-brand)';
+                    num.style.color      = '#0f172a';
+                } else if (isCompleted) {
+                    num.style.background = 'color-mix(in srgb, var(--app-brand) 20%, transparent)';
+                    num.style.color      = 'var(--app-brand)';
+                } else {
+                    num.style.background = 'var(--app-panel-strong)';
+                    num.style.color      = 'var(--app-text-muted)';
+                }
 
-.bf-main { display: flex; flex-direction: column; gap: 1.25rem; }
+                // Show check or number
+                if (isCompleted) {
+                    check?.classList.remove('hidden');
+                    numTxt?.classList.add('hidden');
+                } else {
+                    check?.classList.add('hidden');
+                    numTxt?.classList.remove('hidden');
+                }
 
-.bf-card { background: var(--app-panel); border: 1px solid var(--app-border); border-radius: 1.5rem; padding: 1.5rem; }
-.bf-card-sticky { position: sticky; top: 6rem; }
-.bf-card-title { color: var(--app-text-muted); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; margin-bottom: 1.1rem; text-transform: uppercase; }
+                // Text colour
+                if (label) label.style.color = isActive ? 'var(--app-text)' : isCompleted ? 'var(--app-text)' : 'var(--app-text-muted)';
 
-.bf-field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.9rem; }
-.bf-field:last-child { margin-bottom: 0; }
-.bf-row { display: grid; gap: 0.85rem; grid-template-columns: 1fr 1fr; margin-bottom: 0.9rem; }
-.bf-row .bf-field { margin-bottom: 0; }
+                // Cursor / pointer
+                btn.style.cursor = canClick ? 'pointer' : 'default';
+                btn.style.opacity = canClick ? '1' : '0.45';
 
-.bf-label { color: var(--app-text-muted); font-size: 0.79rem; font-weight: 500; }
-.bf-req { color: #E24B4A; }
-.bf-input { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.65rem; color: var(--app-text); font-size: 0.875rem; outline: none; padding: 0.55rem 0.75rem; transition: border-color 160ms; width: 100%; }
-.bf-input:focus { border-color: color-mix(in srgb, var(--app-brand) 60%, var(--app-border)); }
-.bf-checkbox { accent-color: var(--app-brand); cursor: pointer; }
-.bf-radio { align-items: center; cursor: pointer; display: flex; gap: 0.4rem; }
+                // Active step highlight
+                btn.style.background = isActive ? 'color-mix(in srgb, var(--app-brand) 6%, transparent)' : 'transparent';
+            });
 
-.bf-amenity-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, 1fr); }
-.bf-amenity-check { align-items: center; background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.65rem; cursor: pointer; display: flex; font-size: 0.82rem; gap: 0.5rem; padding: 0.5rem 0.75rem; transition: border-color 140ms, background 140ms; }
-.bf-amenity-check:hover { border-color: color-mix(in srgb, var(--app-brand) 40%, var(--app-border)); }
-.bf-amenity-on { background: color-mix(in srgb, var(--app-brand-soft) 60%, transparent); border-color: color-mix(in srgb, var(--app-brand) 45%, var(--app-border)); }
+            // Connectors
+            connectors().forEach(c => {
+                const after = parseInt(c.dataset.after);
+                c.style.color = (after < currentStep) ? 'var(--app-brand)' : 'var(--app-border)';
+            });
+        }
 
-.bf-hours-list { display: flex; flex-direction: column; gap: 0.5rem; }
-.bf-hours-row { align-items: center; display: flex; gap: 0.6rem; min-height: 2rem; }
-.bf-hours-day { color: var(--app-text-muted); font-size: 0.78rem; font-weight: 600; min-width: 2.5rem; }
-.bf-hours-toggle { align-items: center; display: flex; gap: 0.3rem; min-width: 4.5rem; }
-.bf-hours-times { align-items: center; display: flex; flex: 1; gap: 0.35rem; }
-.bf-time-input { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.5rem; color: var(--app-text); font-size: 0.78rem; outline: none; padding: 0.28rem 0.45rem; width: 5.5rem; }
-.bf-hidden { display: none !important; }
+        // ── Show/hide sections ────────────────────────────────────────
+        function showStep(n) {
+            sections().forEach((sec, i) => {
+                const stepN = i + 1;
+                sec.classList.toggle('hidden', stepN !== n);
+            });
 
-.bf-footer { border-top: 1px solid var(--app-border); display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; }
+            stepField.value = n;
 
-.bf-btn-primary { align-items: center; background: var(--app-brand); border: none; border-radius: 0.75rem; color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.875rem; font-weight: 600; gap: 0.4rem; padding: 0.55rem 1.1rem; transition: opacity 160ms; }
-.bf-btn-primary:hover { opacity: 0.88; }
-.bf-btn-ghost { align-items: center; background: transparent; border: 1px solid var(--app-border); border-radius: 0.75rem; color: var(--app-text-muted); cursor: pointer; display: inline-flex; font-size: 0.875rem; font-weight: 500; padding: 0.55rem 1.1rem; text-decoration: none; transition: background 140ms; }
-.bf-btn-ghost:hover { background: color-mix(in srgb, var(--app-border) 60%, transparent); color: var(--app-text); }
-</style>
-@endpush
+            // Back / Cancel
+            if (n === 1) {
+                cancelBtn.classList.remove('hidden');
+                backBtn.classList.add('hidden');
+            } else {
+                cancelBtn.classList.add('hidden');
+                backBtn.classList.remove('hidden');
+            }
 
-<script>
-document.querySelectorAll('.bf-closed-cb').forEach(cb => {
-    cb.addEventListener('change', function () {
-        const day   = this.dataset.day;
-        const times = document.getElementById('times-' + day);
-        const lbl   = document.getElementById('closed-lbl-' + day);
-        times?.classList.toggle('bf-hidden', this.checked);
-        lbl?.classList.toggle('bf-hidden', !this.checked);
-    });
-});
-document.querySelectorAll('.bf-amenity-check').forEach(wrap => {
-    wrap.querySelector('input')?.addEventListener('change', function () {
-        wrap.classList.toggle('bf-amenity-on', this.checked);
-    });
-});
-</script>
+            // Next / Save
+            if (n === TOTAL_STEPS) {
+                nextBtn.style.display = 'none';
+                saveBtn.style.display = 'inline-flex';
+            } else {
+                nextBtn.style.display = 'inline-flex';
+                saveBtn.style.display = 'none';
+            }
 
+            // Label
+            const labels = @json(array_map(fn($s) => $s['title'], $wizardSteps));
+            stepLabel.textContent = `Step ${n} of ${TOTAL_STEPS}`;
+
+            currentStep = n;
+            applyStepStyles();
+        }
+
+        // ── Client-side validation for current step ───────────────────
+        function validateStep(n) {
+            const section = document.getElementById('branch-step-' + n);
+            const fields  = section.querySelectorAll('input[required], select[required]');
+            let ok = true;
+            fields.forEach(f => {
+                if (!f.reportValidity()) ok = false;
+            });
+            return ok;
+        }
+
+        // ── Button events ─────────────────────────────────────────────
+        nextBtn.addEventListener('click', () => {
+            if (!validateStep(currentStep)) return;
+            completedSteps.add(currentStep);
+            showStep(currentStep + 1);
+        });
+
+        backBtn.addEventListener('click', () => {
+            showStep(currentStep - 1);
+        });
+
+        // Step indicator clicks
+        stepBtns().forEach(btn => {
+            btn.addEventListener('click', () => {
+                const n = parseInt(btn.dataset.step);
+                if (!isEditing && !completedSteps.has(n) && n !== currentStep) return;
+                // In add mode going forward: validate intervening steps
+                if (!isEditing && n > currentStep) {
+                    for (let s = currentStep; s < n; s++) {
+                        if (!validateStep(s)) return;
+                        completedSteps.add(s);
+                    }
+                }
+                showStep(n);
+            });
+        });
+
+        // ── Operating hours closed toggle ─────────────────────────────
+        document.querySelectorAll('.hours-closed-cb').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const day   = this.dataset.day;
+                const times = document.getElementById('times-' + day);
+                const lbl   = document.getElementById('closed-lbl-' + day);
+                times?.classList.toggle('hidden', this.checked);
+                lbl?.classList.toggle('hidden', !this.checked);
+            });
+        });
+
+        // ── Amenity pill toggle ───────────────────────────────────────
+        document.querySelectorAll('.amenity-pill').forEach(pill => {
+            pill.addEventListener('change', function () {
+                const cb = this.querySelector('input');
+                this.classList.toggle('border-[var(--app-brand)]', cb.checked);
+                this.classList.toggle('bg-[color-mix(in_srgb,var(--app-brand)_10%,transparent)]', cb.checked);
+                this.classList.toggle('text-[var(--app-brand)]', cb.checked);
+                this.classList.toggle('app-panel-strong', !cb.checked);
+            });
+        });
+
+        // ── Status radio pill ─────────────────────────────────────────
+        document.querySelectorAll('input[name="status"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('input[name="status"]').forEach(r => {
+                    const lbl = r.closest('label');
+                    lbl.classList.toggle('border-[var(--app-brand)]', r.checked);
+                    lbl.classList.toggle('bg-[color-mix(in_srgb,var(--app-brand)_8%,transparent)]', r.checked);
+                    lbl.classList.toggle('app-panel-strong', !r.checked);
+                });
+            });
+        });
+
+        // ── Bootstrap ─────────────────────────────────────────────────
+        // Mark steps before initialStep as completed (for edit mode or after server error)
+        for (let s = 1; s < currentStep; s++) completedSteps.add(s);
+        showStep(currentStep);
+    })();
+    </script>
 </x-layouts.admin>

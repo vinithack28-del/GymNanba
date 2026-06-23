@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Branch;
 use App\Models\Staff;
 use App\Models\StaffAttendanceLog;
-use App\Models\StaffRolePermission;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -27,6 +26,8 @@ class StaffSeeder extends Seeder
         }
 
         $owner = User::query()->where('tenant_id', $tenant->id)->where('role', 'tenant_owner')->first();
+        $staffService = app(\App\Services\Tenant\StaffService::class);
+        $staffService->initializeRolePermissionsForTenant($tenant->id, $owner?->id);
 
         $rows = [
             ['name' => 'Sathish Kumar', 'phone' => '+919811100001', 'email' => 'sathish.staff@irontemple.in', 'role' => 'branch_manager', 'salary_paise' => 6500000, 'join_date' => now()->subMonths(16)->toDateString(), 'branch_id' => $branches[0]->id],
@@ -50,6 +51,11 @@ class StaffSeeder extends Seeder
                     'last_login_at' => $index === 4 ? now()->subDays(45) : now()->subDays($index + 1),
                 ]
             );
+
+            if (function_exists('setPermissionsTeamId')) {
+                setPermissionsTeamId($tenant->id);
+            }
+            $user->syncRoles([$row['role']]);
 
             $staff = Staff::query()->updateOrCreate(
                 ['tenant_id' => $tenant->id, 'email' => $row['email']],
@@ -85,14 +91,7 @@ class StaffSeeder extends Seeder
         }
 
         if ($owner) {
-            app(\App\Services\Tenant\StaffService::class)->rolePermissions($owner);
-        } else {
-            foreach (Staff::ROLES as $role) {
-                StaffRolePermission::query()->firstOrCreate(
-                    ['tenant_id' => $tenant->id, 'role' => $role],
-                    ['permissions' => [], 'updated_by' => null, 'updated_at' => now()]
-                );
-            }
+            $staffService->rolePermissions($owner);
         }
     }
 }

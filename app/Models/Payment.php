@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Payment extends Model
 {
     public const METHODS = ['cash', 'upi', 'card', 'bank', 'cheque'];
 
-    public const REF_REQUIRED = ['upi', 'card', 'bank', 'cheque'];
+    public const REF_REQUIRED = ['card', 'bank', 'cheque'];
 
     public const VOID_REASONS = [
         'data_entry_error',
@@ -21,6 +22,7 @@ class Payment extends Model
     protected $fillable = [
         'tenant_id', 'member_id', 'branch_id', 'plan_id',
         'receipt_number', 'amount_paise', 'gst_paise', 'total_paise',
+        'paid_paise', 'is_partial', 'due_paise', 'due_date', 'reminder_sent',
         'method', 'reference', 'payment_date', 'notes', 'status',
         'voided_at', 'void_reason', 'voided_by', 'collected_by',
     ];
@@ -28,11 +30,16 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
-            'payment_date'  => 'date',
-            'voided_at'     => 'datetime',
-            'amount_paise'  => 'integer',
-            'gst_paise'     => 'integer',
-            'total_paise'   => 'integer',
+            'payment_date'   => 'date',
+            'due_date'       => 'date',
+            'voided_at'      => 'datetime',
+            'amount_paise'   => 'integer',
+            'gst_paise'      => 'integer',
+            'total_paise'    => 'integer',
+            'paid_paise'     => 'integer',
+            'due_paise'      => 'integer',
+            'is_partial'     => 'boolean',
+            'reminder_sent'  => 'boolean',
         ];
     }
 
@@ -61,6 +68,11 @@ class Payment extends Model
     public function voidedBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'voided_by');
+    }
+
+    public function splits(): HasMany
+    {
+        return $this->hasMany(PaymentSplit::class);
     }
 
     // ── Scopes ────────────────────────────────────────────────────────────────

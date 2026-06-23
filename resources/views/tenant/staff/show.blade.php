@@ -231,7 +231,7 @@
                 <div class="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 p-5">
                     <p class="text-sm font-semibold text-red-200">{{ __('staff.show.delete_title') }}</p>
                     <p class="mt-1 text-sm text-red-200">
-                        {{ str(__('staff.show.delete_warning'))->replace(':name', '<strong>'.$staff->name.'</strong>') }}
+                        {!! str(__('staff.show.delete_warning'))->replace(':name', '<strong>'.e($staff->name).'</strong>') !!}
                     </p>
                     <form method="POST" action="{{ route('tenant.staff.destroy', $staff) }}"
                           class="mt-4 flex flex-col gap-3 sm:flex-row">

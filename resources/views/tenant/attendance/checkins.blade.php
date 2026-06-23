@@ -7,14 +7,6 @@
 
 <style>
 /* ── Attendance page ───────────────────────────────────────────── */
-.atc-tab { display:flex; gap:.5rem; margin-bottom:1.25rem; }
-.atc-tab a {
-    padding:.45rem 1.1rem; border-radius:999px; font-size:.8rem; font-weight:600;
-    border:1px solid var(--app-border); color:var(--app-text-muted); text-decoration:none;
-    transition:background .15s,color .15s;
-}
-.atc-tab a:hover  { background:var(--app-panel-strong); color:var(--app-text); }
-.atc-tab a.active { background:var(--app-brand); border-color:var(--app-brand); color:#fff; }
 
 .atc-stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.25rem; }
 @media(max-width:640px){ .atc-stat-grid{ grid-template-columns:1fr; } }
@@ -96,18 +88,36 @@
     font-size:.85rem; background:transparent; color:var(--app-text); outline:none;
 }
 .atc-field input:focus, .atc-field select:focus { border-color:var(--app-brand); }
+
+/* ── Sheet view ────────────────────────────────────────────────────────── */
+.atc-view-toggle { display:inline-flex; border:1px solid var(--app-border); border-radius:.6rem; overflow:hidden; }
+.atc-view-toggle a { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .85rem; font-size:.8rem; font-weight:600; text-decoration:none; color:var(--app-text-muted); transition:background .12s,color .12s; }
+.atc-view-toggle a:hover { background:var(--app-panel-strong); color:var(--app-text); }
+.atc-view-toggle a.active { background:var(--app-brand); color:#0f172a; }
+.atc-view-toggle a + a { border-left:1px solid var(--app-border); }
+
+.sheet-wrap { overflow-x:auto; width:100%; }
+.sheet-table { border-collapse:collapse; white-space:nowrap; font-size:.78rem; }
+.sheet-table th, .sheet-table td { padding:.45rem .55rem; border:1px solid var(--app-border); }
+.sheet-table thead tr:first-child th { background:var(--app-panel-strong); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--app-text-muted); text-align:center; }
+.sheet-table tbody td { background:var(--app-panel); }
+.sheet-table tbody tr:hover td { background:var(--app-panel-strong); }
+.sheet-th-name { text-align:left !important; min-width:120px; position:sticky; left:0; z-index:2; }
+.sheet-th-id   { text-align:left !important; min-width:90px;  position:sticky; left:120px; z-index:2; }
+.sheet-td-name { position:sticky; left:0; z-index:1; font-weight:600; }
+.sheet-td-id   { position:sticky; left:120px; z-index:1; font-size:.72rem; color:var(--app-text-muted); }
+.sheet-th-p  { background:rgba(34,197,94,.15) !important; color:#15803d !important; font-weight:800 !important; }
+.sheet-th-a  { background:rgba(239,68,68,.12) !important; color:#b91c1c !important; font-weight:800 !important; }
+.sheet-cell { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:.3rem; font-size:.65rem; font-weight:800; }
+.sheet-cell-p { background:rgba(34,197,94,.18); color:#15803d; }
+.sheet-cell-a { background:rgba(239,68,68,.14); color:#dc2626; }
+.sheet-cell-f { background:var(--app-panel-strong); color:var(--app-text-muted); }
+.sheet-total-p { font-weight:700; color:#15803d; text-align:center; }
+.sheet-total-a { font-weight:700; color:#dc2626; text-align:center; }
 </style>
 
-{{-- ── Tab navigation ────────────────────────────────────────────────────── --}}
-<div class="atc-tab">
-    <a href="{{ route('tenant.attendance.checkins') }}" class="active">
-        {{ __('attendance.nav.checkins') }}
-    </a>
-    <a href="{{ route('tenant.attendance.walkins') }}">
-        {{ __('attendance.nav.walkins') }}
-    </a>
-</div>
 
+@if($viewMode === 'list')
 {{-- ── Stats ─────────────────────────────────────────────────────────────── --}}
 <div class="atc-stat-grid">
     <div class="app-panel atc-stat">
@@ -150,7 +160,19 @@
 
         {{-- Search --}}
         <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('attendance.checkins.search_ph') }}" class="atc-input flex-1 min-w-40">
-        <button type="submit" class="atc-btn-brand">{{ __('members.filters.search') ?? 'Search' }}</button>
+        <button type="submit" class="atc-btn-brand">Search</button>
+
+        {{-- View toggle --}}
+        <div class="atc-view-toggle">
+            <a href="{{ route('tenant.attendance.checkins', request()->except('view')) }}" class="active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                List
+            </a>
+            <a href="{{ route('tenant.attendance.checkins', array_merge(request()->only(['branch_id']), ['view'=>'sheet'])) }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                Sheet
+            </a>
+        </div>
 
         {{-- Export --}}
         <a href="{{ route('tenant.attendance.checkins.export', request()->only(['date','branch_id','method'])) }}" class="atc-btn-outline">
@@ -281,8 +303,176 @@
     </div>
 @endif
 
+@endif {{-- end @if($viewMode === 'list') --}}
+
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+{{-- ── Sheet View ─────────────────────────────────────────────────────── --}}
+{{-- ══════════════════════════════════════════════════════════════════════ --}}
+@if($viewMode === 'sheet')
+
+{{-- ── Sheet Stats ──────────────────────────────────────────────────────── --}}
+<div class="atc-stat-grid">
+    <div class="app-panel atc-stat">
+        <div class="atc-stat-label">Total Members</div>
+        <div class="atc-stat-val">{{ number_format($sheetStats['total_members']) }}</div>
+    </div>
+    <div class="app-panel atc-stat">
+        <div class="atc-stat-label">Check-ins This Month</div>
+        <div class="atc-stat-val">{{ number_format($sheetStats['total_checkins']) }}</div>
+    </div>
+    <div class="app-panel atc-stat">
+        <div class="atc-stat-label">Attendance Rate</div>
+        <div class="atc-stat-val text-base">
+            {{ $sheetStats['attendance_rate'] }}%
+            <span class="text-xs font-normal" style="color:var(--app-text-muted)">
+                ({{ $sheetStats['past_days'] }} days tracked)
+            </span>
+        </div>
+    </div>
+</div>
+
+{{-- Sheet filter bar --}}
+<form method="GET" action="{{ route('tenant.attendance.checkins') }}" id="sheet-filter-form">
+    <input type="hidden" name="view" value="sheet">
+    <div class="atc-filter">
+
+        {{-- Month (mirrors date input in list view) --}}
+        <input type="month" name="month" value="{{ $month }}" class="atc-input" onchange="this.form.submit()">
+
+        {{-- Branch --}}
+        @if($branches->isNotEmpty())
+        <select name="branch_id" class="atc-input atc-select" onchange="this.form.submit()">
+            <option value="">All Branches</option>
+            @foreach ($branches as $branch)
+                <option value="{{ $branch->id }}" @selected(request('branch_id') == $branch->id)>{{ $branch->name }}</option>
+            @endforeach
+        </select>
+        @endif
+
+        {{-- Status (mirrors method filter in list view) --}}
+        <select name="status" class="atc-input atc-select" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="active"   @selected(request('status')==='active')>Active</option>
+            <option value="inactive" @selected(request('status')==='inactive')>Inactive</option>
+            <option value="expired"  @selected(request('status')==='expired')>Expired</option>
+            <option value="frozen"   @selected(request('status')==='frozen')>Frozen</option>
+        </select>
+
+        {{-- Per page --}}
+        <select name="per_page" class="atc-input atc-select" onchange="this.form.submit()">
+            @foreach([10, 20, 50, 100] as $n)
+                <option value="{{ $n }}" @selected($perPage == $n)>{{ $n }} per page</option>
+            @endforeach
+        </select>
+
+        {{-- Search --}}
+        <input type="text" name="search" value="{{ request('search') }}"
+               placeholder="Search member..." class="atc-input flex-1 min-w-40">
+        <button type="submit" class="atc-btn-brand">Search</button>
+
+        {{-- View toggle --}}
+        <div class="atc-view-toggle">
+            <a href="{{ route('tenant.attendance.checkins', request()->only(['branch_id'])) }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                List
+            </a>
+            <a href="#" class="active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3.5 w-3.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+                Sheet
+            </a>
+        </div>
+
+        {{-- Export CSV --}}
+        <a href="{{ route('tenant.attendance.checkins.export', array_merge(request()->only(['branch_id']), ['month' => $month])) }}" class="atc-btn-outline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4"><path d="M12 15V3m0 12-4-4m4 4 4-4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/></svg>
+            {{ __('attendance.checkins.export_csv') }}
+        </a>
+    </div>
+</form>
+
+{{-- Sheet grid --}}
+@php
+    $sheetYear  = substr($month, 0, 4);
+    $sheetMonthN= (int) substr($month, 5, 2);
+    $today      = today();
+@endphp
+<div class="app-panel mt-2 w-full rounded-[2rem] border overflow-hidden">
+    @if($members->isEmpty())
+        <div class="atc-empty">
+            <div class="atc-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="h-7 w-7"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <p class="atc-empty-title">No members found</p>
+            <p class="atc-empty-subtitle">Try adjusting your filters.</p>
+        </div>
+    @else
+        <div class="sheet-wrap">
+            <table class="sheet-table">
+                <thead>
+                    {{-- Group header --}}
+                    <tr>
+                        <th class="sheet-th-name" rowspan="2">Name</th>
+                        <th class="sheet-th-id"   rowspan="2">Member ID</th>
+                        <th colspan="2" style="text-align:center;background:var(--app-panel-strong)">Total</th>
+                        <th colspan="{{ $daysCount }}" style="text-align:center;background:var(--app-panel-strong)">
+                            {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y') }}
+                        </th>
+                    </tr>
+                    {{-- Day headers --}}
+                    <tr>
+                        <th class="sheet-th-p">P</th>
+                        <th class="sheet-th-a">A</th>
+                        @for($d = 1; $d <= $daysCount; $d++)
+                            @php
+                                $colDate = \Carbon\Carbon::createFromDate($sheetYear, $sheetMonthN, $d);
+                                $isToday = $colDate->isToday();
+                                $isFuture = $colDate->gt($today);
+                            @endphp
+                            <th style="text-align:center;min-width:30px;{{ $isToday ? 'background:rgba(var(--brand-rgb,99,102,241),.12);color:var(--app-brand);' : ($isFuture ? 'color:var(--app-text-muted);opacity:.5;' : '') }}">
+                                {{ $d }}
+                            </th>
+                        @endfor
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($members as $member)
+                        @php $row = $grid[$member->id] ?? ['present'=>0,'absent'=>0,'cells'=>[]]; @endphp
+                        <tr>
+                            <td class="sheet-td-name">{{ $member->name }}</td>
+                            <td class="sheet-td-id">{{ $member->member_code }}<br><span style="font-size:.68rem">{{ $member->phone }}</span></td>
+                            <td class="sheet-total-p">{{ $row['present'] }}</td>
+                            <td class="sheet-total-a">{{ $row['absent'] }}</td>
+                            @for($d = 1; $d <= $daysCount; $d++)
+                                @php $cell = $row['cells'][$d] ?? '-'; @endphp
+                                <td style="text-align:center;padding:.3rem .4rem;">
+                                    @if($cell === 'P')
+                                        <span class="sheet-cell sheet-cell-p">✓</span>
+                                    @elseif($cell === 'A')
+                                        <span class="sheet-cell sheet-cell-a">✗</span>
+                                    @else
+                                        <span class="sheet-cell sheet-cell-f">—</span>
+                                    @endif
+                                </td>
+                            @endfor
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Pagination --}}
+        @if($members->hasPages())
+            <div class="border-t border-[var(--app-border)] px-5 py-3">
+                {{ $members->links() }}
+            </div>
+        @endif
+    @endif
+</div>
+
+@endif {{-- end @if($viewMode === 'sheet') --}}
+
 {{-- ── Check-in Drawer ───────────────────────────────────────────────────── --}}
-@if($canCheckin)
+@if(isset($canCheckin) && $canCheckin)
 <div class="atc-overlay" id="atc-overlay" onclick="atcCloseDrawer()"></div>
 <aside class="atc-drawer" id="atc-drawer" role="dialog" aria-modal="true">
     <div class="atc-drawer-head">
@@ -347,7 +537,8 @@
 </aside>
 @endif
 
-{{-- ── Auto-refresh every 30 s ─────────────────────────────────────────── --}}
+{{-- ── Auto-refresh every 30 s (list view only) ────────────────────────── --}}
+@if($viewMode === 'list')
 <script>
     let atcRefreshTimer = setInterval(() => {
         if (!document.getElementById('atc-drawer')?.classList.contains('open')) {
@@ -416,5 +607,6 @@
     function escHtml(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
     function escAttr(s) { return String(s ?? '').replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 </script>
+@endif {{-- end @if($viewMode === 'list') script block --}}
 
 </x-layouts.admin>

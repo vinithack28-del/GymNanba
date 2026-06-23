@@ -50,8 +50,8 @@
                 <select name="role" class="w-full rounded-2xl border px-4 py-3 text-sm outline-none" required>
                     <option value="">{{ __('staff.form.select_role') }}</option>
                     @foreach ($roles as $role)
-                        <option value="{{ $role }}" @selected(old('role', $staff->role ?? '') === $role)>
-                            {{ str($role)->replace('_', ' ')->title() }}
+                        <option value="{{ $role->role }}" @selected(old('role', $staff->role ?? '') === $role->role)>
+                            {{ $role->display_name ?? str($role->role)->replace('_', ' ')->title() }}
                         </option>
                     @endforeach
                 </select>

@@ -139,16 +139,6 @@
                             <option value="separate" @selected(old('database_mode') === 'separate')>{{ __('tenants.wizard.database_modes.separate') }}</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-medium">{{ __('tenants.wizard.fields.default_language') }}</label>
-                        <select name="default_language" class="w-full rounded-2xl border px-4 py-3 outline-none" required>
-                            @foreach ($languages as $language)
-                                <option value="{{ $language->locale_code }}" @selected(old('default_language', 'en-IN') === $language->locale_code)>
-                                    {{ $language->display_name }} ({{ $language->locale_code }})
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-sm font-medium">{{ __('tenants.wizard.fields.plan') }}</label>
                         <select name="plan_id" class="w-full rounded-2xl border px-4 py-3 outline-none" required>
@@ -195,7 +185,6 @@
                         'domain_mode' => 'Domain mode',
                         'custom_domain' => 'Separate domain',
                         'database_mode' => 'Database mode',
-                        'default_language' => 'Default language',
                         'plan_id' => 'Plan',
                         'trial_end_date' => 'Trial end date',
                     ] as $field => $label)
@@ -290,7 +279,6 @@
             const refreshReview = () => {
                 const formData = new FormData(form);
                 const planSelect = form.querySelector('[name="plan_id"]');
-                const languageSelect = form.querySelector('[name="default_language"]');
                 const domainModeLabels = {
                     shared: @json(__('tenants.wizard.domain_modes.shared')),
                     separate: @json(__('tenants.wizard.domain_modes.separate')),
@@ -306,10 +294,6 @@
 
                     if (key === 'plan_id' && planSelect) {
                         value = planSelect.selectedOptions[0]?.textContent?.trim() || '-';
-                    }
-
-                    if (key === 'default_language' && languageSelect) {
-                        value = languageSelect.selectedOptions[0]?.textContent?.trim() || '-';
                     }
 
                     if (key === 'subdomain' && value !== '-') {
@@ -337,11 +321,6 @@
             };
 
             const ensureDefaults = () => {
-                const languageSelect = form.querySelector('[name="default_language"]');
-
-                if (languageSelect && !languageSelect.value && languageSelect.options.length > 0) {
-                    languageSelect.selectedIndex = 0;
-                }
             };
 
             const syncDomainFields = () => {

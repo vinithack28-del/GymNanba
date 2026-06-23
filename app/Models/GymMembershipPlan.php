@@ -25,6 +25,7 @@ class GymMembershipPlan extends Model
         'max_members',
         'grace_days',
         'inclusions',
+        'tags',
         'allow_freeze',
         'max_freeze_days',
         'status',
@@ -36,6 +37,7 @@ class GymMembershipPlan extends Model
             'gst_applicable' => 'boolean',
             'allow_freeze'   => 'boolean',
             'inclusions'     => 'array',
+            'tags'           => 'array',
             'gst_rate'       => 'float',
         ];
     }
@@ -75,6 +77,22 @@ class GymMembershipPlan extends Model
             return (int) round($this->price_paise * (1 + $this->gst_rate / 100));
         }
         return (int) $this->price_paise;
+    }
+
+    public function getGstAmountPaiseAttribute(): int
+    {
+        return max(0, $this->total_price_paise - (int) $this->price_paise);
+    }
+
+    public function getTotalPriceFormattedAttribute(): string
+    {
+        return 'Rs. ' . number_format($this->total_price_paise / 100, 2);
+    }
+
+    public function isOneDayPass(): bool
+    {
+        return $this->duration_type === 'days'
+            && (int) ($this->duration_value ?: $this->duration_days) === 1;
     }
 
     public function getDurationLabelAttribute(): string

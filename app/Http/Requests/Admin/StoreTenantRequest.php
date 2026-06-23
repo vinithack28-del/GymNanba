@@ -30,7 +30,6 @@ class StoreTenantRequest extends FormRequest
             'custom_domain' => ['nullable', 'string', 'max:255', 'required_if:domain_mode,separate', 'unique:tenants,custom_domain'],
             'database_mode' => ['required', Rule::in(['shared', 'separate'])],
             'plan_id' => ['required', 'exists:plans,id'],
-            'default_language' => ['required', 'exists:platform_languages,locale_code'],
             'trial_enabled' => ['nullable', 'boolean'],
             'trial_end_date' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string'],

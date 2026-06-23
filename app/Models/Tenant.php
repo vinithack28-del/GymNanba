@@ -18,7 +18,7 @@ class Tenant extends Model
         'logo_url', 'cover_photo_url', 'social_links', 'about', 'operating_hours',
         'subdomain', 'domain_mode', 'custom_domain', 'database_mode', 'database_name',
         'owner_user_id', 'status', 'default_language', 'members_count',
-        'last_owner_login_at', 'notes',
+        'last_owner_login_at', 'notes', 'registration_token',
     ];
 
     protected function casts(): array
@@ -63,6 +63,25 @@ class Tenant extends Model
     public function ownerUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function memberRegistrations(): HasMany
+    {
+        return $this->hasMany(MemberRegistration::class);
+    }
+
+    public function ensureRegistrationToken(): string
+    {
+        if (! $this->registration_token) {
+            $this->update(['registration_token' => \Illuminate\Support\Str::random(40)]);
+        }
+
+        return $this->registration_token;
+    }
+
+    public function getRegistrationUrlAttribute(): string
+    {
+        return route('register.show', $this->ensureRegistrationToken());
     }
 
     public function getPrimaryDomainAttribute(): string

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\WalkIn;
+use App\Models\WalkInFollowup;
 use App\Services\Tenant\AttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -23,9 +24,15 @@ class AttendanceController extends Controller
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
+
+        if ($request->get('view') === 'sheet') {
+            $data = $this->service->sheetView($request->user(), $request);
+            return view('tenant.attendance.checkins', array_merge($data, ['viewMode' => 'sheet']));
+        }
+
         $data = $this->service->listCheckins($request->user(), $request);
 
-        return view('tenant.attendance.checkins', $data);
+        return view('tenant.attendance.checkins', array_merge($data, ['viewMode' => 'list']));
     }
 
     public function storeCheckin(Request $request): JsonResponse|RedirectResponse
@@ -109,11 +116,16 @@ class AttendanceController extends Controller
     {
         $validated = $request->validate([
             'name'           => ['required', 'string', 'max:100'],
-            'phone'          => ['required', 'string', 'max:20'],
+            'phone'          => ['required', 'regex:/^\d{10,20}$/'],
             'purpose'        => ['required', 'in:'.implode(',', WalkIn::PURPOSES)],
+            'plan_id'        => ['nullable', 'integer', 'exists:gym_membership_plans,id'],
             'fee_paise'      => ['nullable', 'integer', 'min:0'],
-            'payment_method' => ['nullable', 'in:'.implode(',', WalkIn::METHODS)],
-            'reference'      => ['nullable', 'string', 'max:100'],
+            'payment_methods' => ['nullable', 'array'],
+            'payment_methods.*' => ['required', 'in:'.implode(',', WalkIn::METHODS)],
+            'amounts'         => ['nullable', 'array'],
+            'amounts.*'       => ['nullable', 'numeric', 'min:0'],
+            'references'      => ['nullable', 'array'],
+            'references.*'    => ['nullable', 'string', 'max:100'],
             'notes'          => ['nullable', 'string', 'max:1000'],
             'guest_of_id'    => ['nullable', 'integer'],
             'branch_id'      => ['nullable', 'integer'],
@@ -122,5 +134,40 @@ class AttendanceController extends Controller
         $this->service->storeWalkin($request->user(), $validated);
 
         return back()->with('status', __('attendance.flash.walkin_logged'));
+    }
+
+    public function storeFollowup(Request $request, WalkIn $walkIn): RedirectResponse
+    {
+        $validated = $request->validate([
+            'outcome'            => ['required', 'in:'.implode(',', WalkInFollowup::OUTCOMES)],
+            'notes'              => ['nullable', 'string', 'max:1000'],
+            'next_followup_date' => ['nullable', 'date', 'after_or_equal:today'],
+        ]);
+
+        $this->service->storeFollowup($request->user(), $walkIn, $validated);
+
+        return back()->with('status', 'Follow-up logged successfully.');
+    }
+
+    public function followupHistory(WalkIn $walkIn, Request $request): JsonResponse
+    {
+        abort_unless($walkIn->tenant_id === $request->user()->tenant_id, 403);
+
+        $history = $walkIn->followups()->with('loggedByUser')->get()->map(fn ($f) => [
+            'id'                 => $f->id,
+            'outcome'            => $f->outcome,
+            'notes'              => $f->notes,
+            'next_followup_date' => $f->next_followup_date?->format('d M Y'),
+            'logged_by'          => $f->loggedByUser?->name ?? 'Staff',
+            'created_at'         => $f->created_at->format('d M Y, H:i'),
+        ]);
+
+        return response()->json([
+            'walk_in' => [
+                'name'  => $walkIn->name,
+                'phone' => $walkIn->phone,
+            ],
+            'history' => $history,
+        ]);
     }
 }

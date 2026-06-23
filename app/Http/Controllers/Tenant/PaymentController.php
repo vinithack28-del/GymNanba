@@ -21,12 +21,19 @@ class PaymentController extends Controller
 
     // ── Collect ───────────────────────────────────────────────────────────────
 
-    public function collect(): View
+    public function collect(Request $request): View
     {
         abort_unless($this->svc->canCollect(), 403);
 
         $data = $this->svc->collectPage($this->tenantId());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
+
+        if ($request->filled('member_id')) {
+            $member = \App\Models\Member::where('tenant_id', $this->tenantId())
+                ->select('id', 'name', 'phone', 'member_code', 'plan_id', 'plan_name', 'balance_paise', 'branch_id')
+                ->find($request->integer('member_id'));
+            $data['preselectedMember'] = $member;
+        }
 
         return view('tenant.payments.collect', $data);
     }
@@ -36,18 +43,19 @@ class PaymentController extends Controller
         abort_unless($this->svc->canCollect(), 403);
 
         $request->validate([
-            'member_id'    => ['required', 'integer'],
-            'branch_id'    => ['required', 'integer'],
-            'plan_id'      => ['nullable', 'integer'],
-            'amount'       => ['required', 'numeric', 'min:0.01'],
-            'method'       => ['required', 'in:' . implode(',', Payment::METHODS)],
-            'reference'    => ['nullable', 'string', 'max:100',
-                'required_if:method,upi', 'required_if:method,card',
-                'required_if:method,bank', 'required_if:method,cheque'],
-            'payment_date' => ['required', 'date'],
-            'notes'        => ['nullable', 'string', 'max:500'],
-            'apply_gst'    => ['nullable', 'boolean'],
-            'gst_rate'     => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'member_id'              => ['required', 'integer'],
+            'branch_id'              => ['required', 'integer'],
+            'plan_id'                => ['nullable', 'integer'],
+            'amount'                 => ['required', 'numeric', 'min:0.01'],
+            'splits'                 => ['required', 'array', 'min:1'],
+            'splits.*.method'        => ['required', 'in:' . implode(',', Payment::METHODS)],
+            'splits.*.amount'        => ['required', 'numeric', 'min:0.01'],
+            'splits.*.reference'     => ['nullable', 'string', 'max:100'],
+            'payment_date'           => ['required', 'date'],
+            'notes'                  => ['nullable', 'string', 'max:500'],
+            'is_partial'             => ['nullable', 'boolean'],
+            'due_amount'             => ['nullable', 'numeric', 'min:0.01'],
+            'due_date'               => ['nullable', 'date', 'after:today'],
         ]);
 
         $payment = $this->svc->storePayment($request, $this->tenantId());
@@ -70,14 +78,15 @@ class PaymentController extends Controller
 
     // ── Dues ──────────────────────────────────────────────────────────────────
 
-    public function dues(Request $request): View
+    public function dues(Request $request): RedirectResponse
     {
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
-        $data = $this->svc->dues($request, $this->tenantId());
+        $query = array_filter([
+            'tab' => 'dues',
+            'branch_id' => $request->get('branch_id'),
+            'search' => $request->get('search'),
+        ], fn ($value) => filled($value));
 
-        return view('tenant.payments.dues', $data);
+        return redirect()->route('tenant.payments.history', $query);
     }
 
     // ── Void ──────────────────────────────────────────────────────────────────

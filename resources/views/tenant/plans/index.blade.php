@@ -129,11 +129,35 @@
                     </div>
                 @endif
 
+                {{-- Plan Tags --}}
+                @if (!empty($plan->tags))
+                    @php
+                        $tagPalette = [
+                            ['bg' => 'rgba(139,92,246,0.13)', 'fg' => '#A78BFA'],
+                            ['bg' => 'rgba(14,165,233,0.13)',  'fg' => '#38BDF8'],
+                            ['bg' => 'rgba(16,185,129,0.13)', 'fg' => '#34D399'],
+                            ['bg' => 'rgba(245,158,11,0.13)', 'fg' => '#FCD34D'],
+                            ['bg' => 'rgba(244,63,94,0.13)',  'fg' => '#FB7185'],
+                        ];
+                    @endphp
+                    <div class="plan-tags-row">
+                        @foreach ($plan->tags as $ti => $tag)
+                            @php $c = $tagPalette[$ti % count($tagPalette)]; @endphp
+                            <span class="plan-tag-pill" style="background:{{ $c['bg'] }};color:{{ $c['fg'] }}">{{ $tag }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
                 {{-- Freeze badge --}}
                 @if ($plan->allow_freeze)
                     <div class="plan-freeze-badge">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3 w-3"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
                         Freeze allowed · {{ $plan->max_freeze_days }}d/yr
+                    </div>
+                @else
+                    <div class="plan-freeze-badge plan-freeze-badge-off">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3 w-3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        Freeze not allowed
                     </div>
                 @endif
 
@@ -216,11 +240,17 @@
 .plan-tag { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 999px; font-size: 0.67rem; padding: 0.15rem 0.5rem; }
 .plan-tag-more { color: var(--app-text-muted); }
 
+/* Plan Tags */
+.plan-tags-row { display: flex; flex-wrap: wrap; gap: 0.28rem; padding: 0.45rem 1rem 0; }
+.plan-tag-pill { border-radius: 999px; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.01em; padding: 0.18rem 0.55rem; }
+
 /* Freeze badge */
 .plan-freeze-badge { align-items: center; color: #378ADD; display: flex; font-size: 0.68rem; font-weight: 500; gap: 0.3rem; padding: 0.4rem 1rem 0; }
+.plan-freeze-badge-off { color: #E24B4A; }
 
 /* Actions */
 .plan-actions { border-top: 1px solid color-mix(in srgb, var(--app-border) 55%, transparent); display: flex; margin-top: auto; }
+.plan-actions > form { display: contents; }
 .plan-action { background: transparent; border: none; border-right: 1px solid color-mix(in srgb, var(--app-border) 55%, transparent); color: var(--app-text-muted); cursor: pointer; flex: 1; font-size: 0.78rem; font-weight: 500; padding: 0.6rem 0.4rem; text-align: center; text-decoration: none; transition: background 130ms, color 130ms; }
 .plan-action:last-child { border-right: none; }
 .plan-action:hover { background: color-mix(in srgb, var(--app-border) 50%, transparent); color: var(--app-text); }

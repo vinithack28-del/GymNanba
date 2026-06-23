@@ -3,6 +3,8 @@
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureTenantUser;
+use App\Http\Middleware\RequirePermission;
+use App\Http\Middleware\SetPermissionTeam;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,11 +21,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             SetLocale::class,
+            SetPermissionTeam::class,
         ]);
         $middleware->alias([
-            'super_admin' => EnsureSuperAdmin::class,
+            'super_admin'      => EnsureSuperAdmin::class,
             'password_changed' => EnsurePasswordChanged::class,
-            'tenant_user' => EnsureTenantUser::class,
+            'tenant_user'      => EnsureTenantUser::class,
+            'permission'       => RequirePermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -17,7 +17,6 @@
     </x-slot:headerAction>
 
     @php
-        $systemRoles = \App\Models\Staff::ROLES;
         $roleData = [
             'receptionist'   => ['color' => '#06b6d4', 'light' => 'rgba(6,182,212,0.12)',   'border' => 'rgba(6,182,212,0.3)'],
             'trainer'        => ['color' => '#a855f7', 'light' => 'rgba(168,85,247,0.12)',  'border' => 'rgba(168,85,247,0.3)'],
@@ -27,29 +26,31 @@
         ];
         $fallback   = ['color' => 'var(--app-brand)', 'light' => 'color-mix(in srgb,var(--app-brand) 12%,transparent)', 'border' => 'color-mix(in srgb,var(--app-brand) 30%,transparent)'];
         $totalRoles = $roles->count();
-        $sysCount   = $roles->filter(fn($r) => in_array($r->role, $systemRoles))->count();
+        $sysCount   = $roles->filter(fn($r) => (bool) $r->is_system)->count();
         $custCount  = $totalRoles - $sysCount;
     @endphp
 
     {{-- Summary strip --}}
-    <div class="grid grid-cols-3 gap-3 mb-6">
-        @foreach ([['Total Roles', $totalRoles, 'var(--app-text)'], ['System', $sysCount, 'var(--app-text-muted)'], ['Custom', $custCount, 'var(--app-brand)']] as [$label, $val, $clr])
-            <div class="rounded-2xl p-4" style="background:var(--app-panel);border:1px solid var(--app-border)">
-                <p class="text-xs mb-1" style="color:var(--app-text-muted)">{{ $label }}</p>
-                <p class="text-2xl font-bold" style="color:{{ $clr }}">{{ $val }}</p>
-            </div>
-        @endforeach
+    <div class="mb-6 rounded-2xl px-5 py-4" style="background:var(--app-panel);border:1px solid var(--app-border)">
+        <div class="flex flex-wrap items-center gap-3">
+            @foreach ([['Total Roles', $totalRoles, 'var(--app-text)'], ['System', $sysCount, 'var(--app-text-muted)'], ['Custom', $custCount, 'var(--app-brand)']] as [$label, $val, $clr])
+                <div class="inline-flex items-center gap-3 rounded-full px-4 py-2.5" style="background:var(--app-panel-strong);border:1px solid var(--app-border)">
+                    <span class="text-xs font-medium uppercase tracking-[0.14em]" style="color:var(--app-text-muted)">{{ $label }}</span>
+                    <span class="text-base font-bold" style="color:{{ $clr }}">{{ $val }}</span>
+                </div>
+            @endforeach
+        </div>
     </div>
 
     {{-- Role cards --}}
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         @forelse ($roles as $roleRow)
             @php
-                $isSystem   = in_array($roleRow->role, $systemRoles);
+                $isSystem   = (bool) $roleRow->is_system;
                 $rd         = $roleData[$roleRow->role] ?? $fallback;
                 $modCount   = count($roleRow->permissions ?? []);
                 $staffCount = $staffCounts[$roleRow->role] ?? 0;
-                $label      = str($roleRow->role)->replace('_', ' ')->title();
+                $label      = $roleRow->display_name ?? str($roleRow->role)->replace('_', ' ')->title();
             @endphp
 
             <div class="rounded-2xl overflow-hidden flex flex-col"

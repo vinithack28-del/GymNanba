@@ -2,6 +2,7 @@
 
 namespace App\Services\Admin;
 
+use App\Models\Branch;
 use App\Models\Plan;
 use App\Models\PlatformLanguage;
 use App\Models\Subscription;
@@ -51,7 +52,6 @@ class TenantService
     {
         return [
             'plans' => Plan::query()->where('status', 'active')->orderBy('price_paise')->get(),
-            'languages' => PlatformLanguage::query()->orderByDesc('is_active')->orderBy('display_name')->get(),
         ];
     }
 
@@ -92,7 +92,7 @@ class TenantService
                 'database_mode' => $validated['database_mode'],
                 'database_name' => $validated['database_mode'] === 'separate' ? $this->databaseNameFromSubdomain($validated['subdomain']) : null,
                 'status' => $trialEnabled ? 'trial' : 'active',
-                'default_language' => $validated['default_language'],
+                'default_language' => 'en-IN',
                 'notes' => $validated['notes'] ?? null,
             ]);
 
@@ -100,7 +100,7 @@ class TenantService
                 'tenant_id' => $tenant->id,
                 'name' => $validated['owner_name'],
                 'email' => strtolower($validated['owner_email']),
-                'preferred_language' => $validated['default_language'],
+                'preferred_language' => 'en-IN',
                 'role' => 'tenant_owner',
                 'password' => $validated['owner_password'],
             ]);
@@ -118,6 +118,21 @@ class TenantService
                 'trial_end_date' => $trialEnabled ? ($validated['trial_end_date'] ?? now()->addDays(14)->toDateString()) : null,
                 'price_paise' => $plan->price_paise,
                 'created_by' => Auth::id(),
+            ]);
+
+            // Auto-create a default primary branch from available tenant details
+            Branch::query()->create([
+                'tenant_id'  => $tenant->id,
+                'name'       => $tenant->gym_name . ' (Main Branch)',
+                'address1'   => $tenant->address ?? '',
+                'city'       => $tenant->city,
+                'state'      => $tenant->state,
+                'pin'        => $tenant->pin ?? '',
+                'phone'      => $tenant->phone,
+                'email'      => $tenant->owner_email,
+                'gst_number' => $tenant->gst_number,
+                'status'     => 'active',
+                'is_primary' => true,
             ]);
 
             $this->auditLogService->log(

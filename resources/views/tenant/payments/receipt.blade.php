@@ -63,18 +63,43 @@
             </div>
         </div>
 
-        {{-- Meta --}}
+        {{-- Payment method(s) --}}
         <div class="space-y-1.5 text-sm">
-            <div class="flex justify-between">
-                <span style="color:var(--app-text-muted)">{{ __('payments.receipt.method') }}</span>
-                <span style="color:var(--app-text)">{{ __('payments.methods.' . $payment->method) }}</span>
-            </div>
-            @if ($payment->reference)
+            @if ($payment->splits->isNotEmpty())
+                <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--app-text-muted)">Payment Mode</p>
+                @foreach ($payment->splits as $split)
+                    <div class="flex justify-between">
+                        <span style="color:var(--app-text-muted)">{{ ucfirst($split->method) }}@if($split->reference) <span class="font-mono text-xs">({{ $split->reference }})</span>@endif</span>
+                        <span style="color:var(--app-text)">₹{{ number_format($split->amount_paise / 100, 2) }}</span>
+                    </div>
+                @endforeach
+                @if ($payment->is_partial)
+                    <div class="flex justify-between font-semibold border-t pt-1" style="border-color:var(--app-border)">
+                        <span style="color:var(--app-text-muted)">Collected Now</span>
+                        <span style="color:#16a34a">₹{{ number_format($payment->paid_paise / 100, 2) }}</span>
+                    </div>
+                @endif
+            @else
                 <div class="flex justify-between">
-                    <span style="color:var(--app-text-muted)">{{ __('payments.receipt.reference') }}</span>
-                    <span class="font-mono text-xs" style="color:var(--app-text)">{{ $payment->reference }}</span>
+                    <span style="color:var(--app-text-muted)">{{ __('payments.receipt.method') }}</span>
+                    <span style="color:var(--app-text)">{{ Str::ucfirst($payment->method) }}</span>
+                </div>
+                @if ($payment->reference)
+                    <div class="flex justify-between">
+                        <span style="color:var(--app-text-muted)">{{ __('payments.receipt.reference') }}</span>
+                        <span class="font-mono text-xs" style="color:var(--app-text)">{{ $payment->reference }}</span>
+                    </div>
+                @endif
+            @endif
+
+            @if ($payment->is_partial && $payment->due_paise > 0)
+                <div class="flex justify-between text-sm font-semibold rounded-lg px-3 py-2 mt-1"
+                     style="background:rgba(234,88,12,.08);border:1px solid rgba(234,88,12,.3)">
+                    <span style="color:#ea580c">Balance Due{{ $payment->due_date ? ' · ' . $payment->due_date->format('d M Y') : '' }}</span>
+                    <span style="color:#ea580c">₹{{ number_format($payment->due_paise / 100, 2) }}</span>
                 </div>
             @endif
+
             <div class="flex justify-between">
                 <span style="color:var(--app-text-muted)">{{ __('payments.receipt.date') }}</span>
                 <span style="color:var(--app-text)">{{ $payment->payment_date->format('d M Y') }}</span>

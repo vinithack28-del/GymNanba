@@ -32,12 +32,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        $target = match (true) {
-            $user->role === 'super_admin'  => route('admin.dashboard', absolute: false),
-            default                        => route('tenant.dashboard', absolute: false),
-        };
+        // Super-admins always go to admin dashboard — never follow a stale tenant intended URL.
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
 
-        return redirect()->intended($target);
+        return redirect()->intended(route('tenant.dashboard', absolute: false));
     }
 
     /**

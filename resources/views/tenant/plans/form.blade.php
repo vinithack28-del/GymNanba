@@ -3,6 +3,9 @@
     $formAction = $editing ? route('tenant.plans.update', $plan) : route('tenant.plans.store');
     $pageTitle  = $editing ? 'Edit plan' : 'Create plan';
     $pageSub    = $editing ? "Update details for {$plan->name}." : 'Define a new membership plan for your members.';
+    $defaultGstRate = $defaultGstRate ?? (float) config('gym.default_gst_rate', 18);
+    $gstEnabled = (bool) old('gst_applicable', $editing ? $plan->gst_applicable : false);
+    $gstRateValue = old('gst_rate', $editing ? ($plan->gst_rate ?? ($gstEnabled ? $defaultGstRate : null)) : $defaultGstRate);
 
     $selectedBranchIds = old('branch_ids', $editing ? $plan->branches->pluck('id')->toArray() : []);
 @endphp
@@ -106,19 +109,18 @@
                     </div>
                 </div>
 
-                <div id="gst-rate-row" class="plf-field {{ old('gst_applicable', $editing ? $plan->gst_applicable : false) ? '' : 'plf-hidden' }}">
+                <div id="gst-rate-row" class="plf-field {{ $gstEnabled ? '' : 'plf-hidden' }}">
                     <label class="plf-label" for="plf-gst-rate">GST rate <span class="plf-req">*</span></label>
-                    <select id="plf-gst-rate" name="gst_rate" class="plf-input">
-                        @foreach ([0, 5, 12, 18, 28] as $rate)
-                            <option value="{{ $rate }}"
-                                {{ old('gst_rate', $editing ? (int)$plan->gst_rate : 18) == $rate ? 'selected' : '' }}>
-                                {{ $rate }}%
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="plf-suffix-wrap">
+                        <input id="plf-gst-rate" type="number" name="gst_rate"
+                            value="{{ $gstRateValue }}"
+                            min="0" max="100" step="0.01" placeholder="{{ $defaultGstRate }}"
+                            class="plf-input plf-with-suffix">
+                        <span class="plf-suffix">%</span>
+                    </div>
                 </div>
 
-                <div id="price-preview" class="plf-price-preview {{ old('gst_applicable', $editing ? $plan->gst_applicable : false) ? '' : 'plf-hidden' }}">
+                <div id="price-preview" class="plf-price-preview {{ $gstEnabled ? '' : 'plf-hidden' }}">
                     Total with GST: <strong id="price-total">—</strong>
                 </div>
             </div>
@@ -175,6 +177,34 @@
                         placeholder="Pool access, Steam room, Personal trainer…"
                         class="plf-input">
                     <span class="plf-hint">Comma-separated list of what's included</span>
+                </div>
+            </div>
+
+            {{-- Tags --}}
+            <div class="plf-card">
+                <h3 class="plf-card-title">Plan Tags</h3>
+
+                <div class="plf-field">
+                    <label class="plf-label">Tags <span style="font-weight:400;font-size:0.68rem;margin-left:0.25rem">Press Enter or , to add · max 10</span></label>
+
+                    <div class="plf-tags-wrap" id="tags-wrap">
+                        @foreach (old('tags', $plan->tags ?? []) as $tag)
+                            <span class="plf-tag-chip">
+                                <input type="hidden" name="tags[]" value="{{ $tag }}">
+                                <span>{{ $tag }}</span>
+                                <button type="button" class="plf-tag-remove" aria-label="Remove">×</button>
+                            </span>
+                        @endforeach
+                        <input
+                            type="text"
+                            id="tag-text-input"
+                            placeholder="Add a tag…"
+                            class="plf-tag-text-input"
+                            maxlength="30"
+                            autocomplete="off"
+                        >
+                    </div>
+                    <span class="plf-hint">e.g. Popular, Best Value, Summer Offer, Students</span>
                 </div>
             </div>
 
@@ -284,6 +314,9 @@
 .plf-prefix-wrap { position: relative; }
 .plf-prefix { align-items: center; bottom: 0; color: var(--app-text-muted); display: flex; font-size: 0.82rem; left: 0.75rem; pointer-events: none; position: absolute; top: 0; }
 .plf-with-prefix { padding-left: 2.8rem; }
+.plf-suffix-wrap { position: relative; }
+.plf-suffix { align-items: center; bottom: 0; color: var(--app-text-muted); display: flex; font-size: 0.82rem; pointer-events: none; position: absolute; right: 0.75rem; top: 0; }
+.plf-with-suffix { padding-right: 2rem; }
 
 .plf-price-preview { background: color-mix(in srgb, var(--app-brand-soft) 40%, transparent); border: 1px solid color-mix(in srgb, var(--app-brand) 25%, var(--app-border)); border-radius: 0.65rem; color: var(--app-text-muted); font-size: 0.8rem; margin-top: 0.5rem; padding: 0.45rem 0.75rem; }
 .plf-price-preview strong { color: var(--app-brand); }
@@ -316,6 +349,15 @@
 .plf-btn-primary:hover { opacity: 0.88; }
 .plf-btn-ghost { align-items: center; background: transparent; border: 1px solid var(--app-border); border-radius: 0.75rem; color: var(--app-text-muted); display: inline-flex; font-size: 0.875rem; font-weight: 500; padding: 0.55rem 1.25rem; text-decoration: none; transition: background 140ms, color 140ms; }
 .plf-btn-ghost:hover { background: color-mix(in srgb, var(--app-border) 60%, transparent); color: var(--app-text); }
+
+/* Tags chip input */
+.plf-tags-wrap { align-items: center; background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.65rem; cursor: text; display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 2.5rem; padding: 0.35rem 0.5rem; transition: border-color 160ms; }
+.plf-tags-wrap:focus-within { border-color: color-mix(in srgb, var(--app-brand) 60%, var(--app-border)); }
+.plf-tag-chip { align-items: center; background: color-mix(in srgb, var(--app-brand-soft) 70%, transparent); border: 1px solid color-mix(in srgb, var(--app-brand) 25%, var(--app-border)); border-radius: 999px; color: var(--app-brand-text); display: inline-flex; font-size: 0.72rem; font-weight: 500; gap: 0.2rem; padding: 0.15rem 0.3rem 0.15rem 0.55rem; }
+.plf-tag-remove { align-items: center; background: transparent; border: none; border-radius: 999px; color: inherit; cursor: pointer; display: inline-flex; font-size: 1rem; height: 1.1rem; justify-content: center; line-height: 1; opacity: 0.7; padding: 0; width: 1.1rem; }
+.plf-tag-remove:hover { opacity: 1; }
+.plf-tag-text-input { background: transparent; border: none; color: var(--app-text); flex: 1; font-size: 0.82rem; min-width: 80px; outline: none; padding: 0.1rem 0.25rem; }
+.plf-tag-text-input::placeholder { color: var(--app-text-muted); }
 </style>
 @endpush
 
@@ -345,7 +387,7 @@
 
     document.getElementById('plf-gst-toggle')?.addEventListener('change', updateGstUI);
     document.getElementById('plf-price')?.addEventListener('input', updatePricePreview);
-    document.getElementById('plf-gst-rate')?.addEventListener('change', updatePricePreview);
+    document.getElementById('plf-gst-rate')?.addEventListener('input', updatePricePreview);
 
     // Freeze toggle
     function updateFreezeUI() {
@@ -389,6 +431,87 @@
     // Init
     updateGstUI();
     updateFreezeUI();
+})();
+
+// Plan Tags chip input
+(function () {
+    const wrap = document.getElementById('tags-wrap');
+    const inp  = document.getElementById('tag-text-input');
+    if (!wrap || !inp) return;
+
+    function getTagValues() {
+        return [...wrap.querySelectorAll('.plf-tag-chip')].map(el => el.querySelector('input[type=hidden]').value);
+    }
+
+    function makeChip(value) {
+        const chip   = document.createElement('span');
+        chip.className = 'plf-tag-chip';
+
+        const hidden = document.createElement('input');
+        hidden.type  = 'hidden';
+        hidden.name  = 'tags[]';
+        hidden.value = value;
+
+        const label = document.createElement('span');
+        label.textContent = value;
+
+        const btn = document.createElement('button');
+        btn.type      = 'button';
+        btn.className = 'plf-tag-remove';
+        btn.textContent = '×';
+        btn.setAttribute('aria-label', 'Remove');
+        btn.addEventListener('click', function () { chip.remove(); syncState(); });
+
+        chip.appendChild(hidden);
+        chip.appendChild(label);
+        chip.appendChild(btn);
+        return chip;
+    }
+
+    function addTag(raw) {
+        const v = raw.trim().replace(/,+$/, '');
+        if (!v || v.length > 30) return;
+        const existing = getTagValues();
+        if (existing.includes(v) || existing.length >= 10) return;
+        wrap.insertBefore(makeChip(v), inp);
+        inp.value = '';
+        syncState();
+    }
+
+    function syncState() {
+        const count = getTagValues().length;
+        inp.disabled    = count >= 10;
+        inp.placeholder = count >= 10 ? 'Max 10 tags reached' : 'Add a tag…';
+    }
+
+    // Event delegation for server-rendered remove buttons
+    wrap.addEventListener('click', function (e) {
+        if (e.target.classList.contains('plf-tag-remove')) {
+            e.target.closest('.plf-tag-chip').remove();
+            syncState();
+            return;
+        }
+        if (e.target !== inp) inp.focus();
+    });
+
+    inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(this.value);
+        }
+        if (e.key === 'Backspace' && this.value === '') {
+            const chips = wrap.querySelectorAll('.plf-tag-chip');
+            if (chips.length) { chips[chips.length - 1].remove(); syncState(); }
+        }
+    });
+
+    inp.addEventListener('paste', function (e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        text.split(',').forEach(t => addTag(t));
+    });
+
+    syncState();
 })();
 </script>
 

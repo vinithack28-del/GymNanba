@@ -11,7 +11,7 @@ class EnsureTenantUser
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user()?->isSuperAdmin()) {
-            abort(403);
+            return redirect()->route('admin.dashboard');
         }
 
         return $next($request);

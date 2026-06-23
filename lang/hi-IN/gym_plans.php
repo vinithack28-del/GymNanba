@@ -2,7 +2,7 @@
 
 return [
     'title'       => 'सदस्यता योजनाएं',
-    'create_plan' => '+ योजना बनाएं',
+    'create_plan' => 'योजना बनाएं',
     'edit_plan'   => 'योजना संपादित करें',
 
     'filters' => [

@@ -53,7 +53,9 @@ class MembershipPlanController extends Controller
     {
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
-        return view('tenant.plans.form', compact('branches'));
+        $defaultGstRate = (float) config('gym.default_gst_rate', 18);
+
+        return view('tenant.plans.form', compact('branches', 'defaultGstRate'));
     }
 
     public function edit(Request $request, GymMembershipPlan $plan): View
@@ -62,7 +64,9 @@ class MembershipPlanController extends Controller
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $plan->load('branches');
-        return view('tenant.plans.form', compact('plan', 'branches'));
+        $defaultGstRate = (float) config('gym.default_gst_rate', 18);
+
+        return view('tenant.plans.form', compact('plan', 'branches', 'defaultGstRate'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -75,6 +79,7 @@ class MembershipPlanController extends Controller
             'tenant_id'    => $tenant->id,
             'duration_days' => $this->toDays($validated['duration_type'], (int) $validated['duration_value']),
             'inclusions'   => $this->parseInclusions($request->input('inclusions', '')),
+            'tags'         => $this->parseTags($validated['tags'] ?? []),
         ]);
 
         if ($request->filled('branch_ids')) {
@@ -97,6 +102,7 @@ class MembershipPlanController extends Controller
             ...$validated,
             'duration_days' => $this->toDays($validated['duration_type'], (int) $validated['duration_value']),
             'inclusions'    => $this->parseInclusions($request->input('inclusions', '')),
+            'tags'          => $this->parseTags($validated['tags'] ?? []),
         ]);
 
         $branchIds = $request->filled('branch_ids')
@@ -158,7 +164,7 @@ class MembershipPlanController extends Controller
         $maxDuration  = $durationType === 'months' ? 24 : 730;
         $name         = $request->input('name', '');
 
-        return $request->validate([
+        $validated = $request->validate([
             'name' => [
                 'required', 'string', 'min:2', 'max:80',
                 Rule::unique('gym_membership_plans')
@@ -173,13 +179,26 @@ class MembershipPlanController extends Controller
             'duration_value' => "required|integer|min:1|max:{$maxDuration}",
             'price_paise'    => 'required|integer|min:0|max:99999900',
             'gst_applicable' => 'boolean',
-            'gst_rate'       => 'nullable|in:0,5,12,18,28',
+            'gst_rate'       => [Rule::requiredIf($request->boolean('gst_applicable')), 'nullable', 'numeric', 'min:0', 'max:100'],
             'max_members'    => 'nullable|integer|min:0',
             'grace_days'     => 'nullable|integer|min:0|max:30',
             'allow_freeze'   => 'boolean',
             'max_freeze_days'=> 'nullable|integer|min:1|max:90',
             'status'         => 'required|in:active,inactive',
+            'tags'           => 'nullable|array|max:10',
+            'tags.*'         => 'string|max:30',
         ]);
+
+        $validated['gst_rate'] = $request->boolean('gst_applicable')
+            ? (float) ($validated['gst_rate'] ?? config('gym.default_gst_rate', 18))
+            : null;
+        $validated['gst_applicable'] = $request->boolean('gst_applicable');
+        $validated['allow_freeze'] = $request->boolean('allow_freeze');
+        $validated['max_freeze_days'] = $validated['allow_freeze']
+            ? (int) ($validated['max_freeze_days'] ?? 30)
+            : 0;
+
+        return $validated;
     }
 
     private function toDays(string $type, int $value): int
@@ -187,10 +206,18 @@ class MembershipPlanController extends Controller
         return $type === 'months' ? $value * 30 : $value;
     }
 
-    private function parseInclusions(string $raw): array
+    private function parseInclusions(?string $raw): array
     {
         return array_values(array_filter(
-            array_map('trim', explode(',', $raw)),
+            array_map('trim', explode(',', $raw ?? '')),
+            fn ($s) => $s !== ''
+        ));
+    }
+
+    private function parseTags(array $raw): array
+    {
+        return array_values(array_filter(
+            array_map('trim', $raw),
             fn ($s) => $s !== ''
         ));
     }

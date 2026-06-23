@@ -151,7 +151,7 @@
 </div>
 
 {{-- Void modal --}}
-<div id="ivVoidModal" class="fixed inset-0 z-50 hidden flex items-center justify-center no-print" style="background:rgba(0,0,0,0.5)">
+<div id="ivVoidModal" class="fixed inset-0 z-[300] hidden flex items-center justify-center no-print" style="background:rgba(0,0,0,0.5)">
     <div class="rounded-xl p-6 w-full max-w-md mx-4" style="background:var(--app-panel);border:1px solid var(--app-border)">
         <h3 class="font-semibold text-base mb-1" style="color:var(--app-text)">{{ __('invoices.void.title') }}</h3>
         <p class="text-sm mb-4" style="color:var(--app-text-muted)">{{ __('invoices.void.desc_prefix') }} {{ $invoice->invoice_number }}</p>

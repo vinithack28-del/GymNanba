@@ -162,7 +162,7 @@
                                 <span class="text-xs font-semibold" style="color: {{ $statusColor }}">{{ $statusText }}</span>
                             </td>
                             <td class="rn-td">
-                                @if ($member->balance_paise > 0)
+                                @if ($member->balance_paise < 0)
                                     <span class="font-semibold text-sm" style="color:#E24B4A">{{ $member->balance_rupees }}</span>
                                 @else
                                     <span class="app-muted text-sm">₹0</span>
@@ -232,8 +232,11 @@
                         data-duration-type="{{ $plan->duration_type }}"
                         data-duration-value="{{ $plan->duration_value }}"
                         data-duration-days="{{ $plan->duration_days }}"
-                        data-price="{{ $plan->price_paise }}">
-                        {{ $plan->name }} — ₹{{ number_format($plan->price_paise / 100, 0) }}
+                        data-price="{{ $plan->total_price_paise }}">
+                        {{ $plan->name }} — ₹{{ number_format($plan->total_price_paise / 100, 2) }}
+                        @if($plan->gst_amount_paise > 0)
+                            (incl. GST)
+                        @endif
                     </option>
                 @endforeach
             </select>
@@ -414,8 +417,8 @@
         const hint  = document.getElementById('rn-plan-price');
         const amtEl = document.getElementById('rn-amount');
         if (paise > 0) {
-            const rs = (paise / 100).toFixed(0);
-            hint.textContent = 'Plan price: ₹' + Number(rs).toLocaleString('en-IN');
+            const rs = paise / 100;
+            hint.textContent = 'Plan total: ₹' + rs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             amtEl.value = (paise / 100).toFixed(2);
         } else {
             hint.textContent = '';

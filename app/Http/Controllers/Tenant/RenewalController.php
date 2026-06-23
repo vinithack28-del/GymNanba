@@ -38,7 +38,7 @@ class RenewalController extends Controller
             'thirty_days' => $base()->whereDate('expiry_date', '>', $today)->whereDate('expiry_date', '<=', now()->addDays(30)->toDateString())->count(),
         ];
 
-        $tab  = $request->get('tab', 'all');
+        $tab  = $request->get('tab', '7days');
         $from = $request->get('from');
         $to   = $request->get('to');
 

@@ -31,6 +31,7 @@ class Member extends Model
         'start_date',
         'expiry_date',
         'status',
+        'frozen_until',
         'balance_paise',
         'notes',
         'created_by',
@@ -39,15 +40,21 @@ class Member extends Model
     protected function casts(): array
     {
         return [
-            'dob' => 'date',
-            'start_date' => 'date',
-            'expiry_date' => 'date',
+            'dob'          => 'date',
+            'start_date'   => 'date',
+            'expiry_date'  => 'date',
+            'frozen_until' => 'date',
         ];
     }
 
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function plan(): BelongsTo
@@ -65,12 +72,21 @@ class Member extends Model
         return $this->hasMany(PosSale::class, 'member_id');
     }
 
+    public function lockerAssignments(): HasMany
+    {
+        return $this->hasMany(LockerAssignment::class);
+    }
+
     public function getEffectiveStatusAttribute(): string
     {
         if ($this->status === 'inactive') {
             return 'inactive';
         }
         if ($this->status === 'frozen') {
+            // Auto-unfreeze if the freeze period has ended
+            if ($this->frozen_until && $this->frozen_until->isPast()) {
+                return 'active';
+            }
             return 'frozen';
         }
         if ($this->expiry_date && $this->expiry_date->isPast()) {
@@ -78,6 +94,11 @@ class Member extends Model
         }
 
         return 'active';
+    }
+
+    public function isFrozen(): bool
+    {
+        return $this->effective_status === 'frozen';
     }
 
     public function getStatusLabelAttribute(): string

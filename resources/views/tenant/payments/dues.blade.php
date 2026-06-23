@@ -13,14 +13,14 @@
 </div>
 
 {{-- Total due banner --}}
-@if ($totalDuePaise < 0)
+@if ($totalDuePaise > 0)
     <div class="rounded-xl p-4 mb-6 flex items-center justify-between"
-         style="background:color-mix(in srgb, #ef4444 10%, transparent);border:1px solid #ef4444">
+         style="background:color-mix(in srgb, #ef4444 10%, transparent);border:1px solid color-mix(in srgb, #ef4444 40%, transparent)">
         <div>
-            <p class="text-sm font-medium text-red-700">{{ __('payments.dues.total_due') }}</p>
-            <p class="text-xs text-red-600">{{ $members->total() }} {{ __('payments.dues.members_due') }}</p>
+            <p class="text-sm font-semibold text-red-600">{{ __('payments.dues.total_due') }}</p>
+            <p class="text-xs text-red-500 mt-0.5">{{ $payments->total() }} {{ __('payments.dues.members_due') }}</p>
         </div>
-        <p class="text-2xl font-bold text-red-700">₹{{ number_format(abs($totalDuePaise) / 100, 0) }}</p>
+        <p class="text-2xl font-bold text-red-600">₹{{ number_format($totalDuePaise / 100, 0) }}</p>
     </div>
 @endif
 
@@ -61,28 +61,59 @@
             <thead style="background:var(--app-panel-strong)">
                 <tr>
                     <th class="text-left px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">{{ __('payments.dues.member') }}</th>
-                    <th class="text-left px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">{{ __('common.branch') }}</th>
-                    <th class="text-right px-4 py-2.5 font-medium text-red-600">{{ __('payments.dues.amount_due') }}</th>
+                    <th class="text-left px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">{{ __('payments.history.plan') }}</th>
+                    <th class="text-left px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">{{ __('payments.history.receipt') }}</th>
+                    <th class="text-right px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">{{ __('payments.history.total') }}</th>
+                    <th class="text-right px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">Paid</th>
+                    <th class="text-right px-4 py-2.5 font-medium text-red-500">{{ __('payments.dues.amount_due') }}</th>
+                    <th class="text-left px-4 py-2.5 font-medium" style="color:var(--app-text-muted)">Due Date</th>
                     <th class="px-4 py-2.5"></th>
                 </tr>
             </thead>
             <tbody>
-                @forelse ($members as $member)
+                @forelse ($payments as $payment)
+                    @php $isOverdue = $payment->due_date && \Carbon\Carbon::parse($payment->due_date)->isPast(); @endphp
                     <tr class="border-t hover:opacity-90 transition-opacity"
                         style="border-color:var(--app-border);background:var(--app-panel)">
                         <td class="px-4 py-3" style="color:var(--app-text)">
-                            <div class="font-medium">{{ $member->name }}</div>
-                            <div class="text-xs" style="color:var(--app-text-muted)">{{ $member->member_code }} · {{ $member->phone }}</div>
+                            <div class="font-medium">{{ $payment->member?->name ?? '—' }}</div>
+                            <div class="text-xs" style="color:var(--app-text-muted)">
+                                {{ $payment->member?->member_code }}
+                                @if($payment->member?->phone) · {{ $payment->member->phone }} @endif
+                            </div>
+                            @if($payment->member?->branch)
+                                <div class="text-xs" style="color:var(--app-text-muted)">{{ $payment->member->branch->name }}</div>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-xs" style="color:var(--app-text-muted)">
-                            {{ $member->branch?->name ?? '—' }}
+                            {{ $payment->plan?->name ?? '—' }}
                         </td>
-                        <td class="px-4 py-3 text-right font-semibold text-red-600">
-                            ₹{{ number_format(abs($member->balance_paise) / 100, 0) }}
+                        <td class="px-4 py-3 text-xs font-mono" style="color:var(--app-text-muted)">
+                            {{ $payment->receipt_number }}
+                            <div class="text-xs">{{ $payment->payment_date?->format('d M Y') }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-right" style="color:var(--app-text)">
+                            ₹{{ number_format($payment->total_paise / 100, 0) }}
+                        </td>
+                        <td class="px-4 py-3 text-right" style="color:var(--app-text-muted)">
+                            ₹{{ number_format($payment->paid_paise / 100, 0) }}
+                        </td>
+                        <td class="px-4 py-3 text-right font-semibold text-red-500">
+                            ₹{{ number_format($payment->due_paise / 100, 0) }}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            @if($payment->due_date)
+                                <span class="{{ $isOverdue ? 'text-red-500 font-semibold' : '' }}" style="{{ $isOverdue ? '' : 'color:var(--app-text-muted)' }}">
+                                    {{ \Carbon\Carbon::parse($payment->due_date)->format('d M Y') }}
+                                    @if($isOverdue) <span class="text-xs">(overdue)</span> @endif
+                                </span>
+                            @else
+                                <span style="color:var(--app-text-muted)">—</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a href="{{ route('tenant.payments.collect') }}?member_id={{ $member->id }}"
-                               class="text-xs px-3 py-1 rounded-lg text-white"
+                            <a href="{{ route('tenant.payments.collect') }}?member_id={{ $payment->member_id }}"
+                               class="text-xs px-3 py-1 rounded-lg text-white whitespace-nowrap"
                                style="background:var(--app-brand)">
                                 {{ __('payments.dues.collect_btn') }}
                             </a>
@@ -90,7 +121,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-10 text-center text-sm" style="color:var(--app-text-muted)">
+                        <td colspan="8" class="px-4 py-10 text-center text-sm" style="color:var(--app-text-muted)">
                             {{ __('payments.dues.empty') }}
                         </td>
                     </tr>
@@ -100,6 +131,6 @@
     </div>
 </div>
 
-<div class="mt-4">{{ $members->links() }}</div>
+<div class="mt-4">{{ $payments->links() }}</div>
 
 </x-layouts.admin>

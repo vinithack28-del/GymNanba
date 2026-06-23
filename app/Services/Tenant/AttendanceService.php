@@ -4,10 +4,16 @@ namespace App\Services\Tenant;
 
 use App\Models\AttendanceLog;
 use App\Models\Branch;
+use App\Models\GymMembershipPlan;
 use App\Models\Member;
+use App\Models\Payment;
+use App\Models\PaymentSplit;
+use App\Models\Staff;
 use App\Models\WalkIn;
+use App\Models\WalkInFollowup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
@@ -176,39 +182,96 @@ class AttendanceService
 
     public function listWalkins(object $user, Request $request): array
     {
-        $date     = $request->get('date', now()->toDateString());
-        $branchId = $this->resolveBranch($user, $request->get('branch_id'));
+        $date          = $request->get('date', now()->toDateString());
+        $branchId      = $this->resolveBranch($user, $request->get('branch_id'));
+        $todayFollowup = (bool) $request->get('today_followup', false);
+        $followupDate  = $request->get('followup_date');
 
-        $query = WalkIn::query()
+        $base = WalkIn::query()
             ->forTenant($user->tenant_id)
-            ->with(['branch', 'guestOf'])
-            ->whereDate('created_at', $date)
-            ->orderByDesc('created_at');
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
 
-        if ($branchId) {
-            $query->where('branch_id', $branchId);
+        if ($todayFollowup) {
+            $logs = (clone $base)
+                ->enquiries()
+                ->whereHas('followups', fn ($q) => $q->whereDate('next_followup_date', now()->toDateString()))
+                ->with(['branch', 'followups'])
+                ->orderByDesc('created_at')
+                ->paginate(30)
+                ->withQueryString();
+        } elseif ($followupDate) {
+            $logs = (clone $base)
+                ->enquiries()
+                ->whereHas('followups', fn ($q) => $q->whereDate('next_followup_date', $followupDate))
+                ->with(['branch', 'followups'])
+                ->orderByDesc('created_at')
+                ->paginate(30)
+                ->withQueryString();
+        } else {
+            $logs = (clone $base)
+                ->with(['branch', 'guestOf', 'followups'])
+                ->whereDate('created_at', $date)
+                ->orderByDesc('created_at')
+                ->paginate(30)
+                ->withQueryString();
         }
 
-        $logs = $query->paginate(30)->withQueryString();
+        $todayTotal   = (clone $base)->whereDate('created_at', $date)->count();
+        $todayRevenue = (clone $base)->whereDate('created_at', $date)->sum('fee_paise');
 
-        $todayTotal   = $query->toBase()->count();
-        $todayRevenue = WalkIn::query()
+        $todayFollowupCount = (clone $base)
+            ->enquiries()
+            ->whereHas('followups', fn ($q) => $q->whereDate('next_followup_date', now()->toDateString()))
+            ->count();
+
+        $dayPassPlans = GymMembershipPlan::query()
             ->forTenant($user->tenant_id)
-            ->whereDate('created_at', $date)
-            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
-            ->sum('fee_paise');
+            ->active()
+            ->get()
+            ->filter(fn (GymMembershipPlan $plan) => $plan->isOneDayPass())
+            ->values();
 
         return [
-            'logs'        => $logs,
-            'branches'    => Branch::forTenant($user->tenant_id)->active()->orderBy('name')->get(),
-            'members'     => Member::forTenant($user->tenant_id)->where('status', 'active')->orderBy('name')->get(['id', 'name', 'member_code']),
-            'purposes'    => WalkIn::PURPOSES,
-            'methods'     => WalkIn::METHODS,
-            'date'        => $date,
-            'todayTotal'  => $todayTotal,
-            'todayRevenue'=> $todayRevenue,
-            'canManage'   => $this->canManage($user),
+            'logs'               => $logs,
+            'branches'           => Branch::forTenant($user->tenant_id)->active()->orderBy('name')->get(),
+            'members'            => Member::forTenant($user->tenant_id)->where('status', 'active')->orderBy('name')->get(['id', 'name', 'member_code']),
+            'dayPassPlans'       => $dayPassPlans,
+            'purposes'           => WalkIn::PURPOSES,
+            'methods'            => WalkIn::METHODS,
+            'date'               => $date,
+            'followupDate'       => $followupDate,
+            'todayTotal'         => $todayTotal,
+            'todayRevenue'       => $todayRevenue,
+            'todayFollowup'      => $todayFollowup,
+            'todayFollowupCount' => $todayFollowupCount,
+            'canManage'          => $this->canManage($user),
         ];
+    }
+
+    public function storeFollowup(object $user, WalkIn $walkIn, array $validated): WalkInFollowup
+    {
+        abort_unless($walkIn->tenant_id === $user->tenant_id, 403);
+
+        $followup = WalkInFollowup::query()->create([
+            'walk_in_id'        => $walkIn->id,
+            'tenant_id'         => $user->tenant_id,
+            'outcome'           => $validated['outcome'],
+            'notes'             => $validated['notes'] ?? null,
+            'next_followup_date'=> $validated['next_followup_date'] ?? null,
+            'logged_by'         => $user->id,
+            'created_at'        => now(),
+        ]);
+
+        // Update enquiry_status on the parent walk-in
+        $newStatus = match ($validated['outcome']) {
+            'converted'      => 'converted',
+            'not_interested' => 'closed',
+            default          => 'followed_up',
+        };
+
+        $walkIn->update(['enquiry_status' => $newStatus]);
+
+        return $followup;
     }
 
     public function storeWalkin(object $user, array $validated): WalkIn
@@ -217,20 +280,55 @@ class AttendanceService
             ?? $user->branch_id
             ?? Branch::forTenant($user->tenant_id)->active()->value('id');
 
-        return WalkIn::query()->create([
-            'tenant_id'      => $user->tenant_id,
-            'branch_id'      => $branchId,
-            'name'           => $validated['name'],
-            'phone'          => $validated['phone'],
-            'purpose'        => $validated['purpose'],
-            'fee_paise'      => $validated['fee_paise'] ?? 0,
-            'payment_method' => ($validated['fee_paise'] ?? 0) > 0 ? ($validated['payment_method'] ?? null) : null,
-            'reference'      => $validated['reference'] ?? null,
-            'notes'          => $validated['notes'] ?? null,
-            'guest_of_id'    => $validated['guest_of_id'] ?? null,
-            'logged_by'      => null,
-            'created_at'     => now(),
-        ]);
+        return DB::transaction(function () use ($user, $validated, $branchId): WalkIn {
+            $plan = null;
+            $feePaise = (int) ($validated['fee_paise'] ?? 0);
+            $member = null;
+            $paymentMethods = array_values(array_unique($validated['payment_methods'] ?? []));
+            $paymentMeta = [];
+            $paymentMethodSummary = null;
+            $referenceSummary = null;
+
+            if (($validated['purpose'] ?? null) === 'day_pass') {
+                abort_if(empty($validated['plan_id']), 422, 'Please select a one-day membership plan.');
+                abort_if(empty($paymentMethods), 422, 'Please select at least one payment method for day pass.');
+
+                $plan = GymMembershipPlan::query()
+                    ->forTenant($user->tenant_id)
+                    ->active()
+                    ->findOrFail($validated['plan_id']);
+
+                abort_unless($plan->isOneDayPass(), 422, 'Selected plan is not a one-day membership plan.');
+
+                $feePaise = $plan->total_price_paise;
+                [$paymentMeta, $paymentMethodSummary, $referenceSummary, $paidPaise] = $this->buildWalkinPaymentMeta(
+                    $paymentMethods,
+                    $validated['amounts'] ?? [],
+                    $validated['references'] ?? []
+                );
+                abort_if($paidPaise !== $feePaise, 422, 'Payment method amounts must exactly match the day pass fee.');
+                $member = $this->createDayPassMember($user, $validated, $branchId, $plan);
+                $this->createDayPassPayment($user, $validated, $branchId, $plan, $member, $feePaise, $paymentMeta);
+            }
+
+            return WalkIn::query()->create([
+                'tenant_id'      => $user->tenant_id,
+                'branch_id'      => $branchId,
+                'name'           => $validated['name'],
+                'phone'          => $validated['phone'],
+                'purpose'        => $validated['purpose'],
+                'fee_paise'      => $feePaise,
+                'plan_id'        => $plan?->id,
+                'member_id'      => $member?->id,
+                'payment_method' => $paymentMethodSummary,
+                'payment_meta'   => $paymentMeta ?: null,
+                'reference'      => $referenceSummary,
+                'notes'          => $validated['notes'] ?? null,
+                'guest_of_id'    => $validated['guest_of_id'] ?? null,
+                'logged_by'      => null,
+                'created_at'     => now(),
+            ]);
+        });
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -283,5 +381,225 @@ class AttendanceService
         }
 
         return filled($branchId) ? (int) $branchId : null;
+    }
+
+    private function createDayPassMember(object $user, array $validated, int $branchId, GymMembershipPlan $plan): Member
+    {
+        $existingMember = Member::query()
+            ->forTenant($user->tenant_id)
+            ->where('phone', $validated['phone'])
+            ->first();
+
+        if ($existingMember) {
+            return $existingMember;
+        }
+
+        $startDate = now()->toDateString();
+        $expiryDate = $plan->computeExpiryDate($startDate);
+
+        $member = Member::query()->create([
+            'tenant_id'      => $user->tenant_id,
+            'branch_id'      => $branchId,
+            'member_code'    => Member::generateCode($user->tenant_id),
+            'name'           => $validated['name'],
+            'phone'          => $validated['phone'],
+            'plan_id'        => $plan->id,
+            'plan_name'      => $plan->name,
+            'start_date'     => $startDate,
+            'expiry_date'    => $expiryDate,
+            'status'         => 'active',
+            'balance_paise'  => 0,
+            'notes'          => $validated['notes'] ?? null,
+            'created_by'     => $user->id ?? null,
+        ]);
+
+        return $member;
+    }
+
+    private function createDayPassPayment(object $user, array $validated, int $branchId, GymMembershipPlan $plan, Member $member, int $feePaise, array $paymentMeta): void
+    {
+        if ($feePaise <= 0) {
+            return;
+        }
+
+        $staff = Staff::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id ?? 0)
+            ->first();
+
+        $payment = Payment::query()->create([
+            'tenant_id'      => $user->tenant_id,
+            'member_id'      => $member->id,
+            'branch_id'      => $branchId,
+            'plan_id'        => $plan->id,
+            'receipt_number' => 'RCP-' . strtoupper(substr(uniqid(), -6)),
+            'amount_paise'   => $plan->price_paise,
+            'gst_paise'      => $plan->gst_amount_paise,
+            'total_paise'    => $feePaise,
+            'paid_paise'     => $feePaise,
+            'is_partial'     => false,
+            'due_paise'      => 0,
+            'due_date'       => null,
+            'reminder_sent'  => false,
+            'method'         => count($paymentMeta) > 1 ? 'split' : ($paymentMeta[0]['method'] ?? 'cash'),
+            'reference'      => $paymentMeta[0]['reference'] ?? null,
+            'payment_date'   => now()->toDateString(),
+            'notes'          => $validated['notes'] ?? null,
+            'status'         => 'active',
+            'collected_by'   => $staff?->id,
+        ]);
+
+        foreach ($paymentMeta as $row) {
+            PaymentSplit::query()->create([
+                'payment_id'   => $payment->id,
+                'method'       => $row['method'],
+                'amount_paise' => $row['amount_paise'],
+                'reference'    => $row['reference'],
+            ]);
+        }
+    }
+
+    private function buildWalkinPaymentMeta(array $paymentMethods, array $amounts, array $references): array
+    {
+        $meta = [];
+        $paidPaise = 0;
+
+        foreach ($paymentMethods as $method) {
+            $amountPaise = (int) round(((float) ($amounts[$method] ?? 0)) * 100);
+            $reference = trim((string) ($references[$method] ?? ''));
+            abort_if($amountPaise <= 0, 422, 'Each selected payment method must include an amount greater than zero.');
+
+            $meta[] = [
+                'method' => $method,
+                'amount_paise' => $amountPaise,
+                'reference' => $reference !== '' ? $reference : null,
+            ];
+            $paidPaise += $amountPaise;
+        }
+
+        $methodSummary = count($paymentMethods) > 0
+            ? implode(', ', $paymentMethods)
+            : null;
+
+        $referenceSummary = collect($meta)
+            ->map(fn (array $row) => strtoupper($row['method']) . ': ₹' . number_format($row['amount_paise'] / 100, 2) . (filled($row['reference']) ? ' (' . $row['reference'] . ')' : ''))
+            ->implode(', ');
+
+        return [$meta, $methodSummary, $referenceSummary !== '' ? mb_substr($referenceSummary, 0, 100) : null, $paidPaise];
+    }
+
+    // ── Sheet view ────────────────────────────────────────────────────────────
+
+    public function sheetView(object $user, Request $request): array
+    {
+        $tenantId = $user->tenant_id;
+        $monthStr = $request->get('month', now()->format('Y-m'));
+        $perPage  = max(5, min(100, (int) $request->get('per_page', 20)));
+        $search   = trim((string) $request->get('search'));
+        $status   = $request->get('status');
+        $branchId = $this->resolveBranch($user, $request->get('branch_id'));
+
+        $start = \Carbon\Carbon::createFromFormat('Y-m', $monthStr)->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+        $today = today();
+        $days  = $start->daysInMonth;
+
+        // ── Members query ──────────────────────────────────────────────────────
+        $query = Member::where('tenant_id', $tenantId)->orderBy('name');
+
+        if ($search) {
+            $query->where(fn ($q) => $q
+                ->where('name', 'ilike', "%{$search}%")
+                ->orWhere('member_code', 'ilike', "%{$search}%")
+                ->orWhere('phone', 'ilike', "%{$search}%")
+            );
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
+
+        $members = $query->paginate($perPage)->withQueryString();
+
+        // ── Global stats across ALL matching members for the month ─────────────
+        $allMemberIds = (clone $query)->pluck('id');
+
+        $pastDaysInMonth = $start->gt($today) ? 0 : (int) min($days, $today->diffInDays($start) + 1);
+
+        $totalCheckins = AttendanceLog::where('tenant_id', $tenantId)
+            ->whereIn('member_id', $allMemberIds)
+            ->whereBetween('checked_in_at', [$start->toDateTimeString(), $end->endOfDay()->toDateTimeString()])
+            ->count();
+
+        $uniqueCheckinDays = AttendanceLog::where('tenant_id', $tenantId)
+            ->whereIn('member_id', $allMemberIds)
+            ->whereBetween('checked_in_at', [$start->toDateTimeString(), $end->endOfDay()->toDateTimeString()])
+            ->selectRaw('member_id, DATE(checked_in_at) AS day')
+            ->distinct()
+            ->count();
+
+        $totalMembersCount = $allMemberIds->count();
+        $totalPossibleDays = $totalMembersCount * $pastDaysInMonth;
+        $attendanceRate    = $totalPossibleDays > 0
+            ? round(($uniqueCheckinDays / $totalPossibleDays) * 100, 1)
+            : 0;
+
+        $sheetStats = [
+            'total_members'   => $totalMembersCount,
+            'total_checkins'  => $totalCheckins,
+            'attendance_rate' => $attendanceRate,
+            'past_days'       => $pastDaysInMonth,
+        ];
+
+        // ── Fetch check-in dates for this page's members in the month ──────────
+        $memberIds = $members->getCollection()->pluck('id');
+
+        $checkinDates = AttendanceLog::where('tenant_id', $tenantId)
+            ->whereIn('member_id', $memberIds)
+            ->whereBetween('checked_in_at', [$start->toDateTimeString(), $end->endOfDay()->toDateTimeString()])
+            ->selectRaw('member_id, DATE(checked_in_at) AS day')
+            ->distinct()
+            ->get()
+            ->groupBy('member_id')
+            ->map(fn ($rows) => $rows->pluck('day')->toArray());
+
+        // ── Build per-member grid ──────────────────────────────────────────────
+        $grid = [];
+        foreach ($members as $member) {
+            $memberDays = $checkinDates->get($member->id, []);
+            $present = 0;
+            $absent  = 0;
+            $cells   = [];
+
+            for ($d = 1; $d <= $days; $d++) {
+                $dateStr = $start->copy()->day($d)->toDateString();
+                $isPast  = \Carbon\Carbon::parse($dateStr)->lte($today);
+
+                if (in_array($dateStr, $memberDays)) {
+                    $cells[$d] = 'P';
+                    $present++;
+                } elseif ($isPast) {
+                    $cells[$d] = 'A';
+                    $absent++;
+                } else {
+                    $cells[$d] = '-';
+                }
+            }
+
+            $grid[$member->id] = compact('present', 'absent', 'cells');
+        }
+
+        return [
+            'members'    => $members,
+            'grid'       => $grid,
+            'month'      => $monthStr,
+            'daysCount'  => $days,
+            'branches'   => Branch::forTenant($tenantId)->active()->orderBy('name')->get(),
+            'branchId'   => $branchId,
+            'perPage'    => $perPage,
+            'sheetStats' => $sheetStats,
+        ];
     }
 }

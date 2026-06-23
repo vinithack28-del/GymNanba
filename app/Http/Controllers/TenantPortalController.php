@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Tenant\DashboardService;
 use Illuminate\Contracts\View\View;
 
 class TenantPortalController extends Controller
 {
+    public function __construct(private readonly DashboardService $dashboardService) {}
+
     public function dashboard(): View
     {
         $tenant = request()->user()?->tenant;
 
-        return view('tenant.portal', [
+        return view('tenant.portal', $this->dashboardService->build(request()->user()) + [
             'tenant' => $tenant,
         ]);
     }

@@ -4,10 +4,12 @@ namespace App\Services\Tenant;
 
 use App\Models\Branch;
 use App\Models\OwnerAuditLog;
+use App\Models\Permission;
+use App\Models\PermissionModule;
+use App\Models\Role;
 use App\Models\Staff;
 use App\Models\StaffAttendanceLog;
 use App\Models\StaffLoginActivity;
-use App\Models\StaffRolePermission;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class StaffService
@@ -49,7 +52,7 @@ class StaffService
             'staff' => $staff,
             'stats' => $this->staffStats($user),
             'branches' => Branch::forTenant($tenant->id)->active()->orderBy('name')->get(),
-            'roles' => Staff::ROLES,
+            'roles' => $this->assignableRoleSlugs($user->tenant_id),
             'statuses' => Staff::STATUSES,
             'canManage' => $this->canManage($user),
         ];
@@ -73,6 +76,8 @@ class StaffService
                 'password' => $password,
                 'must_change_password' => true,
             ]);
+
+            $this->syncUserRole($loginUser, $validated['role'], $tenant->id);
 
             $staff = Staff::query()->create([
                 'tenant_id' => $tenant->id,
@@ -134,6 +139,10 @@ class StaffService
                     'must_change_password' => true,
                 ] : []),
             ]);
+
+            if ($staff->user) {
+                $this->syncUserRole($staff->user, $validated['role'], $staff->tenant_id);
+            }
 
             $this->logOwnerAction($staff->tenant_id, $user, 'STAFF_UPDATE', 'STAFF', $staff->id, $staff->name, [
                 'status' => $staff->status,
@@ -268,28 +277,33 @@ class StaffService
     public function rolePermissions(User $user): Collection
     {
         $tenantId = $user->tenant_id;
-        $this->ensureDefaultRolePermissions($tenantId, $user->id);
+        $this->initializeRolePermissionsForTenant($tenantId, $user->id);
 
-        return StaffRolePermission::query()
+        return Role::query()
             ->where('tenant_id', $tenantId)
-            ->orderByRaw("CASE role
-                WHEN 'receptionist' THEN 1
-                WHEN 'trainer' THEN 2
-                WHEN 'accountant' THEN 3
-                WHEN 'pos' THEN 4
-                WHEN 'branch_manager' THEN 5
-                ELSE 99 END")
-            ->get();
+            ->with('permissions')
+            ->orderByDesc('is_system')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->each(function (Role $role): void {
+                $this->decorateRole($role);
+            });
     }
 
-    public function singleRolePermission(User $user, string $role): StaffRolePermission
+    public function singleRolePermission(User $user, string $role): Role
     {
-        $this->ensureDefaultRolePermissions($user->tenant_id, $user->id);
+        $this->initializeRolePermissionsForTenant($user->tenant_id, $user->id);
 
-        return StaffRolePermission::query()
+        $rolePermission = Role::query()
             ->where('tenant_id', $user->tenant_id)
-            ->where('role', $role)
+            ->where('name', $role)
+            ->with('permissions')
             ->firstOrFail();
+
+        $this->decorateRole($rolePermission);
+
+        return $rolePermission;
     }
 
     public function staffCountsByRole(User $user): array
@@ -302,65 +316,118 @@ class StaffService
             ->toArray();
     }
 
-    public function defaultPermissionModules(): array
+    public function roleOptions(int $tenantId): Collection
     {
-        // Returns the full module+action scaffold for the permissions form
-        return [
-            'dashboard'  => ['view'],
-            'members'    => ['view', 'add', 'edit', 'delete'],
-            'renewals'   => ['view'],
-            'attendance' => ['check_in', 'view_log'],
-            'classes'    => ['view_timetable', 'manage', 'book'],
-            'branches'   => ['view', 'manage'],
-            'staff'      => ['view', 'manage'],
-            'payments'   => ['collect', 'history', 'void'],
-            'invoices'   => ['view', 'manage'],
-            'expenses'   => ['view', 'manage'],
-            'pos'        => ['billing', 'products_stock_view', 'manage_products'],
-            'reports'    => ['view', 'revenue_only', 'branch_only', 'own_data'],
-        ];
+        $this->initializeRolePermissionsForTenant($tenantId);
+
+        return Role::query()
+            ->where('tenant_id', $tenantId)
+            ->orderByDesc('is_system')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->each(fn (Role $role) => $this->decorateRole($role));
+    }
+
+    public function assignableRoleSlugs(int $tenantId): array
+    {
+        return $this->roleOptions($tenantId)->pluck('role')->all();
+    }
+
+    public function defaultPermissionModules(): Collection
+    {
+        if (! $this->permissionTablesReady()) {
+            return collect();
+        }
+
+        $moduleMeta = PermissionModule::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->keyBy('slug');
+
+        return Permission::query()
+            ->orderBy('name')
+            ->get()
+            ->groupBy(fn (Permission $permission) => explode('.', $permission->name, 2)[0])
+            ->map(function (Collection $permissions, string $module) use ($moduleMeta) {
+                $meta = $moduleMeta->get($module);
+
+                return (object) [
+                    'slug' => $module,
+                    'name' => $meta?->name ?? str($module)->replace('_', ' ')->title()->toString(),
+                    'icon' => $meta?->icon,
+                    'sort_order' => $meta?->sort_order ?? 9999,
+                    'actions' => $permissions
+                        ->map(function (Permission $permission) {
+                            [, $action] = explode('.', $permission->name, 2);
+
+                            return (object) [
+                                'slug' => $action,
+                                'name' => str($action)->replace('_', ' ')->title()->toString(),
+                            ];
+                        })
+                        ->values(),
+                ];
+            })
+            ->sortBy(fn (object $module) => $module->sort_order)
+            ->values();
+    }
+
+    public function permissionModulesForRole(?string $role = null): Collection
+    {
+        return $this->defaultPermissionModules();
     }
 
     public function storeCustomRole(User $user, string $roleName, array $permissions): void
     {
         abort_if(
-            StaffRolePermission::query()
+            Role::query()
                 ->where('tenant_id', $user->tenant_id)
-                ->where('role', $roleName)
+                ->where('name', $roleName)
                 ->exists(),
             422
         );
 
-        StaffRolePermission::query()->create([
-            'tenant_id'  => $user->tenant_id,
-            'role'       => $roleName,
-            'permissions'=> $permissions,
-            'updated_by' => $user->id,
-            'updated_at' => now(),
+        $role = Role::query()->create([
+            'tenant_id' => $user->tenant_id,
+            'name' => $roleName,
+            'guard_name' => 'web',
+            'is_system' => false,
+            'sort_order' => ((int) Role::query()->where('tenant_id', $user->tenant_id)->max('sort_order')) + 10,
+            'default_permissions' => null,
         ]);
+
+        $this->setRoleTeamContext($user->tenant_id);
+        $role->syncPermissions($this->flattenPermissionPayload($this->normalizePermissionPayload($permissions)));
 
         $this->logOwnerAction($user->tenant_id, $user, 'STAFF_ROLE_CREATE', 'ROLE', null, $roleName, []);
     }
 
     public function destroyCustomRole(User $user, string $role): void
     {
-        // Block deletion of built-in system roles
-        abort_if(in_array($role, Staff::ROLES, true), 422);
-
-        StaffRolePermission::query()
+        $roleModel = Role::query()
             ->where('tenant_id', $user->tenant_id)
-            ->where('role', $role)
-            ->delete();
+            ->where('name', $role)
+            ->firstOrFail();
+
+        abort_if((bool) $roleModel->is_system, 422);
+
+        $roleModel->delete();
 
         $this->logOwnerAction($user->tenant_id, $user, 'STAFF_ROLE_DELETE', 'ROLE', null, $role, []);
     }
 
     public function updateRolePermissions(User $user, string $role, array $permissions): void
     {
-        StaffRolePermission::query()->updateOrCreate(
-            ['tenant_id' => $user->tenant_id, 'role' => $role],
-            ['permissions' => $permissions, 'updated_by' => $user->id, 'updated_at' => now()]
-        );
+        $permissions = $this->normalizePermissionPayload($permissions);
+        $roleModel = Role::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('name', $role)
+            ->firstOrFail();
+
+        $this->setRoleTeamContext($user->tenant_id);
+        $roleModel->syncPermissions($this->flattenPermissionPayload($permissions));
 
         $this->logOwnerAction($user->tenant_id, $user, 'STAFF_ROLE_UPDATE', 'ROLE', null, $role, [
             'permissions' => $permissions,
@@ -369,12 +436,15 @@ class StaffService
 
     public function resetRolePermissions(User $user, string $role): void
     {
-        $defaults = $this->defaultPermissions()[$role] ?? [];
+        $roleModel = Role::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('name', $role)
+            ->firstOrFail();
 
-        StaffRolePermission::query()->updateOrCreate(
-            ['tenant_id' => $user->tenant_id, 'role' => $role],
-            ['permissions' => $defaults, 'updated_by' => $user->id, 'updated_at' => now()]
-        );
+        $defaults = $this->normalizeStoredPermissions($roleModel->default_permissions ?? $this->defaultPermissionsForRole($role));
+
+        $this->setRoleTeamContext($user->tenant_id);
+        $roleModel->syncPermissions($this->flattenPermissionPayload($defaults));
 
         $this->logOwnerAction($user->tenant_id, $user, 'STAFF_ROLE_RESET', 'ROLE', null, $role, []);
     }
@@ -474,61 +544,152 @@ class StaffService
         }
     }
 
-    private function ensureDefaultRolePermissions(int $tenantId, int $updatedBy): void
+    public function initializeRolePermissionsForTenant(int $tenantId, ?int $updatedBy = null): void
     {
-        foreach ($this->defaultPermissions() as $role => $permissions) {
-            StaffRolePermission::query()->firstOrCreate(
-                ['tenant_id' => $tenantId, 'role' => $role],
-                ['permissions' => $permissions, 'updated_by' => $updatedBy, 'updated_at' => now()]
+        foreach (Role::query()->whereNull('tenant_id')->where('is_system', true)->orderBy('sort_order')->orderBy('id')->get() as $template) {
+            $role = Role::query()->firstOrCreate(
+                ['tenant_id' => $tenantId, 'name' => $template->name, 'guard_name' => 'web'],
+                [
+                    'is_system' => true,
+                    'sort_order' => $template->sort_order ?? 9999,
+                    'default_permissions' => $template->default_permissions ?? [],
+                ]
             );
+
+            $role->forceFill([
+                'is_system' => true,
+                'sort_order' => $template->sort_order ?? 9999,
+                'default_permissions' => $template->default_permissions ?? [],
+            ])->save();
+
+            if ($role->permissions()->count() === 0) {
+                $this->setRoleTeamContext($tenantId);
+                $role->syncPermissions($this->flattenPermissionPayload($template->default_permissions ?? []));
+            }
         }
     }
 
-    private function defaultPermissions(): array
+    private function defaultPermissionsForRole(string $role): array
     {
-        return [
-            'receptionist' => [
-                'dashboard' => ['view' => true],
-                'members' => ['view' => true, 'add' => true, 'edit' => false, 'delete' => false],
-                'renewals' => ['view' => true],
-                'attendance' => ['check_in' => true, 'view_log' => true],
-                'classes' => ['view_timetable' => true, 'book' => true],
-                'payments' => ['collect' => true, 'history' => true],
-            ],
-            'trainer' => [
-                'dashboard' => ['view' => true],
-                'members' => ['view_own_clients' => true],
-                'classes' => ['view_timetable' => true, 'manage_own' => true, 'book' => true],
-                'reports' => ['own_data' => true],
-            ],
-            'accountant' => [
-                'dashboard' => ['view' => true],
-                'members' => ['view' => true],
-                'renewals' => ['view' => true],
-                'attendance' => ['view_log' => true],
-                'payments' => ['collect' => true, 'history' => true, 'void' => true],
-                'invoices' => ['view' => true],
-                'expenses' => ['view' => true, 'manage' => true],
-                'reports' => ['revenue_only' => true],
-            ],
-            'pos' => [
-                'dashboard' => ['view' => true],
-                'pos' => ['billing' => true, 'products_stock_view' => true],
-            ],
-            'branch_manager' => [
-                'dashboard' => ['view_own_branch' => true],
-                'members' => ['view' => true, 'add' => true, 'edit' => true],
-                'renewals' => ['view' => true],
-                'attendance' => ['check_in' => true, 'view_log' => true],
-                'classes' => ['view_timetable' => true, 'manage' => true, 'book' => true],
-                'branches' => ['view_own' => true],
-                'staff' => ['view_own_branch' => true],
-                'payments' => ['collect' => true, 'history' => true],
-                'invoices' => ['view' => true],
-                'expenses' => ['view_own_branch' => true],
-                'reports' => ['branch_only' => true],
-            ],
+        return Role::query()
+            ->whereNull('tenant_id')
+            ->where('name', $role)
+            ->value('default_permissions') ?? [];
+    }
+
+    private function normalizePermissionPayload(array $permissions): array
+    {
+        $permissions = $this->normalizeStoredPermissions($permissions);
+        $normalized = [];
+
+        foreach ($permissions as $module => $actions) {
+            if (! is_array($actions)) {
+                continue;
+            }
+
+            foreach ($actions as $action => $value) {
+                $normalized[$module][$action] = in_array((string) $value, ['1', 'true', 'on'], true);
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeStoredPermissions(array $permissions): array
+    {
+        $aliases = [
+            'dashboard' => ['view_own_branch' => 'view'],
+            'members' => ['view_own_clients' => 'view'],
+            'classes' => ['manage_own' => 'manage'],
+            'branches' => ['view_own' => 'view'],
+            'staff' => ['view_own_branch' => 'view'],
+            'expenses' => ['view_own_branch' => 'view'],
         ];
+
+        foreach ($aliases as $module => $actionAliases) {
+            if (! isset($permissions[$module]) || ! is_array($permissions[$module])) {
+                continue;
+            }
+
+            foreach ($actionAliases as $legacy => $canonical) {
+                if (array_key_exists($legacy, $permissions[$module]) && ! array_key_exists($canonical, $permissions[$module])) {
+                    $permissions[$module][$canonical] = $permissions[$module][$legacy];
+                }
+
+                unset($permissions[$module][$legacy]);
+            }
+        }
+
+        return $permissions;
+    }
+
+    private function permissionTablesReady(): bool
+    {
+        return Schema::hasTable('roles')
+            && Schema::hasTable('permissions')
+            && Schema::hasTable('permission_modules');
+    }
+
+    private function flattenPermissionPayload(array $permissions): array
+    {
+        $names = [];
+
+        foreach ($permissions as $module => $actions) {
+            if (! is_array($actions)) {
+                continue;
+            }
+
+            foreach ($actions as $action => $enabled) {
+                if ($enabled) {
+                    $names[] = $module.'.'.$action;
+                }
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    private function permissionMapForRole(Role $role): array
+    {
+        $permissions = [];
+
+        foreach ($role->permissions as $permission) {
+            [$module, $action] = array_pad(explode('.', $permission->name, 2), 2, null);
+
+            if ($module && $action) {
+                $permissions[$module][$action] = true;
+            }
+        }
+
+        return $this->normalizeStoredPermissions($permissions);
+    }
+
+    private function decorateRole(Role $role): void
+    {
+        $role->setAttribute('role', $role->name);
+        $role->setAttribute('display_name', str($role->name)->replace('_', ' ')->title()->toString());
+        $role->setAttribute('permissions', $this->permissionMapForRole($role->relationLoaded('permissions') ? $role : $role->load('permissions')));
+    }
+
+    private function syncUserRole(User $user, string $roleName, int $tenantId): void
+    {
+        $this->setRoleTeamContext($tenantId);
+
+        // Always resolve the tenant-specific role object so Spatie doesn't pick up a
+        // global role (tenant_id=NULL) that shares the same name.
+        $role = Role::where('name', $roleName)
+            ->where('tenant_id', $tenantId)
+            ->where('guard_name', 'web')
+            ->first();
+
+        $user->syncRoles($role ? [$role] : [$roleName]);
+    }
+
+    private function setRoleTeamContext(int $tenantId): void
+    {
+        if (function_exists('setPermissionsTeamId')) {
+            setPermissionsTeamId($tenantId);
+        }
     }
 
     private function logOwnerAction(int $tenantId, User $user, string $actionType, ?string $targetType, mixed $targetId, ?string $targetName, array $payload): void

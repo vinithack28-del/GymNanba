@@ -15,6 +15,8 @@ return [
         'no_results'         => 'No members found',
         'change_member'      => 'Change member',
         'select_member_first' => 'Please select a member first',
+        'pending_due_first'  => 'This member has pending dues of :amount. Collect the pending dues first before taking a new fee.',
+        'pending_due_block'  => 'New fee collection is blocked until the member\'s pending dues are cleared.',
         'payment_details'    => 'Payment Details',
         'plan'               => 'Membership Plan',
         'no_plan'            => 'No plan',
@@ -84,6 +86,7 @@ return [
         'card'  => 'Card',
         'bank'  => 'Bank Transfer',
         'cheque' => 'Cheque',
+        'split' => 'Split',
     ],
 
     'status' => [

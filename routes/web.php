@@ -1,17 +1,22 @@
 <?php
 
+use App\Http\Controllers\Public\OnlineRegistrationController;
 use App\Http\Controllers\Tenant\BranchController;
 use App\Http\Controllers\Tenant\MemberController;
+use App\Http\Controllers\Tenant\MemberRegistrationController;
 use App\Http\Controllers\Tenant\MembershipPlanController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\RenewalController;
 use App\Http\Controllers\Tenant\AttendanceController;
+use App\Http\Controllers\Tenant\AssessmentController;
 use App\Http\Controllers\Tenant\ClassController;
 use App\Http\Controllers\Tenant\ExpenseController;
 use App\Http\Controllers\Tenant\InvoiceController;
 use App\Http\Controllers\Tenant\PaymentController;
 use App\Http\Controllers\Tenant\ReportController;
 use App\Http\Controllers\Tenant\SettingController;
+use App\Http\Controllers\Tenant\EquipmentController;
+use App\Http\Controllers\Tenant\LockerController;
 use App\Http\Controllers\Tenant\StaffController;
 use App\Http\Controllers\TenantPortalController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -29,6 +34,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// ── Public member self-registration ─────────────────────────────────────────
+Route::get('/join/{token}',         [OnlineRegistrationController::class, 'show'])->name('register.show');
+Route::post('/join/{token}',        [OnlineRegistrationController::class, 'submit'])->name('register.submit');
+Route::get('/join/{token}/success', [OnlineRegistrationController::class, 'success'])->name('register.success');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -110,10 +120,23 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
         Route::prefix('members')->name('members.')->group(function (): void {
             Route::get('/', [MemberController::class, 'index'])->name('index');
             Route::get('/create', [MemberController::class, 'create'])->name('create');
+            Route::get('/walkin-lookup', [MemberController::class, 'walkinLookup'])->name('walkin-lookup');
             Route::post('/', [MemberController::class, 'store'])->name('store');
+
+            // Online registration management (must be before /{member} wildcard)
+            Route::post('/registration-link/email', [MemberRegistrationController::class, 'sendEmail'])->name('registration-link.email');
+            Route::prefix('registrations')->name('registrations.')->group(function (): void {
+                Route::get('/',                                        [MemberRegistrationController::class, 'index'])->name('index');
+                Route::post('/{registration}/confirm',                 [MemberRegistrationController::class, 'confirm'])->name('confirm');
+                Route::post('/{registration}/reject',                  [MemberRegistrationController::class, 'reject'])->name('reject');
+            });
+
+            Route::get('/{member}', [MemberController::class, 'show'])->name('show');
             Route::get('/{member}/edit', [MemberController::class, 'edit'])->name('edit');
             Route::put('/{member}', [MemberController::class, 'update'])->name('update');
             Route::patch('/{member}/toggle-status', [MemberController::class, 'toggleStatus'])->name('toggle-status');
+            Route::patch('/{member}/freeze', [MemberController::class, 'freeze'])->name('freeze');
+            Route::patch('/{member}/unfreeze', [MemberController::class, 'unfreeze'])->name('unfreeze');
             Route::delete('/{member}', [MemberController::class, 'destroy'])->name('destroy');
         });
 
@@ -165,6 +188,39 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::get('/member-search', [AttendanceController::class, 'memberSearch'])->name('member-search');
             Route::get('/walkins', [AttendanceController::class, 'walkins'])->name('walkins');
             Route::post('/walkins', [AttendanceController::class, 'storeWalkin'])->name('walkins.store');
+            Route::post('/walkins/{walkIn}/followup', [AttendanceController::class, 'storeFollowup'])->name('walkins.followup');
+            Route::get('/walkins/{walkIn}/followup-history', [AttendanceController::class, 'followupHistory'])->name('walkins.followup-history');
+        });
+
+        Route::prefix('assess')->name('assess.')->group(function (): void {
+            Route::get('/report', [AssessmentController::class, 'report'])->name('report');
+            Route::get('/questionnaire', [AssessmentController::class, 'questionnaire'])->name('questionnaire');
+            Route::get('/questionnaire/create', [AssessmentController::class, 'questionnaireCreate'])->name('questionnaire.create');
+            Route::get('/questionnaire/{record}/edit', [AssessmentController::class, 'questionnaireEdit'])->name('questionnaire.edit');
+            Route::post('/questionnaire', [AssessmentController::class, 'saveQuestionnaire'])->name('questionnaire.save');
+            Route::get('/nutrition', [AssessmentController::class, 'nutrition'])->name('nutrition');
+            Route::post('/nutrition', [AssessmentController::class, 'storeNutrition'])->name('nutrition.store');
+            Route::put('/nutrition/{record}', [AssessmentController::class, 'updateNutrition'])->name('nutrition.update');
+            Route::get('/body-metrics', [AssessmentController::class, 'bodyMetrics'])->name('body-metrics');
+            Route::post('/body-metrics', [AssessmentController::class, 'storeBodyMetrics'])->name('body-metrics.store');
+            Route::put('/body-metrics/{record}', [AssessmentController::class, 'updateBodyMetrics'])->name('body-metrics.update');
+            Route::get('/body-metrics/progress', [AssessmentController::class, 'bodyMetricsProgress'])->name('body-metrics.progress');
+            Route::get('/posture', [AssessmentController::class, 'posture'])->name('posture');
+            Route::post('/posture', [AssessmentController::class, 'storePosture'])->name('posture.store');
+            Route::put('/posture/{record}', [AssessmentController::class, 'updatePosture'])->name('posture.update');
+            Route::get('/balance', [AssessmentController::class, 'balance'])->name('balance');
+            Route::post('/balance', [AssessmentController::class, 'storeBalance'])->name('balance.store');
+            Route::put('/balance/{record}', [AssessmentController::class, 'updateBalance'])->name('balance.update');
+            Route::post('/balance/{record}/insight', [AssessmentController::class, 'generateBalanceInsight'])->name('balance.insight');
+            Route::get('/vitals', [AssessmentController::class, 'vitals'])->name('vitals');
+            Route::post('/vitals', [AssessmentController::class, 'storeVitals'])->name('vitals.store');
+            Route::put('/vitals/{record}', [AssessmentController::class, 'updateVitals'])->name('vitals.update');
+            Route::get('/fitness', [AssessmentController::class, 'fitness'])->name('fitness');
+            Route::post('/fitness', [AssessmentController::class, 'storeFitness'])->name('fitness.store');
+            Route::put('/fitness/{record}', [AssessmentController::class, 'updateFitness'])->name('fitness.update');
+            Route::get('/goal-forecasting', [AssessmentController::class, 'goalForecasting'])->name('goal-forecasting');
+            Route::delete('/records/{record}', [AssessmentController::class, 'destroy'])->name('records.destroy');
+            Route::get('/member-search', [AssessmentController::class, 'memberSearch'])->name('member-search');
         });
 
         Route::prefix('expenses')->name('expenses.')->group(function (): void {
@@ -231,6 +287,32 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::get('/stock', [PosController::class, 'stock'])->name('stock');
             Route::post('/stock/restock', [PosController::class, 'restock'])->name('stock.restock');
             Route::post('/stock/adjust', [PosController::class, 'adjust'])->name('stock.adjust');
+        });
+
+        Route::prefix('equipment')->name('equipment.')->group(function (): void {
+            Route::get('/',                                                     [EquipmentController::class, 'index'])->name('index');
+            Route::get('/create',                                              [EquipmentController::class, 'create'])->name('create');
+            Route::get('/summary',                                              [EquipmentController::class, 'summary'])->name('summary');
+            Route::post('/',                                                    [EquipmentController::class, 'store'])->name('store');
+            Route::get('/{equipment}/details',                                  [EquipmentController::class, 'details'])->name('details');
+            Route::put('/{equipment}',                                          [EquipmentController::class, 'update'])->name('update');
+            Route::delete('/{equipment}',                                       [EquipmentController::class, 'destroy'])->name('destroy');
+            Route::post('/{equipment}/service-records',                         [EquipmentController::class, 'storeServiceRecord'])->name('service-records.store');
+            Route::delete('/{equipment}/service-records/{record}',              [EquipmentController::class, 'destroyServiceRecord'])->name('service-records.destroy');
+        });
+
+        Route::prefix('lockers')->name('lockers.')->group(function (): void {
+            Route::get('/', [LockerController::class, 'index'])->name('index');
+            Route::get('/create', [LockerController::class, 'create'])->name('create');
+            Route::post('/', [LockerController::class, 'store'])->name('store');
+            Route::get('/member-search', [LockerController::class, 'memberSearch'])->name('member-search');
+            Route::get('/{locker}', [LockerController::class, 'show'])->name('show');
+            Route::get('/{locker}/details', [LockerController::class, 'details'])->name('details');
+            Route::put('/{locker}', [LockerController::class, 'update'])->name('update');
+            Route::delete('/{locker}', [LockerController::class, 'destroy'])->name('destroy');
+            Route::post('/{locker}/assign', [LockerController::class, 'assign'])->name('assign');
+            Route::post('/{locker}/reassign', [LockerController::class, 'reassign'])->name('reassign');
+            Route::post('/{locker}/release', [LockerController::class, 'release'])->name('release');
         });
 
         Route::prefix('settings')->name('settings.')->group(function (): void {

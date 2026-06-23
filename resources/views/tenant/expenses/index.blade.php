@@ -244,7 +244,7 @@
 <div class="mt-4">{{ $expenses->links() }}</div>
 
 {{-- Reject modal --}}
-<div id="exRejectModal" class="fixed inset-0 z-50 hidden flex items-center justify-center" style="background:rgba(0,0,0,0.5)">
+<div id="exRejectModal" class="fixed inset-0 z-[300] hidden flex items-center justify-center" style="background:rgba(0,0,0,0.5)">
     <div class="rounded-xl p-6 w-full max-w-md mx-4" style="background:var(--app-panel);border:1px solid var(--app-border)">
         <h3 class="font-semibold mb-3" style="color:var(--app-text)">{{ __('expenses.reject.title') }}</h3>
         <form id="exRejectForm" method="POST">

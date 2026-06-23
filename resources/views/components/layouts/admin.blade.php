@@ -24,10 +24,42 @@
 
     $currentTenantSlug = request()->route('slug');
     $tenantRoute = static fn (string $slug): string => route('tenant.coming-soon', $slug);
+    $canAccess = static fn (?string $permission): bool => ! $permission || ($user && method_exists($user, 'canAccess') ? $user->canAccess($permission) : false);
+
+    $quickActions = [];
+    if (! $isSuperAdmin && $user) {
+        if ($canAccess('members.add')) {
+            $quickActions[] = [
+                'label' => __('common.quick_actions.add_member'),
+                'route' => route('tenant.members.create'),
+                'icon' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>',
+            ];
+        }
+        if ($canAccess('attendance.check_in')) {
+            $quickActions[] = [
+                'label' => __('common.quick_actions.add_enquiry'),
+                'route' => route('tenant.attendance.walkins', ['purpose' => 'inquiry']),
+                'icon' => '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
+            ];
+            $quickActions[] = [
+                'label' => __('common.quick_actions.member_attendance'),
+                'route' => route('tenant.attendance.checkins'),
+                'icon' => '<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+            ];
+        }
+        if ($canAccess('staff.view|staff.manage')) {
+            $quickActions[] = [
+                'label' => __('common.quick_actions.staff_attendance'),
+                'route' => route('tenant.staff.attendance'),
+                'icon' => '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>',
+            ];
+        }
+    }
 
     // Renewals sidebar badge: expired + today + 7-day count
     $renewalBadge = null;
     $lowStockBadge = null;
+    $dueBadge = null;
     if (!$isSuperAdmin && $user?->tenant) {
         $today = now()->toDateString();
         $renewalBadge = \App\Models\Member::forTenant($user->tenant->id)
@@ -40,6 +72,13 @@
             ->whereColumn('stock_quantity', '<=', 'low_stock_threshold')
             ->count();
         $lowStockBadge = $lowStockCount > 0 ? (string) $lowStockCount : null;
+
+        $dueCount = \App\Models\Payment::where('tenant_id', $user->tenant->id)
+            ->where('status', 'active')
+            ->where('is_partial', true)
+            ->where('due_paise', '>', 0)
+            ->count();
+        $dueBadge = $dueCount > 0 ? (string) $dueCount : null;
     }
     $isTenantItemActive = static function (?string $slug, array $children = []) use ($currentTenantSlug): bool {
         if ($slug && $currentTenantSlug === $slug) {
@@ -56,19 +95,20 @@
                 [
                     'label' => __('common.tenant_nav.dashboard'),
                     'route' => route('tenant.dashboard'),
-                    'icon' => 'grid',
+                    'icon'  => 'grid',
                     'active' => request()->routeIs('tenant.dashboard'),
+                    'permission' => 'dashboard.view',
                 ],
             ],
         ],
         [
             'heading' => __('common.tenant_nav.section_members'),
             'items' => [
-                ['label' => __('common.tenant_nav.members'), 'slug' => 'members', 'route' => route('tenant.members.index'), 'icon' => 'users', 'active' => request()->routeIs('tenant.members.*')],
-                ['label' => __('common.tenant_nav.memberships_plans'), 'slug' => 'memberships-plans', 'route' => route('tenant.plans.index'), 'icon' => 'card', 'active' => request()->routeIs('tenant.plans.*')],
-                ['label' => __('common.tenant_nav.renewals_due'), 'route' => route('tenant.renewals.index'), 'icon' => 'clock', 'active' => request()->routeIs('tenant.renewals.*'), 'badge' => $renewalBadge],
-                ['label' => __('common.tenant_nav.attendance'), 'slug' => 'attendance', 'route' => route('tenant.attendance.checkins'), 'icon' => 'scan', 'active' => request()->routeIs('tenant.attendance.checkins')],
-                ['label' => __('common.tenant_nav.walk_ins'), 'slug' => 'walk-ins', 'route' => route('tenant.attendance.walkins'), 'icon' => 'walkin', 'active' => request()->routeIs('tenant.attendance.walkins')],
+                ['label' => __('common.tenant_nav.members'),          'slug' => 'members',           'route' => route('tenant.members.index'), 'icon' => 'users',  'active' => request()->routeIs('tenant.members.*'),  'permission' => 'members.view|members.add|members.edit|members.delete'],
+                ['label' => __('common.tenant_nav.memberships_plans'), 'slug' => 'memberships-plans', 'route' => route('tenant.plans.index'),   'icon' => 'card',   'active' => request()->routeIs('tenant.plans.*'),    'permission' => 'members.view|members.add|members.edit|members.delete'],
+                ['label' => __('common.tenant_nav.renewals_due'),      'route' => route('tenant.renewals.index'),                               'icon' => 'clock',  'active' => request()->routeIs('tenant.renewals.*'), 'badge' => $renewalBadge, 'permission' => 'renewals.view'],
+                ['label' => __('common.tenant_nav.attendance'),        'slug' => 'attendance',        'route' => route('tenant.attendance.checkins'), 'icon' => 'scan',   'active' => request()->routeIs('tenant.attendance.checkins'), 'permission' => 'attendance.check_in|attendance.view_log'],
+                ['label' => __('common.tenant_nav.walk_ins'),          'slug' => 'walk-ins',          'route' => route('tenant.attendance.walkins'),  'icon' => 'walkin', 'active' => request()->routeIs('tenant.attendance.walkins'),  'permission' => 'attendance.check_in'],
             ],
         ],
         [
@@ -76,27 +116,55 @@
             'items' => [
                 [
                     'label' => __('common.tenant_nav.classes_schedules'),
-                    'slug' => 'classes-schedules',
+                    'slug'  => 'classes-schedules',
                     'route' => route('tenant.classes.timetable'),
-                    'icon' => 'calendar',
+                    'icon'  => 'calendar',
                     'active' => request()->routeIs('tenant.classes.*'),
+                    'permission' => 'classes.view_timetable|classes.manage|classes.book',
                     'children' => [
-                        ['label' => __('common.tenant_nav.timetable'), 'slug' => 'timetable', 'route' => route('tenant.classes.timetable'), 'active' => request()->routeIs('tenant.classes.timetable')],
-                        ['label' => __('common.tenant_nav.book_a_class'), 'slug' => 'book-a-class', 'route' => route('tenant.classes.book'), 'active' => request()->routeIs('tenant.classes.book')],
-                        ['label' => __('common.tenant_nav.trainers'), 'slug' => 'trainers', 'route' => route('tenant.classes.trainers'), 'active' => request()->routeIs('tenant.classes.trainers')],
+                        ['label' => __('common.tenant_nav.timetable'),   'slug' => 'timetable',   'route' => route('tenant.classes.timetable'), 'active' => request()->routeIs('tenant.classes.timetable')],
+                        ['label' => __('common.tenant_nav.book_a_class'), 'slug' => 'book-a-class', 'route' => route('tenant.classes.book'),      'active' => request()->routeIs('tenant.classes.book')],
+                        ['label' => __('common.tenant_nav.trainers'),    'slug' => 'trainers',    'route' => route('tenant.classes.trainers'),  'active' => request()->routeIs('tenant.classes.trainers')],
                     ],
                 ],
-                ['label' => __('common.tenant_nav.branches'), 'slug' => 'branches', 'route' => route('tenant.branches.index'), 'icon' => 'office', 'active' => request()->routeIs('tenant.branches.*')],
+                ['label' => __('common.tenant_nav.branches'),  'slug' => 'branches',  'route' => route('tenant.branches.index'),  'icon' => 'office',     'active' => request()->routeIs('tenant.branches.*'),  'permission' => 'branches.view|branches.manage'],
+                ['label' => __('common.tenant_nav.equipment'), 'slug' => 'equipment', 'route' => route('tenant.equipment.index'), 'icon' => 'equipment', 'active' => request()->routeIs('tenant.equipment.*'), 'permission' => 'equipment.view'],
+                ['label' => __('common.tenant_nav.lockers'), 'slug' => 'lockers', 'route' => route('tenant.lockers.index'), 'icon' => 'locker', 'active' => request()->routeIs('tenant.lockers.*'), 'permission' => 'locker.view|locker.assign|locker.add|locker.edit|locker.delete'],
                 [
                     'label' => __('common.tenant_nav.staff'),
-                    'slug' => 'staff',
+                    'slug'  => 'staff',
                     'route' => route('tenant.staff.index'),
-                    'icon' => 'team',
+                    'icon'  => 'team',
                     'active' => request()->routeIs('tenant.staff.index', 'tenant.staff.create', 'tenant.staff.edit', 'tenant.staff.show'),
+                    'permission' => 'staff.view|staff.manage',
                     'children' => [
-                        ['label' => __('common.tenant_nav.all_staff'), 'slug' => 'all-staff', 'route' => route('tenant.staff.index'), 'active' => request()->routeIs('tenant.staff.index', 'tenant.staff.create', 'tenant.staff.edit', 'tenant.staff.show')],
-                        ['label' => __('common.tenant_nav.roles_permissions'), 'slug' => 'roles-permissions', 'route' => route('tenant.staff.roles'), 'active' => request()->routeIs('tenant.staff.roles')],
-                        ['label' => __('common.tenant_nav.staff_attendance'), 'slug' => 'staff-attendance', 'route' => route('tenant.staff.attendance'), 'active' => request()->routeIs('tenant.staff.attendance')],
+                        ['label' => __('common.tenant_nav.all_staff'),         'slug' => 'all-staff',         'route' => route('tenant.staff.index'),      'active' => request()->routeIs('tenant.staff.index', 'tenant.staff.create', 'tenant.staff.edit', 'tenant.staff.show')],
+                        ['label' => __('common.tenant_nav.roles_permissions'), 'slug' => 'roles-permissions', 'route' => route('tenant.staff.roles'),       'active' => request()->routeIs('tenant.staff.roles'), 'owner_only' => true],
+                        ['label' => __('common.tenant_nav.staff_attendance'),  'slug' => 'staff-attendance',  'route' => route('tenant.staff.attendance'), 'active' => request()->routeIs('tenant.staff.attendance')],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'heading' => __('common.tenant_nav.section_assess'),
+            'items' => [
+                [
+                    'label' => __('common.tenant_nav.assess'),
+                    'slug'  => 'assess',
+                    'route' => route('tenant.assess.report'),
+                    'icon'  => 'chart',
+                    'active' => request()->routeIs('tenant.assess.*'),
+                    'permission' => 'assessment_report.view|parq.view|nutrition.view|body_metrics.view|posture.view|balance.view|vitals.view|fitness.view|goal_forecasting.view',
+                    'children' => [
+                        ['label' => __('common.tenant_nav.assessment_report'), 'slug' => 'assessment-report', 'route' => route('tenant.assess.report'), 'active' => request()->routeIs('tenant.assess.report'), 'permission' => 'assessment_report.view'],
+                        ['label' => __('common.tenant_nav.parq'), 'slug' => 'parq', 'route' => route('tenant.assess.questionnaire'), 'active' => request()->routeIs('tenant.assess.questionnaire'), 'permission' => 'parq.view'],
+                        ['label' => __('common.tenant_nav.nutrition'), 'slug' => 'nutrition', 'route' => route('tenant.assess.nutrition'), 'active' => request()->routeIs('tenant.assess.nutrition'), 'permission' => 'nutrition.view'],
+                        ['label' => __('common.tenant_nav.body_metrics'), 'slug' => 'body-metrics', 'route' => route('tenant.assess.body-metrics'), 'active' => request()->routeIs('tenant.assess.body-metrics', 'tenant.assess.body-metrics.progress'), 'permission' => 'body_metrics.view'],
+                        ['label' => __('common.tenant_nav.posture'), 'slug' => 'posture', 'route' => route('tenant.assess.posture'), 'active' => request()->routeIs('tenant.assess.posture'), 'permission' => 'posture.view'],
+                        ['label' => __('common.tenant_nav.balance'), 'slug' => 'balance', 'route' => route('tenant.assess.balance'), 'active' => request()->routeIs('tenant.assess.balance'), 'permission' => 'balance.view'],
+                        ['label' => __('common.tenant_nav.vitals'), 'slug' => 'vitals', 'route' => route('tenant.assess.vitals'), 'active' => request()->routeIs('tenant.assess.vitals'), 'permission' => 'vitals.view'],
+                        ['label' => __('common.tenant_nav.fitness'), 'slug' => 'fitness', 'route' => route('tenant.assess.fitness'), 'active' => request()->routeIs('tenant.assess.fitness'), 'permission' => 'fitness.view'],
+                        ['label' => __('common.tenant_nav.goal_forecasting'), 'slug' => 'goal-forecasting', 'route' => route('tenant.assess.goal-forecasting'), 'active' => request()->routeIs('tenant.assess.goal-forecasting'), 'permission' => 'goal_forecasting.view'],
                     ],
                 ],
             ],
@@ -106,30 +174,29 @@
             'items' => [
                 [
                     'label' => __('common.tenant_nav.payments'),
-                    'slug' => 'payments',
+                    'slug'  => 'payments',
                     'route' => route('tenant.payments.history'),
-                    'icon' => 'wallet',
-                    'children' => [
-                        ['label' => __('common.tenant_nav.collect_fee'), 'slug' => 'collect-fee', 'route' => route('tenant.payments.collect')],
-                        ['label' => __('common.tenant_nav.payment_history'), 'slug' => 'payment-history', 'route' => route('tenant.payments.history')],
-                        ['label' => __('common.tenant_nav.pending_dues'), 'slug' => 'pending-dues', 'route' => route('tenant.payments.dues')],
-                    ],
+                    'icon'  => 'wallet',
+                    'active' => request()->routeIs('tenant.payments.*'),
+                    'badge' => $dueBadge,
+                    'permission' => 'payments.collect|payments.history|payments.void',
                 ],
-                ['label' => __('common.tenant_nav.invoices'), 'slug' => 'invoices', 'route' => route('tenant.invoices.index'), 'icon' => 'receipt'],
+                ['label' => __('common.tenant_nav.invoices'), 'slug' => 'invoices', 'route' => route('tenant.invoices.index'), 'icon' => 'receipt', 'permission' => 'invoices.view|invoices.manage'],
                 [
                     'label' => __('common.tenant_nav.pos_store'),
-                    'slug' => 'pos-store',
+                    'slug'  => 'pos-store',
                     'route' => route('tenant.pos.sales'),
-                    'icon' => 'cart',
+                    'icon'  => 'cart',
                     'active' => request()->routeIs('tenant.pos.*'),
                     'badge' => $lowStockBadge,
+                    'permission' => 'pos.billing|pos.products_stock_view|pos.manage_products',
                     'children' => [
                         ['label' => __('common.tenant_nav.products'), 'slug' => 'products', 'route' => route('tenant.pos.products'), 'active' => request()->routeIs('tenant.pos.products', 'tenant.pos.products.create', 'tenant.pos.products.edit')],
-                        ['label' => __('common.tenant_nav.sales'), 'slug' => 'sales', 'route' => route('tenant.pos.sales'), 'active' => request()->routeIs('tenant.pos.sales', 'tenant.pos.sales.show')],
-                        ['label' => __('common.tenant_nav.stock'), 'slug' => 'stock', 'route' => route('tenant.pos.stock'), 'active' => request()->routeIs('tenant.pos.stock')],
+                        ['label' => __('common.tenant_nav.sales'),    'slug' => 'sales',    'route' => route('tenant.pos.sales'),    'active' => request()->routeIs('tenant.pos.sales', 'tenant.pos.sales.show')],
+                        ['label' => __('common.tenant_nav.stock'),    'slug' => 'stock',    'route' => route('tenant.pos.stock'),    'active' => request()->routeIs('tenant.pos.stock')],
                     ],
                 ],
-                ['label' => __('common.tenant_nav.expenses'), 'slug' => 'expenses', 'route' => route('tenant.expenses.index'), 'icon' => 'doc', 'active' => request()->routeIs('tenant.expenses.*')],
+                ['label' => __('common.tenant_nav.expenses'), 'slug' => 'expenses', 'route' => route('tenant.expenses.index'), 'icon' => 'doc', 'active' => request()->routeIs('tenant.expenses.*'), 'permission' => 'expenses.view|expenses.manage'],
             ],
         ],
         [
@@ -137,15 +204,16 @@
             'items' => [
                 [
                     'label' => __('common.tenant_nav.reports'),
-                    'slug' => 'reports',
+                    'slug'  => 'reports',
                     'route' => route('tenant.reports.index'),
-                    'icon' => 'chart',
+                    'icon'  => 'chart',
                     'active' => request()->routeIs('tenant.reports.*'),
+                    'permission' => 'reports.view|reports.revenue_only|reports.branch_only|reports.own_data',
                     'children' => [
-                        ['label' => __('common.tenant_nav.revenue_report'), 'slug' => 'revenue-report', 'route' => route('tenant.reports.revenue'), 'active' => request()->routeIs('tenant.reports.revenue')],
-                        ['label' => __('common.tenant_nav.member_report'), 'slug' => 'member-report', 'route' => route('tenant.reports.members'), 'active' => request()->routeIs('tenant.reports.members')],
+                        ['label' => __('common.tenant_nav.revenue_report'),    'slug' => 'revenue-report',    'route' => route('tenant.reports.revenue'),    'active' => request()->routeIs('tenant.reports.revenue')],
+                        ['label' => __('common.tenant_nav.member_report'),     'slug' => 'member-report',     'route' => route('tenant.reports.members'),    'active' => request()->routeIs('tenant.reports.members')],
                         ['label' => __('common.tenant_nav.attendance_report'), 'slug' => 'attendance-report', 'route' => route('tenant.reports.attendance'), 'active' => request()->routeIs('tenant.reports.attendance')],
-                        ['label' => __('common.tenant_nav.staff_report'), 'slug' => 'staff-report', 'route' => route('tenant.reports.staff'), 'active' => request()->routeIs('tenant.reports.staff')],
+                        ['label' => __('common.tenant_nav.staff_report'),      'slug' => 'staff-report',      'route' => route('tenant.reports.staff'),      'active' => request()->routeIs('tenant.reports.staff')],
                     ],
                 ],
             ],
@@ -160,6 +228,7 @@
                     'route'  => route('tenant.settings.profile'),
                     'icon'   => 'settings',
                     'active' => request()->routeIs('tenant.settings.*'),
+                    'owner_only' => true,
                     'children' => [
                         ['label' => __('settings.nav.profile'),      'slug' => 'settings-profile',      'route' => route('tenant.settings.profile'),      'active' => request()->routeIs('tenant.settings.profile')],
                         ['label' => __('settings.nav.account'),      'slug' => 'settings-account',      'route' => route('tenant.settings.account'),      'active' => request()->routeIs('tenant.settings.account')],
@@ -190,21 +259,62 @@
         unset($section);
     }
 
+    // Permission-based nav filtering for staff (not owners / super-admins)
+    if (!$isSuperAdmin && $user && $user->isStaffMember()) {
+        $tenantSections = array_values(array_map(function (array $section) use ($user): array {
+            $section['items'] = array_values(array_filter($section['items'], function (array $item) use ($user): bool {
+                if ($item['owner_only'] ?? false) return false;
+                $perm = $item['permission'] ?? null;
+                if (!$perm) return true;
+                return $user->canAccess($perm);
+            }));
+            // Filter owner_only children too
+            $section['items'] = array_map(function (array $item) use ($user): array {
+                if (!empty($item['children'])) {
+                    $item['children'] = array_values(array_filter($item['children'], function (array $c) use ($user): bool {
+                        if ($c['owner_only'] ?? false) {
+                            return false;
+                        }
+                        $perm = $c['permission'] ?? null;
+                        return ! $perm || $user->canAccess($perm);
+                    }));
+                }
+                return $item;
+            }, $section['items']);
+            $section['items'] = array_values(array_filter($section['items'], function (array $item): bool {
+                if (! array_key_exists('children', $item)) {
+                    return true;
+                }
+
+                return ! empty($item['children']);
+            }));
+            return $section;
+        }, $tenantSections));
+        // Drop sections that have no items left
+        $tenantSections = array_values(array_filter($tenantSections, fn (array $s) => !empty($s['items'])));
+    }
+
     // Branch switcher data (tenant users only)
-    $tenantBranches   = collect();
-    $selectedBranchId = null;
-    $selectedBranch   = null;
+    $tenantBranches    = collect();
+    $selectedBranchId  = null;
+    $selectedBranch    = null;
+    $isOwnerBranchCtrl = !$isSuperAdmin && $user?->isGymOwner(); // only owners control branch switching
     if (!$isSuperAdmin && $user?->tenant) {
-        $tenantBranches   = \App\Models\Branch::forTenant($user->tenant->id)
+        $tenantBranches = \App\Models\Branch::forTenant($user->tenant->id)
             ->active()
             ->orderByRaw('is_primary DESC, name ASC')
             ->get();
-        $selectedBranchId = session('gymos_selected_branch_id');
-        $selectedBranch   = $tenantBranches->find($selectedBranchId);
-        // Clear stale session value if branch no longer exists/active
-        if ($selectedBranchId && !$selectedBranch) {
-            session()->forget('gymos_selected_branch_id');
-            $selectedBranchId = null;
+        if ($isOwnerBranchCtrl) {
+            $selectedBranchId = session('gymos_selected_branch_id');
+            $selectedBranch   = $tenantBranches->find($selectedBranchId);
+            if ($selectedBranchId && !$selectedBranch) {
+                session()->forget('gymos_selected_branch_id');
+                $selectedBranchId = null;
+            }
+        } else {
+            // Staff: locked to their assigned branch
+            $selectedBranchId = $user->branch_id;
+            $selectedBranch   = $tenantBranches->find($selectedBranchId);
         }
     }
 
@@ -229,6 +339,9 @@
             'doc' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>',
             'chart' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>',
             'bell' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 17H5.5a1.5 1.5 0 0 1-1.1-2.52C5.6 13.2 6 11.65 6 10V8a6 6 0 1 1 12 0v2c0 1.65.4 3.2 1.6 4.48A1.5 1.5 0 0 1 18.5 17H15"/><path d="M9.5 20a2.5 2.5 0 0 0 5 0"/></svg>',
+            'walkin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="13" cy="4" r="1.5"/><path d="M8 20l2-5 3 3"/><path d="M14.5 9.5L16 12l3 1"/><path d="M11 9.5l-2 4 3 2.5"/><path d="M13 9l1.5-3"/></svg>',
+            'equipment' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h4v4H6z"/><path d="M14 6h4v4h-4z"/><path d="M6 14h4v4H6z"/><path d="M14 14h4v4h-4z"/><path d="M10 8h4"/><path d="M8 10v4"/><path d="M16 10v4"/><path d="M10 16h4"/></svg>',
+            'locker' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="12" r="1.25"/><path d="M12 8v2"/></svg>',
             default => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/></svg>',
         };
     };
@@ -263,6 +376,29 @@
         .bs-option-icon { align-items: center; display: inline-flex; flex: none; opacity: 0.6; }
         .bs-option-icon svg { height: 0.9rem; width: 0.9rem; }
         .bs-primary-tag { background: color-mix(in srgb, var(--app-brand-soft) 80%, transparent); border-radius: 999px; color: var(--app-brand); font-size: 0.6rem; font-weight: 700; margin-left: 0.25rem; padding: 0.05rem 0.35rem; text-transform: uppercase; vertical-align: middle; }
+        .qa-trigger { align-items: center; background: var(--app-brand); border: 1px solid color-mix(in srgb, var(--app-brand) 70%, black 10%); border-radius: 999px; color: #0f172a; cursor: pointer; display: inline-flex; font-size: 0.82rem; font-weight: 700; gap: 0.45rem; padding: 0.5rem 0.85rem; transition: opacity 140ms; white-space: nowrap; }
+        .qa-trigger:hover { opacity: 0.88; }
+        .qa-trigger svg { height: 0.95rem; width: 0.95rem; }
+        .qa-dropdown { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.22); min-width: 220px; padding: 0.4rem; position: absolute; right: 0; top: calc(100% + 0.45rem); z-index: 50; }
+        .qa-item { align-items: center; border-radius: 0.8rem; color: var(--app-text); display: flex; font-size: 0.82rem; font-weight: 500; gap: 0.7rem; padding: 0.65rem 0.75rem; text-decoration: none; transition: background 120ms, color 120ms; }
+        .qa-item:hover { background: color-mix(in srgb, var(--app-border) 55%, transparent); }
+        .qa-item-icon { align-items: center; color: var(--app-brand); display: inline-flex; flex: none; }
+        .qa-item-icon svg { height: 1rem; width: 1rem; }
+        .theme-toggle-btn { align-items: center; background: var(--app-panel-strong); color: var(--app-text-muted); display: inline-flex; gap: 0.3rem; }
+        .theme-icon { align-items: center; border-radius: 999px; color: var(--app-text-muted); display: inline-flex; height: 1.8rem; justify-content: center; transition: color 160ms ease, opacity 160ms ease; width: 1.8rem; }
+        .theme-icon svg { height: 0.95rem; width: 0.95rem; }
+        .theme-toggle-track { align-items: center; background: color-mix(in srgb, var(--app-border) 70%, transparent); border-radius: 999px; display: inline-flex; height: 1.9rem; padding: 0.15rem; position: relative; width: 3.4rem; }
+        .theme-toggle-thumb { align-items: center; background: var(--app-brand); border-radius: 999px; color: #0f172a; display: inline-flex; height: 1.55rem; justify-content: center; transform: translateX(0); transition: transform 180ms ease; width: 1.55rem; }
+        .theme-toggle-thumb svg { height: 0.8rem; position: absolute; width: 0.8rem; }
+        .theme-toggle-thumb-moon { opacity: 0; }
+        [data-theme='light'] .theme-icon-sun { color: var(--app-brand); }
+        [data-theme='dark'] .theme-icon-moon { color: var(--app-brand); }
+        [data-theme='light'] .theme-toggle-thumb { transform: translateX(0); }
+        [data-theme='light'] .theme-toggle-thumb-sun { opacity: 1; }
+        [data-theme='light'] .theme-toggle-thumb-moon { opacity: 0; }
+        [data-theme='dark'] .theme-toggle-thumb { transform: translateX(1.5rem); }
+        [data-theme='dark'] .theme-toggle-thumb-sun { opacity: 0; }
+        [data-theme='dark'] .theme-toggle-thumb-moon { opacity: 1; }
         </style>
     </head>
     <body class="min-h-screen">
@@ -280,6 +416,32 @@
                     </div>
 
                     <div class="flex items-center gap-3">
+                        @if (!empty($quickActions))
+                        <div class="relative" id="quick-add-wrap">
+                            <button
+                                type="button"
+                                id="quick-add-btn"
+                                class="qa-trigger"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                                <span class="hidden md:inline">{{ __('common.quick_add') }}</span>
+                            </button>
+
+                            <div id="quick-add-dropdown" class="qa-dropdown hidden" role="menu">
+                                @foreach ($quickActions as $action)
+                                    <a href="{{ $action['route'] }}" class="qa-item" role="menuitem">
+                                        <span class="qa-item-icon">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">{!! $action['icon'] !!}</svg>
+                                        </span>
+                                        <span>{{ $action['label'] }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
                         @if(($activePortalLanguages ?? collect())->isNotEmpty())
                             <form method="POST" action="{{ $languageRoute }}" class="hidden md:block">
                                 @csrf
@@ -293,20 +455,45 @@
                                 </select>
                             </form>
                         @endif
-                        <span class="app-muted hidden text-sm md:inline">{{ __('common.theme') }}</span>
                         <button
                             type="button"
                             id="theme-toggle"
-                            class="inline-flex items-center rounded-full border border-[var(--app-border)] px-1 py-1 transition hover:opacity-90"
+                            class="theme-toggle-btn inline-flex rounded-full border border-[var(--app-border)] px-1.5 py-1 transition hover:opacity-90"
                             aria-label="Toggle dark and light mode"
                         >
-                            <span class="app-brand-soft inline-flex h-7 w-14 items-center rounded-full">
-                                <span class="app-toggle-thumb inline-flex h-5 w-5 rounded-full bg-[var(--app-brand)] shadow"></span>
+                            <span class="theme-icon theme-icon-sun" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"></circle>
+                                    <path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07 6.7 17.3M17.3 6.7l1.77-1.77"></path>
+                                </svg>
+                            </span>
+                            <span class="theme-toggle-track" aria-hidden="true">
+                                <span class="theme-toggle-thumb">
+                                    <svg class="theme-toggle-thumb-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="4"></circle>
+                                        <path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07 6.7 17.3M17.3 6.7l1.77-1.77"></path>
+                                    </svg>
+                                    <svg class="theme-toggle-thumb-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+                                    </svg>
+                                </span>
+                            </span>
+                            <span class="theme-icon theme-icon-moon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"></path>
+                                </svg>
                             </span>
                         </button>
 
-                        {{-- Branch switcher (tenant users with branches) --}}
-                        @if (!$isSuperAdmin && $tenantBranches->count() > 0)
+                        {{-- Branch switcher: owners can switch; staff see a static badge --}}
+                        @if (!$isSuperAdmin && $tenantBranches->count() > 0 && !$isOwnerBranchCtrl && $selectedBranch)
+                        <div class="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium"
+                             style="background:var(--app-panel-strong);border-color:var(--app-border);color:var(--app-text-muted)">
+                            <svg class="h-3.5 w-3.5" style="color:var(--app-brand)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+                            <span class="hidden md:inline">{{ $selectedBranch->name }}</span>
+                        </div>
+                        @endif
+                        @if (!$isSuperAdmin && $isOwnerBranchCtrl && $tenantBranches->count() > 0)
                         <div class="relative" id="branch-sw-wrap">
                             <button
                                 type="button"
@@ -524,6 +711,8 @@
 
         <script>
             const themeToggle = document.getElementById('theme-toggle');
+            const quickAddBtn = document.getElementById('quick-add-btn');
+            const quickAddDropdown = document.getElementById('quick-add-dropdown');
 
             if (themeToggle) {
                 themeToggle.addEventListener('click', () => {
@@ -536,20 +725,40 @@
             // Branch switcher dropdown
             const bsBtn      = document.getElementById('branch-sw-btn');
             const bsDropdown = document.getElementById('branch-sw-dropdown');
+            const closeTopbarMenus = () => {
+                bsDropdown?.classList.add('hidden');
+                bsBtn?.setAttribute('aria-expanded', 'false');
+                quickAddDropdown?.classList.add('hidden');
+                quickAddBtn?.setAttribute('aria-expanded', 'false');
+                userMenuDropdown?.classList.add('hidden');
+                userMenuBtn?.setAttribute('aria-expanded', 'false');
+            };
             if (bsBtn && bsDropdown) {
                 bsBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const isOpen = !bsDropdown.classList.contains('hidden');
+                    quickAddDropdown?.classList.add('hidden');
+                    quickAddBtn?.setAttribute('aria-expanded', 'false');
                     bsDropdown.classList.toggle('hidden', isOpen);
                     bsBtn.setAttribute('aria-expanded', String(!isOpen));
-                    // Close user menu if open
-                    document.getElementById('user-menu-dropdown')?.classList.add('hidden');
-                });
-                document.addEventListener('click', () => {
-                    bsDropdown.classList.add('hidden');
-                    bsBtn.setAttribute('aria-expanded', 'false');
+                    userMenuDropdown?.classList.add('hidden');
+                    userMenuBtn?.setAttribute('aria-expanded', 'false');
                 });
                 bsDropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            if (quickAddBtn && quickAddDropdown) {
+                quickAddBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isOpen = !quickAddDropdown.classList.contains('hidden');
+                    bsDropdown?.classList.add('hidden');
+                    bsBtn?.setAttribute('aria-expanded', 'false');
+                    userMenuDropdown?.classList.add('hidden');
+                    userMenuBtn?.setAttribute('aria-expanded', 'false');
+                    quickAddDropdown.classList.toggle('hidden', isOpen);
+                    quickAddBtn.setAttribute('aria-expanded', String(!isOpen));
+                });
+                quickAddDropdown.addEventListener('click', (e) => e.stopPropagation());
             }
 
             // User profile dropdown
@@ -558,23 +767,23 @@
             if (userMenuBtn && userMenuDropdown) {
                 userMenuBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Close branch switcher if open
-                    document.getElementById('branch-sw-dropdown')?.classList.add('hidden');
+                    bsDropdown?.classList.add('hidden');
+                    bsBtn?.setAttribute('aria-expanded', 'false');
+                    quickAddDropdown?.classList.add('hidden');
+                    quickAddBtn?.setAttribute('aria-expanded', 'false');
                     const isOpen = !userMenuDropdown.classList.contains('hidden');
                     userMenuDropdown.classList.toggle('hidden', isOpen);
                     userMenuBtn.setAttribute('aria-expanded', String(!isOpen));
                 });
-                document.addEventListener('click', () => {
-                    userMenuDropdown.classList.add('hidden');
-                    userMenuBtn.setAttribute('aria-expanded', 'false');
-                });
                 userMenuDropdown.addEventListener('click', (e) => e.stopPropagation());
             }
+
+            document.addEventListener('click', closeTopbarMenus);
 
             // Auto-dismiss flash messages after 10 s with a fade-out
             document.querySelectorAll('.flash-msg').forEach(el => {
                 el.style.maxHeight = el.scrollHeight + 'px'; // capture current height for collapse animation
-                const DELAY = 10000;
+                const DELAY = 5000;
                 const FADE  = 400;
                 const timer = setTimeout(() => {
                     el.style.transition = `opacity ${FADE}ms ease, margin-bottom ${FADE}ms ease, max-height ${FADE}ms ease`;

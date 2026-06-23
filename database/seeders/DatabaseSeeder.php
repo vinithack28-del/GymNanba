@@ -17,10 +17,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SuperAdminUserSeeder::class,
             PlatformLanguageSeeder::class,
+            StaffAccessControlSeeder::class,
             PhaseOneDemoSeeder::class,
-            MembersSeeder::class,
-            BranchesSeeder::class,
-            StaffSeeder::class,
+            // MembersSeeder::class,
+            // BranchesSeeder::class,
+            // StaffSeeder::class,
         ]);
     }
 }

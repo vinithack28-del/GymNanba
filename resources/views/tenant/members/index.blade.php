@@ -3,6 +3,23 @@
     eyebrow="Gym Workspace"
     heading="{{ __('members.title') }}"
 >
+    <x-slot:headerAction>
+        @if ($registrationUrl)
+            <a href="{{ route('tenant.members.registrations.index') }}"
+               class="app-panel-strong inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition hover:opacity-80">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Registrations
+                @if ($pendingRegistrationCount > 0)
+                    <span class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[var(--app-brand)] px-1.5 text-xs font-bold text-slate-950">{{ $pendingRegistrationCount }}</span>
+                @endif
+            </a>
+            <button id="member-link-btn"
+               class="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--app-brand)_40%,var(--app-border))] bg-[color-mix(in_srgb,var(--app-brand)_10%,transparent)] px-4 py-2.5 text-sm font-semibold text-[var(--app-brand)] transition hover:opacity-80">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Registration Link
+            </button>
+        @endif
+    </x-slot:headerAction>
 
 {{-- ── Branch context chip ───────────────────────────────────────────────── --}}
 @if (isset($selectedBranch) && $selectedBranch)
@@ -222,7 +239,7 @@
                                 @endif
                             </td>
                             <td class="member-td">
-                                @if ($member->balance_paise > 0)
+                                @if ($member->balance_paise < 0)
                                     <span class="font-semibold text-[#E24B4A] text-sm">{{ $member->balance_rupees }}</span>
                                 @else
                                     <span class="app-muted text-sm">₹0.00</span>
@@ -234,9 +251,36 @@
                                         <svg viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
                                     </button>
                                     <div class="member-actions-menu">
-                                        <a href="#" class="member-action-item">{{ __('members.actions.view_profile') }}</a>
+                                        <a href="{{ route('tenant.members.show', $member) }}" class="member-action-item">{{ __('members.actions.view_profile') }}</a>
                                         <a href="{{ route('tenant.members.edit', $member) }}" class="member-action-item">{{ __('members.actions.edit') }}</a>
-                                        <a href="#" class="member-action-item">{{ __('members.actions.collect_fee') }}</a>
+                                        <a href="{{ route('tenant.payments.collect', ['member_id' => $member->id]) }}" class="member-action-item">{{ __('members.actions.collect_fee') }}</a>
+                                        <div class="member-action-divider"></div>
+                                        @if ($member->status === 'frozen')
+                                            <form method="POST" action="{{ route('tenant.members.unfreeze', $member) }}">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="member-action-item member-action-unfreeze w-full text-left">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:.3rem"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
+                                                    Unfreeze Membership
+                                                </button>
+                                            </form>
+                                        @elseif ($member->effective_status === 'active')
+                                            @if ($member->plan?->allow_freeze)
+                                                <button type="button"
+                                                    class="member-action-item member-action-freeze w-full text-left"
+                                                    onclick="openFreezeModal({{ $member->id }}, '{{ addslashes($member->name) }}', true, {{ $member->plan->max_freeze_days ?? 0 }})">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:.3rem"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
+                                                    Freeze Membership
+                                                </button>
+                                            @else
+                                                <button type="button" disabled
+                                                    class="member-action-item w-full text-left"
+                                                    style="opacity:.4;cursor:not-allowed;"
+                                                    title="This plan does not allow freezing">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:.3rem"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
+                                                    Freeze Membership
+                                                </button>
+                                            @endif
+                                        @endif
                                         <div class="member-action-divider"></div>
                                         <form method="POST" action="{{ route('tenant.members.destroy', $member) }}"
                                               onsubmit="return confirm('{{ __('members.actions.delete_confirm', ['name' => addslashes($member->name)]) }}')">
@@ -326,8 +370,29 @@
 .member-actions-wrap.open .member-actions-menu { display: block; }
 .member-action-item { border-radius: 0.5rem; color: var(--app-text); cursor: pointer; display: block; font-size: 0.8rem; padding: 0.45rem 0.6rem; text-decoration: none; transition: background 120ms; background: transparent; border: none; }
 .member-action-item:hover { background: color-mix(in srgb, var(--app-border) 70%, transparent); }
-.member-action-danger { color: #E24B4A !important; }
+.member-action-danger  { color: #E24B4A !important; }
+.member-action-freeze  { color: #378ADD !important; }
+.member-action-unfreeze{ color: #1D9E75 !important; }
 .member-action-divider { border-top: 1px solid var(--app-border); margin: 0.25rem 0; }
+
+/* Freeze modal */
+.freeze-modal-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:300; align-items:center; justify-content:center; padding:1rem; }
+.freeze-modal-backdrop.open { display:flex; }
+.freeze-modal { background:var(--app-panel); border:1px solid var(--app-border); border-radius:1.5rem; width:100%; max-width:420px; box-shadow:0 8px 40px rgba(0,0,0,.18); overflow:hidden; }
+.freeze-modal-head { padding:1.1rem 1.4rem; border-bottom:1px solid var(--app-border); display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
+.freeze-modal-head h3 { font-size:.95rem; font-weight:700; color:var(--app-text); }
+.freeze-modal-head p  { font-size:.8rem; color:var(--app-text-muted); margin-top:.15rem; }
+.freeze-modal-body { padding:1.25rem 1.4rem; display:flex; flex-direction:column; gap:.85rem; }
+.freeze-modal-foot { padding:1rem 1.4rem; border-top:1px solid var(--app-border); display:flex; gap:.6rem; justify-content:flex-end; }
+.freeze-field label { display:block; font-size:.78rem; font-weight:600; color:var(--app-text-muted); margin-bottom:.35rem; }
+.freeze-field input  { width:100%; border:1px solid var(--app-border); border-radius:.6rem; padding:.5rem .75rem; font-size:.9rem; background:transparent; color:var(--app-text); outline:none; }
+.freeze-field input:focus { border-color:var(--app-brand); }
+.freeze-hint { font-size:.78rem; color:var(--app-text-muted); margin-top:.25rem; }
+.freeze-alert { display:none; font-size:.78rem; color:#ef4444; margin-top:.25rem; }
+.freeze-btn-cancel  { border:1px solid var(--app-border); background:transparent; border-radius:.65rem; padding:.45rem .9rem; font-size:.85rem; font-weight:500; color:var(--app-text-muted); cursor:pointer; }
+.freeze-btn-confirm { border:none; background:#378ADD; color:#fff; border-radius:.65rem; padding:.45rem 1rem; font-size:.85rem; font-weight:600; cursor:pointer; transition:opacity .15s; }
+.freeze-btn-confirm:hover { opacity:.85; }
+.freeze-btn-confirm:disabled { opacity:.45; cursor:not-allowed; }
 
 /* Empty state */
 .member-empty-icon { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 999px; color: var(--app-text-muted); display: inline-flex; height: 4.5rem; width: 4.5rem; align-items: center; justify-content: center; }
@@ -376,6 +441,192 @@
     document.addEventListener('click', () => {
         document.querySelectorAll('.member-actions-wrap.open').forEach(w => w.classList.remove('open'));
     });
+})();
+</script>
+
+@if ($registrationUrl)
+{{-- ── Registration Link Modal ────────────────────────────────────────────── --}}
+<div id="member-link-modal" class="reg-modal-backdrop hidden">
+    <div class="reg-modal">
+        <div class="reg-modal-head">
+            <h3>Registration Link</h3>
+            <button type="button" onclick="document.getElementById('member-link-modal').classList.add('hidden')" class="reg-modal-close">✕</button>
+        </div>
+        <p class="reg-modal-sub">Share this link so people can fill in their details online.</p>
+
+        <div class="reg-url-row mb-4">
+            <input type="text" id="member-reg-url" readonly value="{{ $registrationUrl }}" class="reg-url-input">
+            <button type="button" onclick="copyMemberUrl()" id="member-copy-btn" class="reg-copy-btn">Copy</button>
+        </div>
+
+        <div class="reg-divider"></div>
+        <p class="reg-label mb-3">Share via Email</p>
+
+        @if (session('email_sent'))
+            <p class="text-xs text-emerald-400 mb-3">{{ session('email_sent') }}</p>
+        @endif
+
+        <form method="POST" action="{{ route('tenant.members.registration-link.email') }}">
+            @csrf
+            <div class="flex gap-2">
+                <input type="email" name="email" class="reg-input flex-1" placeholder="recipient@example.com" required>
+                <button type="submit" class="reg-btn-primary shrink-0">Send</button>
+            </div>
+        </form>
+
+        <div class="reg-divider"></div>
+        <a href="{{ route('tenant.members.registrations.index') }}"
+           class="flex items-center gap-2 text-sm font-medium text-[var(--app-brand)] hover:opacity-80">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            View pending registrations
+            @if ($pendingRegistrationCount > 0)
+                <span class="rounded-full bg-[var(--app-brand)] px-2 py-0.5 text-xs text-slate-950 font-bold">{{ $pendingRegistrationCount }}</span>
+            @endif
+        </a>
+    </div>
+</div>
+
+@push('styles')
+<style>
+.reg-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.reg-modal-backdrop.hidden { display: none; }
+.reg-modal { background: var(--app-panel); border: 1px solid var(--app-border); border-radius: 1.5rem; padding: 1.5rem; width: 100%; max-width: 460px; }
+.reg-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.reg-modal-head h3 { font-size: 1.05rem; font-weight: 700; }
+.reg-modal-close { background: transparent; border: none; color: var(--app-text-muted); cursor: pointer; font-size: 1rem; padding: 0.2rem; }
+.reg-modal-sub { color: var(--app-text-muted); font-size: 0.82rem; margin-bottom: 1rem; }
+.reg-label { color: var(--app-text-muted); font-size: 0.78rem; font-weight: 500; }
+.reg-input { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.65rem; color: var(--app-text); font-size: 0.875rem; outline: none; padding: 0.5rem 0.75rem; width: 100%; transition: border-color 150ms; }
+.reg-input:focus { border-color: color-mix(in srgb, var(--app-brand) 60%, var(--app-border)); }
+.reg-url-row { display: flex; gap: 0.5rem; align-items: center; }
+.reg-url-input { background: var(--app-panel-strong); border: 1px solid var(--app-border); border-radius: 0.65rem; color: var(--app-text-muted); flex: 1; font-family: monospace; font-size: 0.72rem; outline: none; padding: 0.5rem 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reg-copy-btn { background: color-mix(in srgb, var(--app-brand) 12%, transparent); border: 1px solid color-mix(in srgb, var(--app-brand) 30%, var(--app-border)); border-radius: 0.65rem; color: var(--app-brand); cursor: pointer; font-size: 0.78rem; font-weight: 600; padding: 0.5rem 0.85rem; transition: opacity 150ms; white-space: nowrap; }
+.reg-btn-primary { background: var(--app-brand); border: none; border-radius: 0.65rem; color: #0f172a; cursor: pointer; font-size: 0.82rem; font-weight: 600; padding: 0.5rem 1rem; transition: opacity 150ms; white-space: nowrap; }
+.reg-btn-primary:hover { opacity: 0.88; }
+.reg-divider { height: 1px; background: var(--app-border); margin: 1rem 0; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mb-4 { margin-bottom: 1rem; }
+.flex { display: flex; }
+.flex-1 { flex: 1; }
+.gap-2 { gap: 0.5rem; }
+.shrink-0 { flex-shrink: 0; }
+</style>
+@endpush
+
+<script>
+document.getElementById('member-link-btn')?.addEventListener('click', function () {
+    document.getElementById('member-link-modal').classList.remove('hidden');
+});
+
+document.getElementById('member-link-modal')?.addEventListener('click', function (e) {
+    if (e.target === this) this.classList.add('hidden');
+});
+
+function copyMemberUrl() {
+    const input = document.getElementById('member-reg-url');
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = document.getElementById('member-copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1800);
+    }).catch(() => { input.select(); document.execCommand('copy'); });
+}
+
+@if(session('email_sent'))
+    document.getElementById('member-link-modal')?.classList.remove('hidden');
+@endif
+</script>
+@endif
+
+{{-- ── Freeze Modal ──────────────────────────────────────────────────────── --}}
+<div id="freeze-modal" class="freeze-modal-backdrop" onclick="if(event.target===this)closeFreezeModal()">
+    <div class="freeze-modal">
+        <div class="freeze-modal-head">
+            <div>
+                <h3>Freeze Membership</h3>
+                <p id="freeze-member-name"></p>
+            </div>
+            <button type="button" onclick="closeFreezeModal()" style="border:none;background:none;cursor:pointer;color:var(--app-text-muted);font-size:1.1rem;line-height:1;padding:.2rem">✕</button>
+        </div>
+        <form id="freeze-form" method="POST">
+            @csrf
+            @method('PATCH')
+            <div class="freeze-modal-body">
+                <div class="freeze-field">
+                    <label for="freeze-days-input">
+                        Number of days to freeze
+                    </label>
+                    <input type="number" id="freeze-days-input" name="freeze_days" min="1" value="30" oninput="validateFreezeDays()">
+                    <p class="freeze-hint" id="freeze-max-hint"></p>
+                    <p class="freeze-alert" id="freeze-days-error"></p>
+                </div>
+                <div id="freeze-no-allow-alert" style="display:none;padding:.75rem;background:rgba(226,75,74,.08);border:1px solid rgba(226,75,74,.25);border-radius:.8rem;font-size:.82rem;color:#991b1b">
+                    This member's plan does not allow membership freeze.
+                </div>
+            </div>
+            <div class="freeze-modal-foot">
+                <button type="button" class="freeze-btn-cancel" onclick="closeFreezeModal()">Cancel</button>
+                <button type="submit" class="freeze-btn-confirm" id="freeze-submit-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;display:inline;margin-right:.3rem"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
+                    Freeze Membership
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+    let maxFreezeDays = 0;
+    let allowFreeze   = true;
+
+    window.openFreezeModal = function (memberId, memberName, planAllowFreeze, planMaxDays) {
+        allowFreeze   = planAllowFreeze;
+        maxFreezeDays = planMaxDays;
+
+        document.getElementById('freeze-member-name').textContent = memberName;
+        document.getElementById('freeze-form').action = '{{ url("members") }}/' + memberId + '/freeze';
+        document.getElementById('freeze-days-input').value = planMaxDays > 0 ? planMaxDays : 30;
+
+        const noAllowAlert = document.getElementById('freeze-no-allow-alert');
+        const submitBtn    = document.getElementById('freeze-submit-btn');
+        const maxHint      = document.getElementById('freeze-max-hint');
+
+        if (!planAllowFreeze) {
+            noAllowAlert.style.display = 'block';
+            submitBtn.disabled = true;
+            maxHint.textContent = '';
+        } else {
+            noAllowAlert.style.display = 'none';
+            submitBtn.disabled = false;
+            maxHint.textContent = planMaxDays > 0
+                ? 'Maximum allowed by plan: ' + planMaxDays + ' days.'
+                : '';
+        }
+
+        validateFreezeDays();
+        document.getElementById('freeze-modal').classList.add('open');
+        document.getElementById('freeze-days-input').focus();
+    };
+
+    window.closeFreezeModal = function () {
+        document.getElementById('freeze-modal').classList.remove('open');
+    };
+
+    window.validateFreezeDays = function () {
+        if (!allowFreeze) return;
+        const val  = parseInt(document.getElementById('freeze-days-input').value || '0');
+        const errEl = document.getElementById('freeze-days-error');
+        const btn   = document.getElementById('freeze-submit-btn');
+
+        if (maxFreezeDays > 0 && val > maxFreezeDays) {
+            errEl.textContent = 'Cannot exceed ' + maxFreezeDays + ' days (plan limit).';
+            errEl.style.display = 'block';
+            btn.disabled = true;
+        } else {
+            errEl.style.display = 'none';
+            btn.disabled = false;
+        }
+    };
 })();
 </script>
 
