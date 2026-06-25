@@ -12,7 +12,7 @@ class UpdateAccountRequest extends FormRequest
     {
         return [
             'name'   => ['required', 'string', 'min:2', 'max:100'],
-            'phone'  => ['nullable', 'string', 'max:20'],
+            'phone'  => ['nullable', 'string', 'min:10', 'max:20'],
             'avatar' => ['nullable', 'file', 'mimes:jpg,jpeg,png', 'max:2048'],
         ];
     }

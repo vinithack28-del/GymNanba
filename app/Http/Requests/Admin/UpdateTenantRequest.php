@@ -25,7 +25,7 @@ class UpdateTenantRequest extends FormRequest
             'state' => ['required', 'string', 'max:100'],
             'address' => ['required', 'string', 'min:10', 'max:200'],
             'gst_number' => ['nullable', 'string', 'max:30'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'min:10', 'max:20'],
             'owner_name' => ['required', 'string', 'min:2', 'max:100'],
             'owner_email' => [
                 'required',
@@ -39,9 +39,11 @@ class UpdateTenantRequest extends FormRequest
             'domain_mode' => ['required', Rule::in(['shared', 'separate'])],
             'custom_domain' => ['nullable', 'string', 'max:255', 'required_if:domain_mode,separate', Rule::unique('tenants', 'custom_domain')->ignore($tenant->id)],
             'database_mode' => ['required', Rule::in(['shared', 'separate'])],
-            'status' => ['required', Rule::in(['active', 'trial', 'suspended', 'archived'])],
+            'status'           => ['required', Rule::in(['active', 'trial', 'trial_ended', 'subscription_expired', 'suspended', 'archived'])],
             'default_language' => ['required', 'exists:platform_languages,locale_code'],
-            'notes' => ['nullable', 'string'],
+            'plan_id'          => ['nullable', 'exists:plans,id'],
+            'trial_end_date'   => ['nullable', 'date'],
+            'notes'            => ['nullable', 'string'],
         ];
     }
 

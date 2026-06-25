@@ -246,7 +246,7 @@ class SettingController extends Controller
     {
         $this->ownerOnly();
         $tenant       = Auth::user()->tenant;
-        $subscription = $tenant->subscriptions()->latest()->first();
+        $subscription = $tenant->subscriptions()->with('plan')->latest()->first();
 
         return view('tenant.settings.subscription', compact('tenant', 'subscription'));
     }

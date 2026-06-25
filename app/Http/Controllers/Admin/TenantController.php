@@ -20,8 +20,8 @@ class TenantController extends Controller
     public function index(Request $request): View
     {
         return view('admin.tenants.index', [
-            'tenants' => $this->tenantService->paginate($request->only(['search', 'status', 'business_type'])),
-            'statuses' => ['active', 'trial', 'suspended', 'archived'],
+            'tenants' => $this->tenantService->paginate($request->only(['search', 'status', 'business_type', 'per_page'])),
+            'statuses' => ['active', 'trial', 'trial_ended', 'subscription_expired', 'suspended', 'archived'],
             'businessTypes' => ['Gym', 'Yoga', 'Turf'],
         ]);
     }
@@ -33,10 +33,7 @@ class TenantController extends Controller
 
     public function store(StoreTenantRequest $request): RedirectResponse
     {
-        $tenant = $this->tenantService->create(
-            $request->validated(),
-            $request->boolean('trial_enabled'),
-        );
+        $tenant = $this->tenantService->create($request->validated());
 
         return redirect()->route('admin.tenants.show', $tenant)->with('status', 'Tenant created successfully. Owner login is ready.');
     }

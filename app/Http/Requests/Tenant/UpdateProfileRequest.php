@@ -20,7 +20,7 @@ class UpdateProfileRequest extends FormRequest
             'city'          => ['required', 'string', 'min:2', 'max:50'],
             'state'         => ['required', 'string', 'max:50'],
             'pin'           => ['required', 'digits:6'],
-            'phone'         => ['required', 'string', 'max:20'],
+            'phone'         => ['required', 'string', 'min:10', 'max:20'],
             'email'         => ['required', 'email', 'max:255'],
             'website'       => ['nullable', 'url', 'max:255'],
             'gstin'         => ['nullable', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][A-Z0-9]Z[0-9A-Z]$/'],

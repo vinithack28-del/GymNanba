@@ -98,27 +98,30 @@
             {{-- Contact & Identity --}}
             <section class="app-panel rounded-[2rem] border p-6">
                 <h3 class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--app-text-muted)]">Owner & Contact</h3>
-                <div class="grid gap-3 sm:grid-cols-2">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
                     @php
-                        $infoTiles = [
-                            ['label' => 'Owner Name',   'value' => $tenant->owner_name,  'mono' => false],
-                            ['label' => 'Owner Email',  'value' => $tenant->owner_email, 'mono' => false],
-                            ['label' => 'Login Email',  'value' => $tenant->ownerUser?->email ?? $tenant->owner_email, 'mono' => false],
-                            ['label' => 'Phone',        'value' => $tenant->phone ?: '—', 'mono' => false],
-                            ['label' => 'GST Number',   'value' => $tenant->gst_number ?: '—', 'mono' => true],
-                            ['label' => 'Language',     'value' => strtoupper($tenant->default_language), 'mono' => false],
+                        $infoPairs = [
+                            [['label'=>'Owner Name',  'value'=>$tenant->owner_name,  'mono'=>false],
+                             ['label'=>'Owner Email', 'value'=>$tenant->owner_email, 'mono'=>false]],
+                            [['label'=>'Login Email', 'value'=>$tenant->ownerUser?->email ?? $tenant->owner_email, 'mono'=>false],
+                             ['label'=>'Phone',       'value'=>$tenant->phone ?: '—', 'mono'=>false]],
+                            [['label'=>'GST Number',  'value'=>$tenant->gst_number ?: '—', 'mono'=>true],
+                             ['label'=>'Language',    'value'=>strtoupper($tenant->default_language), 'mono'=>false]],
                         ];
                     @endphp
-                    @foreach ($infoTiles as $tile)
-                        <div class="app-panel-strong rounded-2xl border p-4">
-                            <p class="app-muted text-xs uppercase tracking-[0.22em]">{{ $tile['label'] }}</p>
-                            <p class="mt-1.5 text-sm font-semibold {{ $tile['mono'] ? 'font-mono' : '' }}">{{ $tile['value'] }}</p>
-                        </div>
+                    @foreach ($infoPairs as $pairIdx => $pair)
+                        @foreach ($pair as $colIdx => $field)
+                            <div style="padding:1rem 1rem 1rem {{ $colIdx === 0 ? '0' : '1rem' }};{{ $pairIdx < count($infoPairs) - 1 ? 'border-bottom:1px solid var(--app-border)' : '' }};{{ $colIdx === 0 ? 'border-right:1px solid var(--app-border)' : '' }}">
+                                <p style="font-size:.72rem;font-weight:600;color:var(--app-text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem">{{ $field['label'] }}</p>
+                                <p style="font-size:.9rem;font-weight:600;color:var(--app-text);{{ $field['mono'] ? 'font-family:monospace;' : '' }}word-break:break-all">{{ $field['value'] }}</p>
+                            </div>
+                        @endforeach
                     @endforeach
-                    <div class="app-panel-strong rounded-2xl border p-4 sm:col-span-2">
-                        <p class="app-muted text-xs uppercase tracking-[0.22em]">Address</p>
-                        <p class="mt-1.5 text-sm font-semibold">{{ $tenant->address }}</p>
-                        <p class="app-muted mt-0.5 text-xs">{{ $tenant->city }}, {{ $tenant->state }}</p>
+                    {{-- Address — full width --}}
+                    <div style="grid-column:span 2;padding:1rem 0 0">
+                        <p style="font-size:.72rem;font-weight:600;color:var(--app-text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem">Address</p>
+                        <p style="font-size:.9rem;font-weight:600;color:var(--app-text)">{{ $tenant->address }}</p>
+                        <p style="font-size:.8rem;color:var(--app-text-muted);margin-top:.2rem">{{ $tenant->city }}, {{ $tenant->state }}</p>
                     </div>
                 </div>
             </section>
@@ -126,23 +129,29 @@
             {{-- Technical --}}
             <section class="app-panel rounded-[2rem] border p-6">
                 <h3 class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-[var(--app-text-muted)]">Routing & Technical</h3>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    @php
-                        $techTiles = [
-                            ['label' => 'Subdomain',     'value' => $tenant->subdomain.'.gymos.in', 'mono' => true],
-                            ['label' => 'Domain Mode',   'value' => ucfirst($tenant->domain_mode),  'mono' => false],
-                            ['label' => 'Database Mode', 'value' => ucfirst($tenant->database_mode),'mono' => false],
-                            ['label' => 'Database Name', 'value' => $tenant->database_name ?: 'Main database', 'mono' => true],
-                        ];
-                        if ($tenant->domain_mode === 'separate' && $tenant->custom_domain) {
-                            $techTiles[] = ['label' => 'Custom Domain', 'value' => $tenant->custom_domain, 'mono' => true];
-                        }
-                    @endphp
-                    @foreach ($techTiles as $tile)
-                        <div class="app-panel-strong rounded-2xl border p-4">
-                            <p class="app-muted text-xs uppercase tracking-[0.22em]">{{ $tile['label'] }}</p>
-                            <p class="mt-1.5 text-sm font-semibold {{ $tile['mono'] ? 'font-mono' : '' }}">{{ $tile['value'] }}</p>
-                        </div>
+                @php
+                    $techPairs = [
+                        [['label'=>'Subdomain',     'value'=>$tenant->subdomain.'.gymos.in', 'mono'=>true],
+                         ['label'=>'Domain Mode',   'value'=>ucfirst($tenant->domain_mode),  'mono'=>false]],
+                        [['label'=>'Database Mode', 'value'=>ucfirst($tenant->database_mode),'mono'=>false],
+                         ['label'=>'Database Name', 'value'=>$tenant->database_name ?: 'Main database', 'mono'=>true]],
+                    ];
+                    if ($tenant->domain_mode === 'separate' && $tenant->custom_domain) {
+                        $techPairs[] = [['label'=>'Custom Domain','value'=>$tenant->custom_domain,'mono'=>true], null];
+                    }
+                @endphp
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+                    @foreach ($techPairs as $pairIdx => $pair)
+                        @foreach ($pair as $colIdx => $field)
+                            @if ($field)
+                                <div style="padding:1rem 1rem 1rem {{ $colIdx === 0 ? '0' : '1rem' }};{{ $pairIdx < count($techPairs) - 1 ? 'border-bottom:1px solid var(--app-border)' : '' }};{{ $colIdx === 0 ? 'border-right:1px solid var(--app-border)' : '' }}">
+                                    <p style="font-size:.72rem;font-weight:600;color:var(--app-text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem">{{ $field['label'] }}</p>
+                                    <p style="font-size:.9rem;font-weight:600;color:var(--app-text);{{ $field['mono'] ? 'font-family:monospace;' : '' }}word-break:break-all">{{ $field['value'] }}</p>
+                                </div>
+                            @else
+                                <div></div>
+                            @endif
+                        @endforeach
                     @endforeach
                 </div>
             </section>

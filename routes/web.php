@@ -68,6 +68,8 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
         Route::post('/plans', [PlanController::class, 'store'])->name('plans.store');
         Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+        Route::post('/invoices/renewals', [AdminInvoiceController::class, 'storeRenewal'])->name('invoices.renewals.store');
+        Route::post('/invoices/part-payment', [AdminInvoiceController::class, 'storePartPayment'])->name('invoices.part-payment.store');
         Route::post('/invoices/payments', [AdminInvoiceController::class, 'storePayment'])->name('invoices.payments.store');
         Route::get('/audit-log', [AuditLogController::class, 'index'])->name('audit-log.index');
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');

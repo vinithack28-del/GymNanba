@@ -18,17 +18,21 @@ class PlanService
 
     public function create(array $validated): Plan
     {
+        $isTrial = (bool) ($validated['is_trial'] ?? false);
+
         $plan = Plan::query()->create([
-            'name' => $validated['name'],
-            'billing_cycle' => $validated['billing_cycle'],
-            'price_paise' => (int) round(((float) $validated['price_inr']) * 100),
-            'max_members' => $validated['max_members'],
-            'max_branches' => $validated['max_branches'],
-            'max_staff_accounts' => $validated['max_staff_accounts'],
-            'feature_flags' => collect($validated['features'] ?? [])->mapWithKeys(fn ($feature) => [$feature => true])->all(),
-            'trial_eligible' => (bool) ($validated['trial_eligible'] ?? false),
-            'description' => $validated['description'] ?? null,
-            'status' => $validated['status'],
+            'name'               => $validated['name'],
+            'is_trial'           => $isTrial,
+            'trial_days'         => $isTrial ? (int) $validated['trial_days'] : null,
+            'billing_cycle'      => $isTrial ? null : $validated['billing_cycle'],
+            'price_paise'        => $isTrial ? 0 : (int) round(((float) $validated['price_inr']) * 100),
+            'max_members'        => $isTrial ? 0 : ($validated['max_members'] ?? 0),
+            'max_branches'       => $isTrial ? 0 : ($validated['max_branches'] ?? 0),
+            'max_staff_accounts' => $isTrial ? 0 : ($validated['max_staff_accounts'] ?? 0),
+            'feature_flags'      => $isTrial ? [] : collect($validated['features'] ?? [])->mapWithKeys(fn ($feature) => [$feature => true])->all(),
+            'trial_eligible'     => $isTrial ? true : (bool) ($validated['trial_eligible'] ?? false),
+            'description'        => $validated['description'] ?? null,
+            'status'             => $validated['status'],
         ]);
 
         $this->auditLogService->log(

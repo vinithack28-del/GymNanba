@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="260" viewBox="0 0 680 260" role="img">
+  <title>Gym Nanba logo</title>
+  <desc>Gym Nanba logo with dumbbell icon, bold wordmark in white and lime green, and tagline</desc>
+
+  <rect x="0" y="0" width="680" height="260" fill="#0f1117" rx="20"/>
+
+  <!-- Dumbbell icon -->
+  <g transform="translate(200, 52)">
+    <rect x="0" y="14" width="13" height="36" fill="#a3e635" rx="4"/>
+    <rect x="13" y="22" width="8" height="20" fill="#a3e635" rx="3"/>
+    <line x1="21" y1="32" x2="259" y2="32" stroke="#a3e635" stroke-width="6" stroke-linecap="round"/>
+    <rect x="259" y="22" width="8" height="20" fill="#a3e635" rx="3"/>
+    <rect x="267" y="14" width="13" height="36" fill="#a3e635" rx="4"/>
+  </g>
+
+  <!-- GYM wordmark -->
+  <text
+    x="340"
+    y="155"
+    font-family="Arial, sans-serif"
+    font-weight="800"
+    font-size="72"
+    text-anchor="middle"
+    letter-spacing="-2"
+    fill="#ffffff">GYM</text>
+
+  <!-- NANBA wordmark -->
+  <text
+    x="340"
+    y="210"
+    font-family="Arial, sans-serif"
+    font-weight="800"
+    font-size="72"
+    text-anchor="middle"
+    letter-spacing="-2"
+    fill="#a3e635">NANBA</text>
+
+  <!-- Tagline -->
+  <text
+    x="340"
+    y="242"
+    font-family="Arial, sans-serif"
+    font-weight="400"
+    font-size="13"
+    text-anchor="middle"
+    letter-spacing="5"
+    fill="#4b5563">YOUR FITNESS PARTNER</text>
+</svg>

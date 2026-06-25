@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Change Password | {{ config('app.name', 'GymNanba') }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
         @vite(['resources/css/app.css'])
     </head>
     <body class="min-h-screen">

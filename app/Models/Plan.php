@@ -19,6 +19,8 @@ class Plan extends Model
         'max_staff_accounts',
         'feature_flags',
         'trial_eligible',
+        'is_trial',
+        'trial_days',
         'description',
         'status',
     ];
@@ -28,6 +30,7 @@ class Plan extends Model
         return [
             'feature_flags' => 'array',
             'trial_eligible' => 'boolean',
+            'is_trial'       => 'boolean',
         ];
     }
 

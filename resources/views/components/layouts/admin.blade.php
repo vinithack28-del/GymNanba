@@ -353,6 +353,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $title }} | {{ config('app.name', 'GymNanba') }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
 
         <script>
             document.documentElement.dataset.theme = localStorage.getItem('gymos-theme') || 'dark';
@@ -406,8 +407,8 @@
             <header class="app-topbar sticky top-0 z-30 border-b px-4 py-4 backdrop-blur lg:px-6">
                 <div class="flex w-full items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div class="app-brand-soft app-brand-text flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-semibold">
-                            G
+                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden">
+                            <img src="{{ asset('images/GymNanba_Logo.svg') }}" alt="GymNanba" class="h-full w-full object-contain">
                         </div>
                         <div>
                             <p class="app-brand-text text-xs font-semibold uppercase tracking-[0.42em]">{{ $portalEyebrow }}</p>

@@ -19,7 +19,8 @@ class StorePaymentRequest extends FormRequest
             'amount_inr' => ['required', 'numeric', 'min:1'],
             'payment_method' => ['required', Rule::in(['Cash', 'Bank transfer', 'UPI', 'Cheque'])],
             'transaction_ref' => ['nullable', 'string', 'max:100'],
-            'paid_at' => ['required', 'date'],
+            'paid_at'         => ['required', 'date'],
+            'notes'           => ['nullable', 'string', 'max:255'],
         ];
     }
 }

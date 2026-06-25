@@ -14,17 +14,21 @@ class StorePlanRequest extends FormRequest
 
     public function rules(): array
     {
+        $isTrial = $this->boolean('is_trial');
+
         return [
-            'name' => ['required', 'string', 'max:50', 'unique:plans,name'],
-            'billing_cycle' => ['required', Rule::in(['Monthly', 'Quarterly', 'Annual'])],
-            'price_inr' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'max_members' => ['required', 'integer', 'min:0'],
-            'max_branches' => ['required', 'integer', 'min:0'],
-            'max_staff_accounts' => ['required', 'integer', 'min:0'],
-            'trial_eligible' => ['nullable', 'boolean'],
-            'description' => ['nullable', 'string', 'max:500'],
-            'status' => ['required', Rule::in(['active', 'archived'])],
-            'features' => ['nullable', 'array'],
+            'name'               => ['required', 'string', 'max:50', 'unique:plans,name'],
+            'is_trial'           => ['nullable', 'boolean'],
+            'trial_days'         => $isTrial ? ['required', 'integer', 'min:1', 'max:14'] : ['nullable'],
+            'billing_cycle'      => $isTrial ? ['nullable'] : ['required', Rule::in(['Monthly', 'Quarterly', 'Annual'])],
+            'price_inr'          => $isTrial ? ['nullable'] : ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'max_members'        => $isTrial ? ['nullable'] : ['required', 'integer', 'min:0'],
+            'max_branches'       => $isTrial ? ['nullable'] : ['required', 'integer', 'min:0'],
+            'max_staff_accounts' => $isTrial ? ['nullable'] : ['required', 'integer', 'min:0'],
+            'trial_eligible'     => ['nullable', 'boolean'],
+            'description'        => ['nullable', 'string', 'max:500'],
+            'status'             => ['required', Rule::in(['active', 'archived'])],
+            'features'           => ['nullable', 'array'],
         ];
     }
 }

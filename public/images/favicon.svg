@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0f1117" rx="96"/>
+
+  <!-- dumbbell bar -->
+  <line x1="96" y1="256" x2="416" y2="256" stroke="#a3e635" stroke-width="40" stroke-linecap="round"/>
+
+  <!-- left outer plate -->
+  <rect x="68" y="174" width="52" height="164" fill="#a3e635" rx="14"/>
+  <!-- left inner collar -->
+  <rect x="120" y="200" width="32" height="112" fill="#a3e635" rx="10"/>
+
+  <!-- right inner collar -->
+  <rect x="360" y="200" width="32" height="112" fill="#a3e635" rx="10"/>
+  <!-- right outer plate -->
+  <rect x="392" y="174" width="52" height="164" fill="#a3e635" rx="14"/>
+
+  <!-- GN text -->
+  <text x="256" y="348" font-family="Arial,sans-serif" font-weight="800"
+        font-size="100" text-anchor="middle" fill="#ffffff" letter-spacing="-3">GN</text>
+</svg>

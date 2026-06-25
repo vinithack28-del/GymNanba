@@ -17,18 +17,18 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                     <div>
                         <p class="text-xs mb-0.5" style="color:var(--app-text-muted)">{{ __('settings.subscription.field.plan') }}</p>
-                        <p class="text-base font-bold" style="color:var(--app-text)">{{ $subscription->plan_name ?? '—' }}</p>
+                        <p class="text-base font-bold" style="color:var(--app-text)">{{ $subscription->plan?->name ?? '—' }}</p>
                     </div>
                     <div>
                         <p class="text-xs mb-0.5" style="color:var(--app-text-muted)">{{ __('settings.subscription.field.renewal') }}</p>
                         <p class="text-base font-semibold" style="color:var(--app-text)">
-                            {{ $subscription->ends_at ? \Carbon\Carbon::parse($subscription->ends_at)->format('d M Y') : '—' }}
+                            {{ $subscription->end_date ? $subscription->end_date->format('d M Y') : '—' }}
                         </p>
                     </div>
                     <div>
                         <p class="text-xs mb-0.5" style="color:var(--app-text-muted)">{{ __('settings.subscription.field.amount') }}</p>
                         <p class="text-base font-semibold" style="color:var(--app-text)">
-                            {{ $subscription->amount ? '₹' . number_format($subscription->amount / 100, 2) : '—' }}
+                            {{ $subscription->price_paise ? '₹' . number_format($subscription->price_paise / 100, 2) : '—' }}
                         </p>
                     </div>
                     <div>

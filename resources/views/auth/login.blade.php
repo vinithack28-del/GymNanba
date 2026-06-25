@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Sign in | {{ config('app.name', 'GymNanba') }}</title>
+        <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
 
         <script>
             document.documentElement.dataset.theme = localStorage.getItem('gymos-theme') || 'dark';
@@ -16,8 +17,8 @@
             <header class="app-topbar sticky top-0 z-30 border-b px-4 py-4 backdrop-blur lg:px-6">
                 <div class="flex w-full items-center justify-between gap-4">
                     <div class="flex items-center gap-4">
-                        <div class="app-brand-soft app-brand-text flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-semibold">
-                            G
+                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden">
+                            <img src="{{ asset('images/GymNanba_Logo.svg') }}" alt="GymNanba" class="h-full w-full object-contain">
                         </div>
                         <div>
                             <p class="app-brand-text text-xs font-semibold uppercase tracking-[0.42em]">{{ __('common.app_name') }}</p>
@@ -44,7 +45,7 @@
             <main class="flex min-h-[calc(100vh-76px)] w-full items-center px-4 py-8 lg:px-8">
                 <div class="grid w-full gap-10 lg:grid-cols-[minmax(0,1.2fr)_640px]">
                 <section class="flex flex-col justify-center">
-                    <p class="app-brand-text text-sm font-semibold uppercase tracking-[0.4em]">GymNanba</p>
+                    <img src="{{ asset('images/GymNanba_Logo.svg') }}" alt="GymNanba" class="h-10 w-auto">
                     <h1 class="mt-6 max-w-2xl text-5xl font-semibold tracking-tight sm:text-6xl">
                         Unified access for every role in your gym.
                     </h1>

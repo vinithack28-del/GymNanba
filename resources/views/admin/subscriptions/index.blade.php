@@ -23,8 +23,17 @@
                         <td class="px-4 py-4">{{ $subscription->tenant->gym_name }}</td>
                         <td class="px-4 py-4">{{ $subscription->plan->name }}</td>
                         <td class="px-4 py-4">
-                            <span class="rounded-full {{ $subscription->status === 'trial' ? 'bg-sky-500/15 text-sky-300' : ($subscription->status === 'cancelled' ? 'bg-slate-500/15 text-slate-300' : 'bg-emerald-500/15 text-emerald-300') }} px-3 py-1 text-xs uppercase tracking-[0.2em]">
-                                {{ $subscription->status }}
+                            @php
+                                $sc = match($subscription->status) {
+                                    'trial'       => 'bg-sky-500/15 text-sky-300',
+                                    'trial_ended' => 'bg-amber-500/15 text-amber-300',
+                                    'expired'     => 'bg-red-500/15 text-red-300',
+                                    'cancelled'   => 'bg-slate-500/15 text-slate-300',
+                                    default       => 'bg-emerald-500/15 text-emerald-300',
+                                };
+                            @endphp
+                            <span class="rounded-full {{ $sc }} px-3 py-1 text-xs uppercase tracking-[0.2em]">
+                                {{ str_replace('_', ' ', $subscription->status) }}
                             </span>
                         </td>
                         <td class="px-4 py-4">{{ $subscription->start_date?->format('d M Y') }}</td>

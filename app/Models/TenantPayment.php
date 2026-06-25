@@ -13,16 +13,21 @@ class TenantPayment extends Model
     protected $fillable = [
         'tenant_id',
         'admin_id',
+        'subscription_id',
         'amount_paise',
         'payment_method',
         'transaction_ref',
+        'splits',
         'paid_at',
+        'payment_type',
+        'notes',
     ];
 
     protected function casts(): array
     {
         return [
             'paid_at' => 'date',
+            'splits'  => 'array',
         ];
     }
 
@@ -34,5 +39,10 @@ class TenantPayment extends Model
     public function admin(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
     }
 }
