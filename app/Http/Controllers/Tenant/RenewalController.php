@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GymMembershipPlan;
 use App\Models\Member;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class RenewalController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
         $today  = now()->toDateString();
 
@@ -67,7 +66,7 @@ class RenewalController extends Controller
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
 
-        return view('tenant.renewals.index', compact(
+        return Inertia::render('Tenant/Renewals/Index', compact(
             'stats', 'members', 'plans', 'branches', 'today', 'tab', 'from', 'to', 'selectedBranch'
         ));
     }

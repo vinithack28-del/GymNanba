@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Admin\SubscriptionService;
-use Illuminate\Contracts\View\View;
+use Inertia\Inertia;
 
 class SubscriptionController extends Controller
 {
@@ -12,9 +12,9 @@ class SubscriptionController extends Controller
     {
     }
 
-    public function index(): View
+    public function index()
     {
-        return view('admin.subscriptions.index', [
+        return Inertia::render('Admin/Subscriptions/Index', [
             'subscriptions' => $this->subscriptionService->paginate(),
         ]);
     }

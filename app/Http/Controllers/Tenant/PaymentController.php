@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Services\Tenant\PaymentService;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Inertia\Inertia;
 
 class PaymentController extends Controller
 {
@@ -21,8 +21,7 @@ class PaymentController extends Controller
 
     // ── Collect ───────────────────────────────────────────────────────────────
 
-    public function collect(Request $request): View
-    {
+    public function collect(Request $request){
         abort_unless($this->svc->canCollect(), 403);
 
         $data = $this->svc->collectPage($this->tenantId());
@@ -35,7 +34,7 @@ class PaymentController extends Controller
             $data['preselectedMember'] = $member;
         }
 
-        return view('tenant.payments.collect', $data);
+        return Inertia::render('Tenant/Payments/Collect'$data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -66,14 +65,13 @@ class PaymentController extends Controller
 
     // ── History ───────────────────────────────────────────────────────────────
 
-    public function history(Request $request): View
-    {
+    public function history(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->svc->history($request, $this->tenantId());
 
-        return view('tenant.payments.history', $data);
+        return Inertia::render('Tenant/Payments/History'$data);
     }
 
     // ── Dues ──────────────────────────────────────────────────────────────────
@@ -108,11 +106,10 @@ class PaymentController extends Controller
 
     // ── Receipt ───────────────────────────────────────────────────────────────
 
-    public function receipt(Payment $payment): View
-    {
+    public function receipt(Payment $payment){
         $data = $this->svc->receiptData($payment, $this->tenantId());
 
-        return view('tenant.payments.receipt', $data);
+        return Inertia::render('Tenant/Payments/Receipt'$data);
     }
 
     // ── Member search (AJAX) ──────────────────────────────────────────────────

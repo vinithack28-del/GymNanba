@@ -31,8 +31,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\PasswordChangeController;
 use Illuminate\Support\Facades\Route;
 
+use Inertia\Inertia;
+
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Welcome');
 });
 
 // ── Public member self-registration ─────────────────────────────────────────
@@ -47,9 +49,10 @@ Route::middleware('guest')->group(function (): void {
 
 Route::middleware(['auth', 'password_changed'])->group(function (): void {
     Route::get('/dashboard', function () {
-        return request()->user()?->isSuperAdmin()
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('tenant.dashboard');
+        if (request()->user()?->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect()->route('tenant.dashboard');
     })->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::post('/language', [LocalizationController::class, 'update'])->name('language.update');

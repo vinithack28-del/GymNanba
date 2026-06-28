@@ -8,7 +8,7 @@ use App\Services\Tenant\InvoiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class InvoiceController extends Controller
 {
@@ -21,23 +21,21 @@ class InvoiceController extends Controller
 
     // ── List ──────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->svc->list($request, $this->tenantId());
-        return view('tenant.invoices.index', $data);
+        return Inertia::render('Tenant/Invoices/Index'$data);
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
 
-    public function create(): View
-    {
+    public function create(){
         abort_unless($this->svc->canCreate(), 403);
         $data = $this->svc->createPageData($this->tenantId());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return view('tenant.invoices.create', $data);
+        return Inertia::render('Tenant/Invoices/Create'$data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -65,10 +63,9 @@ class InvoiceController extends Controller
 
     // ── Show / print ──────────────────────────────────────────────────────────
 
-    public function show(Invoice $invoice): View
-    {
+    public function show(Invoice $invoice){
         $data = $this->svc->show($invoice, $this->tenantId());
-        return view('tenant.invoices.show', $data);
+        return Inertia::render('Tenant/Invoices/Show'$data);
     }
 
     // ── Void ──────────────────────────────────────────────────────────────────

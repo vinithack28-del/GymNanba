@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePlanRequest;
 use App\Services\Admin\PlanService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class PlanController extends Controller
 {
@@ -14,9 +14,9 @@ class PlanController extends Controller
     {
     }
 
-    public function index(): View
+    public function index()
     {
-        return view('admin.plans.index', [
+        return Inertia::render('Admin/Plans/Index', [
             'plans' => $this->planService->all(),
         ]);
     }

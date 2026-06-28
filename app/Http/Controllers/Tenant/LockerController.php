@@ -8,18 +8,17 @@ use App\Models\Locker;
 use App\Models\LockerAssignment;
 use App\Models\Member;
 use App\Models\Staff;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class LockerController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         abort_unless($request->user()->canAccess('locker.view|locker.assign|locker.add|locker.edit|locker.delete'), 403);
 
         $tenantId = $request->user()->tenant->id;
@@ -68,7 +67,7 @@ class LockerController extends Controller
             'inactive' => (clone $summaryBase)->where('status', 'inactive')->count(),
         ];
 
-        return view('tenant.lockers.index', [
+        return Inertia::render('Tenant/Lockers/Index', [
             'lockers' => $lockers,
             'summary' => $summary,
             'canAdd' => $request->user()->canAccess('locker.add'),
@@ -78,22 +77,20 @@ class LockerController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         abort_unless($request->user()->canAccess('locker.add'), 403);
 
         $tenant = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
 
-        return view('tenant.lockers.form', [
+        return Inertia::render('Tenant/Lockers/Form', [
             'branches' => $branches,
             'selectedBranchId' => $request->user()->effectiveBranchId(),
             'statuses' => Locker::STATUSES,
         ]);
     }
 
-    public function show(Request $request, Locker $locker): View
-    {
+    public function show(Request $request, Locker $locker){
         $this->authorizeLocker($request, $locker);
         abort_unless($request->user()->canAccess('locker.view|locker.assign|locker.edit|locker.delete'), 403);
 
@@ -103,7 +100,7 @@ class LockerController extends Controller
             'assignments.member',
         ]);
 
-        return view('tenant.lockers.show', [
+        return Inertia::render('Tenant/Lockers/Show', [
             'locker' => $locker,
             'lockerData' => $this->lockerPayload($request, $locker),
             'canAssign' => $request->user()->canAccess('locker.assign'),

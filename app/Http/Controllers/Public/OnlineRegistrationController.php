@@ -5,19 +5,19 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\MemberRegistration;
 use App\Models\Tenant;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class OnlineRegistrationController extends Controller
 {
-    public function show(string $token): View
+    public function show(string $token)
     {
         $tenant = Tenant::where('registration_token', $token)
             ->where('status', 'active')
             ->firstOrFail();
 
-        return view('public.registration.show', compact('tenant', 'token'));
+        return Inertia::render('Public/Registration/Show', compact('tenant', 'token'));
     }
 
     public function submit(Request $request, string $token): RedirectResponse
@@ -44,10 +44,10 @@ class OnlineRegistrationController extends Controller
         return redirect()->route('register.success', $token);
     }
 
-    public function success(string $token): View
+    public function success(string $token)
     {
         $tenant = Tenant::where('registration_token', $token)->firstOrFail();
 
-        return view('public.registration.success', compact('tenant'));
+        return Inertia::render('Public/Registration/Success', compact('tenant'));
     }
 }

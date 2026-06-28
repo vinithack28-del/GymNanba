@@ -3,28 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Services\Tenant\DashboardService;
-use Illuminate\Contracts\View\View;
+use Inertia\Inertia;
 
 class TenantPortalController extends Controller
 {
     public function __construct(private readonly DashboardService $dashboardService) {}
 
-    public function dashboard(): View
-    {
+    public function dashboard(){
         $tenant = request()->user()?->tenant;
 
-        return view('tenant.portal', $this->dashboardService->build(request()->user()) + [
+        return Inertia::render('Tenant/Portal', $this->dashboardService->build(request()->user()) + [
             'tenant' => $tenant,
         ]);
     }
 
-    public function comingSoon(string $slug): View
-    {
+    public function comingSoon(string $slug){
         $pages = $this->pageTitles();
 
         abort_unless(array_key_exists($slug, $pages), 404);
 
-        return view('tenant.coming-soon', [
+        return Inertia::render('Tenant/ComingSoon', [
             'tenant' => request()->user()?->tenant,
             'pageTitle' => $pages[$slug],
         ]);

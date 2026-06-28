@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StorePaymentRequest;
 use App\Http\Requests\Admin\StoreRenewalRequest;
 use App\Services\Admin\InvoiceService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class InvoiceController extends Controller
 {
@@ -16,9 +16,9 @@ class InvoiceController extends Controller
     {
     }
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        return view('admin.invoices.index', array_merge(
+        return Inertia::render('Admin/Invoices/Index', array_merge(
             $this->invoiceService->getIndexData(),
             ['tab' => $request->get('tab', 'renewal_due')]
         ));

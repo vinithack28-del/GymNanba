@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Admin\DashboardService;
-use Illuminate\Contracts\View\View;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -12,8 +12,8 @@ class DashboardController extends Controller
     {
     }
 
-    public function index(): View
+    public function index()
     {
-        return view('admin.dashboard', $this->dashboardService->getOverview());
+        return Inertia::render('Admin/Dashboard', $this->dashboardService->getOverview());
     }
 }

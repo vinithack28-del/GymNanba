@@ -6,15 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\User;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class BranchController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
 
         $branches = Branch::forTenant($tenant->id)
@@ -24,7 +23,7 @@ class BranchController extends Controller
 
         [$planLimit, $planName] = $this->planLimit($tenant);
 
-        return view('tenant.branches.index', [
+        return Inertia::render('Tenant/Branches/Index', [
             'branches'    => $branches,
             'planLimit'   => $planLimit,
             'planName'    => $planName,
@@ -34,8 +33,7 @@ class BranchController extends Controller
         ]);
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         $tenant = $request->user()->tenant;
         [$planLimit] = $this->planLimit($tenant);
         $activeCount = Branch::forTenant($tenant->id)->active()->count();
@@ -45,17 +43,16 @@ class BranchController extends Controller
                 ->withErrors(['limit' => "Branch limit reached. Upgrade your plan to add more branches."]);
         }
 
-        return view('tenant.branches.form', [
+        return Inertia::render('Tenant/Branches/Form', [
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),
         ]);
     }
 
-    public function edit(Request $request, Branch $branch): View
-    {
+    public function edit(Request $request, Branch $branch){
         $this->authorizeBranch($request, $branch);
 
-        return view('tenant.branches.form', [
+        return Inertia::render('Tenant/Branches/Form', [
             'branch'      => $branch,
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),

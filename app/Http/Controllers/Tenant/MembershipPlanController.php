@@ -5,15 +5,14 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GymMembershipPlan;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class MembershipPlanController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
 
         $query = GymMembershipPlan::forTenant($tenant->id)
@@ -46,27 +45,25 @@ class MembershipPlanController extends Controller
             'archived' => GymMembershipPlan::forTenant($tenant->id)->where('status', 'archived')->count(),
         ];
 
-        return view('tenant.plans.index', compact('plans', 'branches', 'counts'));
+        return Inertia::render('Tenant/Plans/Index', compact('plans', 'branches', 'counts'));
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
 
-        return view('tenant.plans.form', compact('branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/Plans/Form', compact('branches', 'defaultGstRate'));
     }
 
-    public function edit(Request $request, GymMembershipPlan $plan): View
-    {
+    public function edit(Request $request, GymMembershipPlan $plan){
         $this->authorizePlan($request, $plan);
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $plan->load('branches');
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
 
-        return view('tenant.plans.form', compact('plan', 'branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/Plans/Form', compact('plan', 'branches', 'defaultGstRate'));
     }
 
     public function store(Request $request): RedirectResponse

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class SettingController extends Controller
 {
@@ -25,13 +25,12 @@ class SettingController extends Controller
 
     // ─── Gym Profile ────────────────────────────────────────────────────────
 
-    public function profile(): View
-    {
+    public function profile(){
         $this->ownerOnly();
         $tenant = Auth::user()->tenant;
         $hours  = $tenant->operating_hours ?? \App\Models\Tenant::defaultOperatingHours();
 
-        return view('tenant.settings.profile', compact('tenant', 'hours'));
+        return Inertia::render('Tenant/Settings/Profile', compact('tenant', 'hours'));
     }
 
     public function updateProfile(UpdateProfileRequest $request): RedirectResponse
@@ -75,8 +74,7 @@ class SettingController extends Controller
 
     // ─── My Account ─────────────────────────────────────────────────────────
 
-    public function account(): View
-    {
+    public function account(){
         $this->ownerOnly();
         $user     = Auth::user();
         $sessions = DB::table('sessions')
@@ -91,7 +89,7 @@ class SettingController extends Controller
                 'last_active'  => \Carbon\Carbon::createFromTimestamp($s->last_activity)->diffForHumans(),
             ]);
 
-        return view('tenant.settings.account', compact('user', 'sessions'));
+        return Inertia::render('Tenant/Settings/Account', compact('user', 'sessions'));
     }
 
     public function updateAccount(UpdateAccountRequest $request): RedirectResponse
@@ -153,15 +151,14 @@ class SettingController extends Controller
 
     // ─── Integrations ────────────────────────────────────────────────────────
 
-    public function integrations(): View
-    {
+    public function integrations(){
         $this->ownerOnly();
         $tenantId     = Auth::user()->tenant->id;
         $integrations = Integration::where('tenant_id', $tenantId)
             ->get()
             ->keyBy('key');
 
-        return view('tenant.settings.integrations', compact('integrations'));
+        return Inertia::render('Tenant/Settings/Integrations', compact('integrations'));
     }
 
     public function updateIntegration(Request $request, string $key): RedirectResponse
@@ -218,13 +215,12 @@ class SettingController extends Controller
 
     // ─── Language ────────────────────────────────────────────────────────────
 
-    public function language(): View
-    {
+    public function language(){
         $this->ownerOnly();
         $user      = Auth::user();
         $languages = PlatformLanguage::where('is_active', true)->orderBy('display_name')->get();
 
-        return view('tenant.settings.language', compact('user', 'languages'));
+        return Inertia::render('Tenant/Settings/Language', compact('user', 'languages'));
     }
 
     public function updateLanguage(Request $request): RedirectResponse
@@ -242,21 +238,19 @@ class SettingController extends Controller
 
     // ─── Billing & Subscription (view-only) ──────────────────────────────────
 
-    public function subscription(): View
-    {
+    public function subscription(){
         $this->ownerOnly();
         $tenant       = Auth::user()->tenant;
         $subscription = $tenant->subscriptions()->with('plan')->latest()->first();
 
-        return view('tenant.settings.subscription', compact('tenant', 'subscription'));
+        return Inertia::render('Tenant/Settings/Subscription', compact('tenant', 'subscription'));
     }
 
     // ─── Data & Privacy ──────────────────────────────────────────────────────
 
-    public function data(): View
-    {
+    public function data(){
         $this->ownerOnly();
-        return view('tenant.settings.data');
+        return Inertia::render('Tenant/Settings/Data');
     }
 
     public function exportData(): RedirectResponse
