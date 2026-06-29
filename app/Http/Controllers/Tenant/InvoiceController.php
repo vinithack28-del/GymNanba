@@ -26,7 +26,7 @@ class InvoiceController extends Controller
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->svc->list($request, $this->tenantId());
-        return Inertia::render('Tenant/Invoices/Index'$data);
+        return Inertia::render('Tenant/Invoices/Index', $data);
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ class InvoiceController extends Controller
         abort_unless($this->svc->canCreate(), 403);
         $data = $this->svc->createPageData($this->tenantId());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return Inertia::render('Tenant/Invoices/Create'$data);
+        return Inertia::render('Tenant/Invoices/Create', $data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -65,7 +65,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice){
         $data = $this->svc->show($invoice, $this->tenantId());
-        return Inertia::render('Tenant/Invoices/Show'$data);
+        return Inertia::render('Tenant/Invoices/Show', $data);
     }
 
     // ── Void ──────────────────────────────────────────────────────────────────

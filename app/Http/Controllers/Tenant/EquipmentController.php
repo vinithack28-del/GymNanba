@@ -16,7 +16,7 @@ class EquipmentController extends Controller
     public function create(Request $request){
         abort_unless($request->user()->canAccess('equipment.add'), 403);
 
-        return Inertia::render('Tenant/Equipment/Form'[
+        return Inertia::render('Tenant/Equipment/Form', [
             'types' => Equipment::TYPES,
             'statuses' => Equipment::STATUSES,
         ]);

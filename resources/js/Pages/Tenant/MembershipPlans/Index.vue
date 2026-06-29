@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     plans: Object,
@@ -9,6 +9,9 @@ const props = defineProps({
     canEdit: Boolean,
     canDelete: Boolean,
 });
+
+const page = usePage();
+const currentUrl = () => page.url || '';
 
 const formatCurrency = (paise) => {
     if (!paise) return '₹0';
@@ -37,21 +40,21 @@ const getStatusColor = (status) => {
 
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex flex-wrap gap-2">
-                    <Link :href="`/tenant/plans?status=`" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="!$page.props.url.split('?')[1]?.includes('status=') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
+                    <Link href="/plans" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="!currentUrl().includes('status=') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
                         All <span class="ml-1 rounded-full bg-slate-950/50 px-2 py-0.5 text-xs">{{ counts?.all || 0 }}</span>
                     </Link>
-                    <Link :href="`/tenant/plans?status=active`" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="$page.props.url.includes('status=active') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
+                    <Link href="/plans?status=active" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="currentUrl().includes('status=active') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
                         Active <span class="ml-1 rounded-full bg-slate-950/50 px-2 py-0.5 text-xs">{{ counts?.active || 0 }}</span>
                     </Link>
-                    <Link :href="`/tenant/plans?status=inactive`" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="$page.props.url.includes('status=inactive') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
+                    <Link href="/plans?status=inactive" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="currentUrl().includes('status=inactive') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
                         Inactive <span class="ml-1 rounded-full bg-slate-950/50 px-2 py-0.5 text-xs">{{ counts?.inactive || 0 }}</span>
                     </Link>
-                    <Link :href="`/tenant/plans?status=archived`" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="$page.props.url.includes('status=archived') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
+                    <Link href="/plans?status=archived" class="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold" :class="currentUrl().includes('status=archived') ? 'border-orange-400 bg-orange-500/10 text-orange-400' : 'text-slate-400 hover:bg-white/5'">
                         Archived <span class="ml-1 rounded-full bg-slate-950/50 px-2 py-0.5 text-xs">{{ counts?.archived || 0 }}</span>
                     </Link>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Link v-if="canAdd" href="/tenant/plans/create" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
+                    <Link v-if="canAdd" href="/plans/create" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         <span>+</span> Create Plan
                     </Link>
                 </div>
@@ -61,7 +64,7 @@ const getStatusColor = (status) => {
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">📋</div>
                 <p class="text-lg font-bold">No plans found</p>
                 <p class="text-sm text-slate-400">Get started by creating your first membership plan.</p>
-                <Link v-if="canAdd" href="/tenant/plans/create" class="mt-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Create Plan</Link>
+                <Link v-if="canAdd" href="/plans/create" class="mt-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Create Plan</Link>
             </div>
 
             <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -78,7 +81,7 @@ const getStatusColor = (status) => {
                     <p class="mt-1 text-2xl font-bold">{{ formatCurrency(plan.total_price_paise) }}</p>
                     <p v-if="plan.description" class="mt-2 text-sm text-slate-400">{{ plan.description }}</p>
                     <div class="mt-4 flex items-center gap-2">
-                        <Link v-if="canEdit" :href="`/tenant/plans/${plan.id}/edit`" class="text-sm text-orange-400 hover:text-orange-300">Edit</Link>
+                        <Link v-if="canEdit" :href="`/plans/${plan.id}/edit`" class="text-sm text-orange-400 hover:text-orange-300">Edit</Link>
                         <span v-if="plan.status === 'active' && canDelete" class="text-sm text-slate-400">•</span>
                         <button v-if="plan.status === 'active' && canDelete" class="text-sm text-red-400 hover:text-red-300">Archive</button>
                     </div>

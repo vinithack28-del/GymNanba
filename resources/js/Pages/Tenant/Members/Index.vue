@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed } from 'vue';
 
 const props = defineProps({
     members: Object,
@@ -10,6 +10,8 @@ const props = defineProps({
     registrationUrl: String,
     pendingRegistrationCount: Number,
 });
+
+const memberRows = computed(() => props.members?.data || []);
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -27,7 +29,7 @@ const getStatusColor = (status) => {
 };
 
 const toggleStatus = (member) => {
-    useForm({}).patch(`/tenant/members/${member.id}/toggle-status`);
+    useForm({}).patch(`/members/${member.id}/toggle-status`);
 };
 </script>
 
@@ -42,11 +44,11 @@ const toggleStatus = (member) => {
                     <h1 class="mt-2 text-3xl font-semibold">Members</h1>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Link v-if="registrationUrl" href="/tenant/members/registrations" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
+                    <Link v-if="registrationUrl" href="/members/registrations" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
                         Registrations
                         <span v-if="pendingRegistrationCount > 0" class="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-slate-950">{{ pendingRegistrationCount }}</span>
                     </Link>
-                    <Link href="/tenant/members/create" class="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
+                    <Link href="/members/create" class="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         <span>+</span> Add Member
                     </Link>
                 </div>
@@ -60,19 +62,19 @@ const toggleStatus = (member) => {
             </div>
 
             <div class="grid gap-3 grid-cols-2 sm:grid-cols-4">
-                <Link href="/tenant/members" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+                <Link href="/members" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
                     <p class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Total</p>
                     <p class="mt-2 text-2xl font-semibold text-slate-200">{{ stats.total }}</p>
                 </Link>
-                <Link href="/tenant/members?status=active" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+                <Link href="/members?status=active" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
                     <p class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Active</p>
                     <p class="mt-2 text-2xl font-semibold text-emerald-400">{{ stats.active }}</p>
                 </Link>
-                <Link href="/tenant/members?status=inactive" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+                <Link href="/members?status=inactive" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
                     <p class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Inactive</p>
                     <p class="mt-2 text-2xl font-semibold text-slate-400">{{ stats.inactive }}</p>
                 </Link>
-                <Link href="/tenant/members?status=expired" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
+                <Link href="/members?status=expired" class="rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10">
                     <p class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Expired</p>
                     <p class="mt-2 text-2xl font-semibold text-red-400">{{ stats.expired }}</p>
                 </Link>
@@ -101,13 +103,13 @@ const toggleStatus = (member) => {
             </div>
 
             <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
-                <div v-if="!members || members.length === 0" class="flex flex-col items-center gap-4 py-20 text-center">
+                <div v-if="memberRows.length === 0" class="flex flex-col items-center gap-4 py-20 text-center">
                     <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400">
                         👥
                     </div>
                     <p class="text-base font-semibold">No members found</p>
                     <p class="text-sm text-slate-400">Get started by adding your first member</p>
-                    <Link href="/tenant/members/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Member</Link>
+                    <Link href="/members/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Member</Link>
                 </div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -125,7 +127,7 @@ const toggleStatus = (member) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="member in members" :key="member.id" class="hover:bg-white/5">
+                            <tr v-for="member in memberRows" :key="member.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-mono text-xs text-slate-400">{{ member.member_code }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2.5">
@@ -153,20 +155,20 @@ const toggleStatus = (member) => {
                                     <span v-else class="text-slate-400">₹0.00</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    <Link :href="`/tenant/members/${member.id}`" class="text-orange-400 hover:text-orange-300">View</Link>
+                                    <Link :href="`/members/${member.id}`" class="text-orange-400 hover:text-orange-300">View</Link>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div v-if="members && members.length > 0" class="flex flex-col items-center justify-between gap-3 border-t border-white/10 px-5 py-3 sm:flex-row">
-                    <p class="text-xs text-slate-400">Showing 1 to {{ members.length }} of {{ members.length }} records</p>
+                <div v-if="memberRows.length > 0" class="flex flex-col items-center justify-between gap-3 border-t border-white/10 px-5 py-3 sm:flex-row">
+                    <p class="text-xs text-slate-400">Showing {{ members.from || 0 }} to {{ members.to || 0 }} of {{ members.total || memberRows.length }} records</p>
                     <div class="flex items-center gap-2">
                         <select class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1 text-xs text-slate-300 outline-none">
-                            <option>10 / page</option>
-                            <option>25 / page</option>
-                            <option>50 / page</option>
+                            <option :selected="members.per_page === 10">10 / page</option>
+                            <option :selected="members.per_page === 25">25 / page</option>
+                            <option :selected="members.per_page === 50">50 / page</option>
                         </select>
                     </div>
                 </div>

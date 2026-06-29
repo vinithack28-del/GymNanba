@@ -1,6 +1,6 @@
 <script setup>
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 const page = usePage();
 const props = defineProps({
@@ -10,18 +10,22 @@ const props = defineProps({
 
 const user = computed(() => page.props.auth?.user);
 const tenant = computed(() => page.props.auth?.user?.tenant);
-const isSuperAdmin = computed(() => user.value?.isSuperAdmin?.() ?? false);
-const isGymOwner = computed(() => user.value?.isGymOwner?.() ?? false);
-const isStaffMember = computed(() => user.value?.isStaffMember?.() ?? false);
+const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
+const isGymOwner = computed(() => user.value?.role === 'tenant_owner');
+const isStaffMember = computed(() => user.value?.role === 'staff');
 const isPosRole = computed(() => user.value?.role === 'pos');
 
 const portalTitle = computed(() => isSuperAdmin.value ? 'GymNanba Platform' : (tenant.value?.gym_name || 'GymNanba'));
 const portalEyebrow = computed(() => isSuperAdmin.value ? 'Platform operations' : (tenant.value?.gym_name || 'GymNanba'));
+const portalLanguages = computed(() => page.props.portalLanguages || []);
 
 const theme = ref(localStorage.getItem('gymos-theme') || 'dark');
 const quickAddOpen = ref(false);
 const branchSwitcherOpen = ref(false);
 const userMenuOpen = ref(false);
+const localeForm = useForm({
+    locale_code: page.props.locale || user.value?.preferred_language || 'en-IN',
+});
 
 const userMenuRef = ref(null);
 const quickAddRef = ref(null);
@@ -29,9 +33,36 @@ const quickAddRef = ref(null);
 const navSections = ref([]);
 const expandedSections = ref({});
 
+const normalizePath = (value) => {
+    if (!value) return '/';
+
+    try {
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+            return new URL(value).pathname || '/';
+        }
+    } catch {
+        return '/';
+    }
+
+    return value.startsWith('/') ? value : `/${value}`;
+};
+
+const currentPath = computed(() => {
+    if (page.url) {
+        return normalizePath(page.url);
+    }
+
+    if (typeof window !== 'undefined') {
+        return normalizePath(window.location.pathname);
+    }
+
+    return normalizePath(page.props.ziggy?.location);
+});
+
+const isPathActive = (path) => currentPath.value === path || currentPath.value.startsWith(`${path}/`);
+
 onMounted(() => {
     document.documentElement.dataset.theme = theme.value;
-    initNavigation();
     
     // Click outside handler
     document.addEventListener('click', handleClickOutside);
@@ -54,6 +85,12 @@ const toggleTheme = () => {
     theme.value = theme.value === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = theme.value;
     localStorage.setItem('gymos-theme', theme.value);
+};
+
+const updateLanguage = () => {
+    localeForm.post('/language', {
+        preserveScroll: true,
+    });
 };
 
 const toggleQuickAdd = () => {
@@ -85,36 +122,40 @@ const toggleNavSection = (key) => {
 };
 
 const initNavigation = () => {
-    const currentPath = page.props.ziggy?.location || '';
-    const isTenantContext = currentPath.startsWith('/tenant/');
+    const path = currentPath.value;
+    const isAdminContext = path.startsWith('/admin');
     
-    // SuperAdmin sees tenant menu when in tenant context, otherwise admin menu
-    if (isSuperAdmin.value && !isTenantContext) {
+    if (isSuperAdmin.value && isAdminContext) {
         navSections.value = [
-            { label: 'Dashboard', route: 'admin.dashboard', icon: 'grid' },
-            { label: 'Tenants', route: 'admin.tenants.index', icon: 'building' },
-            { label: 'Plans', route: 'admin.plans.index', icon: 'tag' },
-            { label: 'Subscriptions', route: 'admin.subscriptions.index', icon: 'stack' },
-            { label: 'Invoices', route: 'admin.invoices.index', icon: 'wallet' },
-            { label: 'Audit Log', route: 'admin.audit-log.index', icon: 'activity' },
-            { label: 'Settings', route: 'admin.settings.index', icon: 'settings' },
+            {
+                heading: null,
+                items: [
+                    { label: 'Dashboard', route: '/admin/dashboard', icon: 'grid', active: isPathActive('/admin/dashboard') },
+                    { label: 'Tenants', route: '/admin/tenants', icon: 'building', active: isPathActive('/admin/tenants') },
+                    { label: 'Plans', route: '/admin/plans', icon: 'tag', active: isPathActive('/admin/plans') },
+                    { label: 'Subscriptions', route: '/admin/subscriptions', icon: 'stack', active: isPathActive('/admin/subscriptions') },
+                    { label: 'Invoices', route: '/admin/invoices', icon: 'wallet', active: isPathActive('/admin/invoices') },
+                    { label: 'Audit Log', route: '/admin/audit-log', icon: 'activity', active: isPathActive('/admin/audit-log') },
+                    { label: 'Settings', route: '/admin/settings', icon: 'settings', active: isPathActive('/admin/settings') },
+                ]
+            }
         ];
     } else {
         let sections = [
             {
                 heading: null,
                 items: [
-                    { label: 'Dashboard', route: '/tenant/dashboard', icon: 'grid', active: page.props.ziggy?.location === '/tenant/dashboard', permission: 'dashboard.view' },
+                    { label: 'Dashboard', route: '/dashboard', icon: 'grid', active: isPathActive('/dashboard'), permission: 'dashboard.view' },
                 ],
             },
             {
                 heading: 'Members',
                 items: [
-                    { label: 'Members', route: '/tenant/members', icon: 'users', active: page.props.ziggy?.location?.startsWith('/tenant/members'), permission: 'members.view|members.add|members.edit|members.delete' },
-                    { label: 'Membership Plans', route: '/tenant/plans', icon: 'card', active: page.props.ziggy?.location?.startsWith('/tenant/plans'), permission: 'members.view|members.add|members.edit|members.delete' },
-                    { label: 'Renewals Due', route: '/tenant/renewals', icon: 'clock', active: page.props.ziggy?.location?.startsWith('/tenant/renewals'), permission: 'renewals.view' },
-                    { label: 'Attendance', route: '/tenant/attendance/checkins', icon: 'scan', active: page.props.ziggy?.location?.startsWith('/tenant/attendance'), permission: 'attendance.check_in|attendance.view_log' },
-                    { label: 'Walk-ins', route: '/tenant/attendance/walkins', icon: 'walkin', active: page.props.ziggy?.location?.includes('/tenant/attendance/walkins'), permission: 'attendance.check_in' },
+                    { label: 'Members', route: '/members', icon: 'users', active: isPathActive('/members'), permission: 'members.view|members.add|members.edit|members.delete' },
+                    { label: 'Membership Plans', route: '/plans', icon: 'card', active: isPathActive('/plans'), permission: 'members.view|members.add|members.edit|members.delete' },
+                    { label: 'Renewals Due', route: '/renewals', icon: 'clock', active: isPathActive('/renewals'), permission: 'renewals.view' },
+                    { label: 'Attendance', route: '/attendance/checkins', icon: 'scan', active: isPathActive('/attendance'), permission: 'attendance.check_in|attendance.view_log' },
+                    { label: 'Walk-ins', route: '/walkins', icon: 'walkin', active: isPathActive('/walkins'), permission: 'attendance.check_in' },
                 ],
             },
             {
@@ -122,29 +163,29 @@ const initNavigation = () => {
                 items: [
                     { 
                         label: 'Classes & Schedules', 
-                        route: '/tenant/classes/timetable', 
+                        route: '/classes/timetable', 
                         icon: 'calendar', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/classes'),
+                        active: isPathActive('/classes'),
                         permission: 'classes.view_timetable|classes.manage|classes.book',
                         children: [
-                            { label: 'Timetable', route: '/tenant/classes/timetable', permission: 'classes.view_timetable|classes.manage|classes.book' },
-                            { label: 'Book a Class', route: '/tenant/classes/book', permission: 'classes.book' },
-                            { label: 'Trainers', route: '/tenant/classes/trainers', permission: 'classes.view_timetable|classes.manage|classes.book' },
+                            { label: 'Timetable', route: '/classes/timetable', permission: 'classes.view_timetable|classes.manage|classes.book', active: isPathActive('/classes/timetable') },
+                            { label: 'Book a Class', route: '/classes/book', permission: 'classes.book', active: isPathActive('/classes/book') },
+                            { label: 'Trainers', route: '/classes/trainers', permission: 'classes.view_timetable|classes.manage|classes.book', active: isPathActive('/classes/trainers') },
                         ],
                     },
-                    { label: 'Branches', route: '/tenant/branches', icon: 'office', active: page.props.ziggy?.location?.startsWith('/tenant/branches'), permission: 'branches.view|branches.manage' },
-                    { label: 'Equipment', route: '/tenant/equipment', icon: 'equipment', active: page.props.ziggy?.location?.startsWith('/tenant/equipment'), permission: 'equipment.view' },
-                    { label: 'Lockers', route: '/tenant/lockers', icon: 'locker', active: page.props.ziggy?.location?.startsWith('/tenant/lockers'), permission: 'locker.view|locker.assign|locker.add|locker.edit|locker.delete' },
+                    { label: 'Branches', route: '/branches', icon: 'office', active: isPathActive('/branches'), permission: 'branches.view|branches.manage' },
+                    { label: 'Equipment', route: '/equipment', icon: 'equipment', active: isPathActive('/equipment'), permission: 'equipment.view' },
+                    { label: 'Lockers', route: '/lockers', icon: 'locker', active: isPathActive('/lockers'), permission: 'locker.view|locker.assign|locker.add|locker.edit|locker.delete' },
                     { 
                         label: 'Staff', 
-                        route: '/tenant/staff', 
+                        route: '/staff', 
                         icon: 'team', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/staff'),
+                        active: isPathActive('/staff'),
                         permission: 'staff.view|staff.manage',
                         children: [
-                            { label: 'All Staff', route: '/tenant/staff', permission: 'staff.view|staff.manage' },
-                            { label: 'Roles & Permissions', route: '/tenant/staff/roles', permission: 'staff.view|staff.manage', ownerOnly: true },
-                            { label: 'Staff Attendance', route: '/tenant/staff/attendance', permission: 'staff.view|staff.manage' },
+                            { label: 'All Staff', route: '/staff', permission: 'staff.view|staff.manage', active: isPathActive('/staff') && !isPathActive('/staff/attendance') && !isPathActive('/staff/roles') },
+                            { label: 'Roles & Permissions', route: '/staff/roles', permission: 'staff.view|staff.manage', ownerOnly: true, active: isPathActive('/staff/roles') },
+                            { label: 'Staff Attendance', route: '/staff/attendance', permission: 'staff.view|staff.manage', active: isPathActive('/staff/attendance') },
                         ],
                     },
                 ],
@@ -154,20 +195,20 @@ const initNavigation = () => {
                 items: [
                     { 
                         label: 'Assess', 
-                        route: '/tenant/assess/report', 
+                        route: '/assess/report', 
                         icon: 'chart', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/assess'),
+                        active: isPathActive('/assess'),
                         permission: 'assessment_report.view|parq.view|nutrition.view|body_metrics.view|posture.view|balance.view|vitals.view|fitness.view|goal_forecasting.view',
                         children: [
-                            { label: 'Assessment Report', route: '/tenant/assess/report', permission: 'assessment_report.view' },
-                            { label: 'PARQ', route: '/tenant/assess/questionnaire', permission: 'parq.view' },
-                            { label: 'Nutrition', route: '/tenant/assess/nutrition', permission: 'nutrition.view' },
-                            { label: 'Body Metrics', route: '/tenant/assess/body-metrics', permission: 'body_metrics.view' },
-                            { label: 'Posture', route: '/tenant/assess/posture', permission: 'posture.view' },
-                            { label: 'Balance', route: '/tenant/assess/balance', permission: 'balance.view' },
-                            { label: 'Vitals', route: '/tenant/assess/vitals', permission: 'vitals.view' },
-                            { label: 'Fitness', route: '/tenant/assess/fitness', permission: 'fitness.view' },
-                            { label: 'Goal Forecasting', route: '/tenant/assess/goal-forecasting', permission: 'goal_forecasting.view' },
+                            { label: 'Assessment Report', route: '/assess/report', permission: 'assessment_report.view', active: isPathActive('/assess/report') },
+                            { label: 'PARQ', route: '/assess/questionnaire', permission: 'parq.view', active: isPathActive('/assess/questionnaire') },
+                            { label: 'Nutrition', route: '/assess/nutrition', permission: 'nutrition.view', active: isPathActive('/assess/nutrition') },
+                            { label: 'Body Metrics', route: '/assess/body-metrics', permission: 'body_metrics.view', active: isPathActive('/assess/body-metrics') },
+                            { label: 'Posture', route: '/assess/posture', permission: 'posture.view', active: isPathActive('/assess/posture') },
+                            { label: 'Balance', route: '/assess/balance', permission: 'balance.view', active: isPathActive('/assess/balance') },
+                            { label: 'Vitals', route: '/assess/vitals', permission: 'vitals.view', active: isPathActive('/assess/vitals') },
+                            { label: 'Fitness', route: '/assess/fitness', permission: 'fitness.view', active: isPathActive('/assess/fitness') },
+                            { label: 'Goal Forecasting', route: '/assess/goal-forecasting', permission: 'goal_forecasting.view', active: isPathActive('/assess/goal-forecasting') },
                         ],
                     },
                 ],
@@ -175,21 +216,21 @@ const initNavigation = () => {
             {
                 heading: 'Finance',
                 items: [
-                    { label: 'Payments', route: '/tenant/payments/history', icon: 'wallet', active: page.props.ziggy?.location?.startsWith('/tenant/payments'), permission: 'payments.collect|payments.history|payments.void' },
-                    { label: 'Invoices', route: '/tenant/invoices', icon: 'receipt', active: page.props.ziggy?.location?.startsWith('/tenant/invoices'), permission: 'invoices.view|invoices.manage' },
+                    { label: 'Payments', route: '/payments/history', icon: 'wallet', active: isPathActive('/payments'), permission: 'payments.collect|payments.history|payments.void' },
+                    { label: 'Invoices', route: '/invoices', icon: 'receipt', active: isPathActive('/invoices'), permission: 'invoices.view|invoices.manage' },
                     { 
                         label: 'POS Store', 
-                        route: '/tenant/pos/sales', 
+                        route: '/pos/sales', 
                         icon: 'cart', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/pos'),
+                        active: isPathActive('/pos'),
                         permission: 'pos.billing|pos.products_stock_view|pos.manage_products',
                         children: [
-                            { label: 'Products', route: '/tenant/pos/products', permission: 'pos.products_stock_view|pos.manage_products' },
-                            { label: 'Sales', route: '/tenant/pos/sales', permission: 'pos.billing' },
-                            { label: 'Stock', route: '/tenant/pos/stock', permission: 'pos.products_stock_view|pos.manage_products' },
+                            { label: 'Products', route: '/pos/products', permission: 'pos.products_stock_view|pos.manage_products', active: isPathActive('/pos/products') },
+                            { label: 'Sales', route: '/pos/sales', permission: 'pos.billing', active: isPathActive('/pos/sales') },
+                            { label: 'Stock', route: '/pos/stock', permission: 'pos.products_stock_view|pos.manage_products', active: isPathActive('/pos/stock') },
                         ],
                     },
-                    { label: 'Expenses', route: '/tenant/expenses', icon: 'doc', active: page.props.ziggy?.location?.startsWith('/tenant/expenses'), permission: 'expenses.view|expenses.manage' },
+                    { label: 'Expenses', route: '/expenses', icon: 'doc', active: isPathActive('/expenses'), permission: 'expenses.view|expenses.manage' },
                 ],
             },
             {
@@ -197,15 +238,15 @@ const initNavigation = () => {
                 items: [
                     { 
                         label: 'Reports', 
-                        route: '/tenant/reports', 
+                        route: '/reports', 
                         icon: 'chart', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/reports'),
+                        active: isPathActive('/reports'),
                         permission: 'reports.view|reports.revenue_only|reports.branch_only|reports.own_data',
                         children: [
-                            { label: 'Revenue Report', route: '/tenant/reports/revenue', permission: 'reports.view|reports.revenue_only' },
-                            { label: 'Member Report', route: '/tenant/reports/members', permission: 'reports.view|reports.own_data' },
-                            { label: 'Attendance Report', route: '/tenant/reports/attendance', permission: 'reports.view|reports.branch_only' },
-                            { label: 'Staff Report', route: '/tenant/reports/staff', permission: 'reports.view' },
+                            { label: 'Revenue Report', route: '/reports/revenue', permission: 'reports.view|reports.revenue_only', active: isPathActive('/reports/revenue') },
+                            { label: 'Member Report', route: '/reports/members', permission: 'reports.view|reports.own_data', active: isPathActive('/reports/members') },
+                            { label: 'Attendance Report', route: '/reports/attendance', permission: 'reports.view|reports.branch_only', active: isPathActive('/reports/attendance') },
+                            { label: 'Staff Report', route: '/reports/staff', permission: 'reports.view', active: isPathActive('/reports/staff') },
                         ],
                     },
                 ],
@@ -216,17 +257,17 @@ const initNavigation = () => {
                     { label: 'Notifications', route: '#', icon: 'bell' },
                     { 
                         label: 'Settings', 
-                        route: '/tenant/settings/profile', 
+                        route: '/settings/profile', 
                         icon: 'settings', 
-                        active: page.props.ziggy?.location?.startsWith('/tenant/settings'),
+                        active: isPathActive('/settings'),
                         ownerOnly: true,
                         children: [
-                            { label: 'Profile', route: '/tenant/settings/profile' },
-                            { label: 'Account', route: '/tenant/settings/account' },
-                            { label: 'Integrations', route: '/tenant/settings/integrations' },
-                            { label: 'Language', route: '/tenant/settings/language' },
-                            { label: 'Subscription', route: '/tenant/settings/subscription' },
-                            { label: 'Data', route: '/tenant/settings/data' },
+                            { label: 'Profile', route: '/settings/profile', active: isPathActive('/settings/profile') },
+                            { label: 'Account', route: '/settings/account', active: isPathActive('/settings/account') },
+                            { label: 'Integrations', route: '/settings/integrations', active: isPathActive('/settings/integrations') },
+                            { label: 'Language', route: '/settings/language', active: isPathActive('/settings/language') },
+                            { label: 'Subscription', route: '/settings/subscription', active: isPathActive('/settings/subscription') },
+                            { label: 'Data', route: '/settings/data', active: isPathActive('/settings/data') },
                         ],
                     },
                 ],
@@ -286,12 +327,27 @@ const initNavigation = () => {
 
         navSections.value = sections;
     }
+
+    navSections.value.forEach((section, sIdx) => {
+        section.items.forEach((item, iIdx) => {
+            if (!item.children || expandedSections.value[`${sIdx}-${iIdx}`] !== undefined) {
+                return;
+            }
+
+            expandedSections.value[`${sIdx}-${iIdx}`] = item.active || item.children.some((child) => child.active);
+        });
+    });
 };
+
+watch(currentPath, () => {
+    initNavigation();
+}, { immediate: true });
 
 const checkPermission = (permissionString) => {
     if (!user.value || !permissionString) return true;
-    const permissions = permissionString.split('|');
-    return permissions.some(perm => user.value.canAccess?.(perm) ?? true);
+    // For now, return true for all permissions since we don't have the permission checking logic
+    // This can be enhanced later if permissions are passed from the backend
+    return true;
 };
 
 const getIcon = (name) => {
@@ -325,19 +381,19 @@ const getIcon = (name) => {
 const quickActions = computed(() => {
     if (isSuperAdmin.value) return [];
     return [
-        { label: 'Add Member', route: '/tenant/members/create', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
-        { label: 'Add Enquiry', route: '/tenant/attendance/walkins?purpose=inquiry', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
-        { label: 'Member Attendance', route: '/tenant/attendance/checkins', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
-        { label: 'Staff Attendance', route: '/tenant/staff/attendance', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
+        { label: 'Add Member', route: '/members/create', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
+        { label: 'Add Enquiry', route: '/walkins?purpose=inquiry', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
+        { label: 'Member Attendance', route: '/attendance/checkins', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
+        { label: 'Staff Attendance', route: '/staff/attendance', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
     ];
 });
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-900 text-slate-100">
+    <div class="min-h-screen app-theme-shell">
         <Head :title="`${title} | GymNanba`" />
         
-        <header class="sticky top-0 z-30 border-b border-white/10 bg-slate-900/80 px-4 py-4 backdrop-blur lg:px-6">
+        <header class="sticky top-0 z-30 border-b app-topbar px-4 py-4 backdrop-blur lg:px-6">
             <div class="flex w-full items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <div class="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden bg-orange-500">
@@ -355,7 +411,7 @@ const quickActions = computed(() => {
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
                             <span class="hidden md:inline">Quick Add</span>
                         </button>
-                        <div v-if="quickAddOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-800 p-1 shadow-xl">
+                        <div v-if="quickAddOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border app-panel-strong p-1 shadow-xl">
                             <a v-for="action in quickActions" :key="action.route" :href="action.route" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5">
                                 <span class="text-orange-400">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" v-html="action.icon"></svg>
@@ -365,20 +421,34 @@ const quickActions = computed(() => {
                         </div>
                     </div>
 
-                    <button @click="toggleTheme" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-800 px-3 py-2 text-sm text-slate-400 transition hover:opacity-90">
+                    <form v-if="portalLanguages.length > 0" @submit.prevent="updateLanguage" class="hidden md:block">
+                        <label class="sr-only" for="portal-locale">Language</label>
+                        <select
+                            id="portal-locale"
+                            v-model="localeForm.locale_code"
+                            @change="updateLanguage"
+                            class="rounded-2xl border app-panel px-3 py-2 text-sm outline-none"
+                        >
+                            <option v-for="language in portalLanguages" :key="language.locale_code" :value="language.locale_code">
+                                {{ language.display_name }}
+                            </option>
+                        </select>
+                    </form>
+
+                    <button @click="toggleTheme" class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-400 transition hover:opacity-90">
                         <svg v-if="theme === 'dark'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
                         <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07 6.7 17.3M17.3 6.7l1.77-1.77"/></svg>
                     </button>
 
                     <div class="relative" ref="userMenuRef">
-                        <button @click="toggleUserMenu" class="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-slate-800 px-3 py-2 text-sm transition hover:opacity-90">
+                        <button @click="toggleUserMenu" class="flex items-center gap-2.5 rounded-2xl border app-panel px-3 py-2 text-sm transition hover:opacity-90">
                             <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/20 text-xs font-bold text-orange-400">
                                 {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
                             </span>
                             <span class="hidden font-medium md:inline">{{ user?.name }}</span>
                             <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
                         </button>
-                        <div v-if="userMenuOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-white/10 bg-slate-800 p-1 shadow-xl">
+                        <div v-if="userMenuOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border app-panel-strong p-1 shadow-xl">
                             <div class="px-3 py-2.5 border-b border-white/10 mb-1">
                                 <p class="text-sm font-semibold truncate">{{ user?.name }}</p>
                                 <p class="text-xs text-slate-400 mt-0.5 truncate">{{ user?.email }}</p>
@@ -396,25 +466,29 @@ const quickActions = computed(() => {
         </header>
 
         <div class="flex min-h-[calc(100vh-76px)] w-full flex-col lg:flex-row">
-            <aside class="border-b border-white/10 bg-slate-900/50 px-4 py-4 backdrop-blur lg:min-h-[calc(100vh-76px)] lg:w-[280px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+            <aside class="border-b app-sidebar px-4 py-4 backdrop-blur lg:min-h-[calc(100vh-76px)] lg:w-[280px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
                 <nav class="mt-2 text-sm">
                     <div v-for="(section, sIdx) in navSections" :key="sIdx" class="mb-4">
                         <p v-if="section.heading" class="mb-2 px-3 text-xs font-bold uppercase tracking-widest text-slate-500">{{ section.heading }}</p>
                         <div class="grid gap-1">
                             <div v-for="(item, iIdx) in section.items" :key="iIdx">
                                 <div v-if="item.children">
-                                    <button @click="toggleNavSection(`${sIdx}-${iIdx}`)" :class="item.active ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:bg-white/5'" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left transition">
-                                        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
-                                            <span class="h-4 w-4" v-html="getIcon(item.icon)"></span>
-                                        </span>
-                                        <span class="flex-1 font-medium">{{ item.label }}</span>
-                                        <svg class="h-3.5 w-3.5 transition-transform" :class="expandedSections[`${sIdx}-${iIdx}`] ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
-                                    </button>
+                                    <div :class="item.active ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:bg-white/5'" class="flex items-center gap-2 rounded-xl px-2 py-1 transition">
+                                        <Link :href="item.route" class="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-1">
+                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
+                                                <span class="h-4 w-4" v-html="getIcon(item.icon)"></span>
+                                            </span>
+                                            <span class="truncate font-medium">{{ item.label }}</span>
+                                        </Link>
+                                        <button type="button" @click="toggleNavSection(`${sIdx}-${iIdx}`)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10">
+                                            <svg class="h-3.5 w-3.5 transition-transform" :class="expandedSections[`${sIdx}-${iIdx}`] ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+                                        </button>
+                                    </div>
                                     <div v-show="expandedSections[`${sIdx}-${iIdx}`]" class="ml-4 mt-1 space-y-1">
-                                        <a v-for="(child, cIdx) in item.children" :key="cIdx" :href="child.route" :class="child.active ? 'text-orange-400' : 'text-slate-500 hover:text-slate-300'" class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition">
+                                        <Link v-for="(child, cIdx) in item.children" :key="cIdx" :href="child.route" :class="child.active ? 'text-orange-400' : 'text-slate-500 hover:text-slate-300'" class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition">
                                             <span class="h-1 w-1 rounded-full" :class="child.active ? 'bg-orange-400' : 'bg-slate-600'"></span>
                                             {{ child.label }}
-                                        </a>
+                                        </Link>
                                     </div>
                                 </div>
                                 <Link v-else :href="item.route" :class="item.active ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:bg-white/5'" class="flex items-center gap-2.5 rounded-xl px-3 py-2 transition">

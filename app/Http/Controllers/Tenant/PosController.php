@@ -62,7 +62,7 @@ class PosController extends Controller
         $user = $request->user();
         $this->ensureCanManageProducts($user);
 
-        return Inertia::render('Tenant/Pos/ProductForm'[
+        return Inertia::render('Tenant/Pos/ProductForm', [
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,
             'gstRates' => PosProduct::GST_RATES,
@@ -86,7 +86,7 @@ class PosController extends Controller
         $this->ensureCanManageProducts($user);
         $this->ensureTenantProduct($user, $product);
 
-        return Inertia::render('Tenant/Pos/ProductForm'[
+        return Inertia::render('Tenant/Pos/ProductForm', [
             'product' => $product,
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,

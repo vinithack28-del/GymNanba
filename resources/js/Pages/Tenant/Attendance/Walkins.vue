@@ -32,7 +32,7 @@ const form = useForm({
 });
 
 const submit = () => {
-    form.post('/tenant/attendance/walkins');
+    form.post('/walkins');
 };
 </script>
 

@@ -40,6 +40,7 @@ class RenewalController extends Controller
         $tab  = $request->get('tab', '7days');
         $from = $request->get('from');
         $to   = $request->get('to');
+        $planId = $request->get('plan_id');
 
         $query = $base();
 
@@ -55,7 +56,7 @@ class RenewalController extends Controller
             default   => $query->whereDate('expiry_date', '<=', now()->addDays(30)->toDateString()),
         };
 
-        if ($planId = $request->get('plan_id')) {
+        if ($planId) {
             $query->where('plan_id', $planId);
         }
 
@@ -67,7 +68,7 @@ class RenewalController extends Controller
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
 
         return Inertia::render('Tenant/Renewals/Index', compact(
-            'stats', 'members', 'plans', 'branches', 'today', 'tab', 'from', 'to', 'selectedBranch'
+            'stats', 'members', 'plans', 'branches', 'today', 'tab', 'from', 'to', 'selectedBranch', 'planId'
         ));
     }
 

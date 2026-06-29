@@ -45,7 +45,7 @@ class MembershipPlanController extends Controller
             'archived' => GymMembershipPlan::forTenant($tenant->id)->where('status', 'archived')->count(),
         ];
 
-        return Inertia::render('Tenant/Plans/Index', compact('plans', 'branches', 'counts'));
+        return Inertia::render('Tenant/MembershipPlans/Index', compact('plans', 'branches', 'counts'));
     }
 
     public function create(Request $request){
@@ -53,7 +53,7 @@ class MembershipPlanController extends Controller
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
 
-        return Inertia::render('Tenant/Plans/Form', compact('branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/MembershipPlans/Form', compact('branches', 'defaultGstRate'));
     }
 
     public function edit(Request $request, GymMembershipPlan $plan){
@@ -63,7 +63,7 @@ class MembershipPlanController extends Controller
         $plan->load('branches');
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
 
-        return Inertia::render('Tenant/Plans/Form', compact('plan', 'branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/MembershipPlans/Form', compact('plan', 'branches', 'defaultGstRate'));
     }
 
     public function store(Request $request): RedirectResponse

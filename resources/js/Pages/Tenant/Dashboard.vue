@@ -23,6 +23,11 @@ const formatDate = (date) => {
     return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+const formatTime = (date) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
 const formatCurrency = (paise) => {
     return '₹' + (paise / 100).toFixed(2);
 };
@@ -111,7 +116,7 @@ const formatCurrency = (paise) => {
                                 <td class="py-3">{{ payment.member?.name || 'Walk-in' }}</td>
                                 <td class="py-3 text-slate-400">{{ payment.plan?.name || '—' }}</td>
                                 <td class="py-3 text-right">{{ formatCurrency(payment.total_paise) }}</td>
-                                <td class="py-3 text-slate-400">{{ formatDate(payment.payment_date) }}</td>
+                                <td class="py-3 text-slate-400">{{ formatDate(payment.payment_date) }} {{ formatTime(payment.payment_date) }}</td>
                             </tr>
                         </tbody>
                     </table>

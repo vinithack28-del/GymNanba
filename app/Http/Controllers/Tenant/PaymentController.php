@@ -34,7 +34,7 @@ class PaymentController extends Controller
             $data['preselectedMember'] = $member;
         }
 
-        return Inertia::render('Tenant/Payments/Collect'$data);
+        return Inertia::render('Tenant/Payments/Collect', $data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -71,7 +71,7 @@ class PaymentController extends Controller
         }
         $data = $this->svc->history($request, $this->tenantId());
 
-        return Inertia::render('Tenant/Payments/History'$data);
+        return Inertia::render('Tenant/Payments/History', $data);
     }
 
     // ── Dues ──────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ class PaymentController extends Controller
     public function receipt(Payment $payment){
         $data = $this->svc->receiptData($payment, $this->tenantId());
 
-        return Inertia::render('Tenant/Payments/Receipt'$data);
+        return Inertia::render('Tenant/Payments/Receipt', $data);
     }
 
     // ── Member search (AJAX) ──────────────────────────────────────────────────

@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     lockers: Object,
@@ -9,6 +10,8 @@ const props = defineProps({
     canEdit: Boolean,
     canDelete: Boolean,
 });
+
+const lockerRows = computed(() => props.lockers?.data || []);
 
 const getStatusColor = (status) => {
     const colors = {
@@ -31,7 +34,7 @@ const getStatusColor = (status) => {
                     <h1 class="mt-2 text-3xl font-semibold">Lockers</h1>
                     <p class="mt-1 text-slate-300">Track locker availability, assignments, and usage history.</p>
                 </div>
-                <Link v-if="canAdd" href="/tenant/lockers/create" class="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
+                <Link v-if="canAdd" href="/lockers/create" class="flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                     <span>+</span> Add Locker
                 </Link>
             </div>
@@ -74,11 +77,11 @@ const getStatusColor = (status) => {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!lockers || lockers.length === 0" class="flex flex-col items-center gap-4 py-20 text-center">
+                <div v-if="lockerRows.length === 0" class="flex flex-col items-center gap-4 py-20 text-center">
                     <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">🔒</div>
                     <p class="text-lg font-bold">No lockers found</p>
                     <p class="text-sm text-slate-400">Get started by adding your first locker.</p>
-                    <Link v-if="canAdd" href="/tenant/lockers/create" class="mt-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Locker</Link>
+                    <Link v-if="canAdd" href="/lockers/create" class="mt-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Locker</Link>
                 </div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -94,7 +97,7 @@ const getStatusColor = (status) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="locker in lockers" :key="locker.id" class="hover:bg-white/5">
+                            <tr v-for="locker in lockerRows" :key="locker.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-bold text-orange-400">{{ locker.locker_number }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ locker.location || '—' }}</td>
                                 <td class="px-4 py-3">{{ locker.branch?.name || '—' }}</td>
@@ -111,8 +114,8 @@ const getStatusColor = (status) => {
                                 <td class="px-4 py-3">{{ locker.currentAssignment?.member?.name || '—' }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <Link :href="`/tenant/lockers/${locker.id}`" class="text-orange-400 hover:text-orange-300 text-sm">View</Link>
-                                        <Link v-if="canEdit" :href="`/tenant/lockers/${locker.id}/edit`" class="text-slate-400 hover:text-slate-300 text-sm">Edit</Link>
+                                        <Link :href="`/lockers/${locker.id}`" class="text-orange-400 hover:text-orange-300 text-sm">View</Link>
+                                        <Link v-if="canEdit" :href="`/lockers/${locker.id}/edit`" class="text-slate-400 hover:text-slate-300 text-sm">Edit</Link>
                                     </div>
                                 </td>
                             </tr>

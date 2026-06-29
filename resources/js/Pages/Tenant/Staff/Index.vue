@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     staff: Object,
@@ -11,6 +12,13 @@ const props = defineProps({
     filters: Object,
     canManage: Boolean,
 });
+
+const staffRows = computed(() => props.staff?.data || []);
+const formatRole = (role) => String(role || '—').replaceAll('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+const formatStatus = (status) => {
+    const value = String(status || 'inactive');
+    return value.charAt(0).toUpperCase() + value.slice(1);
+};
 </script>
 
 <template>
@@ -44,12 +52,12 @@ const props = defineProps({
             </div>
 
             <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <form method="GET" action="/tenant/staff" class="flex flex-wrap items-center gap-2">
+                <form method="GET" action="/staff" class="flex flex-wrap items-center gap-2">
                     <input name="search" :value="filters?.search" placeholder="Search staff..." class="min-w-[220px] flex-1 rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
 
                     <select name="role" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                         <option value="">All Roles</option>
-                        <option v-for="role in roles" :key="role" :value="role">{{ role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</option>
+                        <option v-for="role in roles" :key="role" :value="role">{{ formatRole(role) }}</option>
                     </select>
 
                     <select name="branch_id" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
@@ -63,15 +71,15 @@ const props = defineProps({
                     </select>
 
                     <div class="flex items-center gap-2">
-                        <Link href="/tenant/staff/roles" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/5">Roles</Link>
-                        <Link href="/tenant/staff/attendance" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/5">Attendance</Link>
-                        <Link v-if="canManage" href="/tenant/staff/create" class="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Staff</Link>
+                        <Link href="/staff/roles" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/5">Roles</Link>
+                        <Link href="/staff/attendance" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-white/5">Attendance</Link>
+                        <Link v-if="canManage" href="/staff/create" class="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Staff</Link>
                     </div>
                 </form>
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!staff || staff.length === 0" class="p-6 text-center text-sm text-slate-400">No staff found.</div>
+                <div v-if="staffRows.length === 0" class="p-6 text-center text-sm text-slate-400">No staff found.</div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950/60 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -86,19 +94,19 @@ const props = defineProps({
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="member in staff" :key="member.id" class="hover:bg-white/5">
+                            <tr v-for="member in staffRows" :key="member.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-semibold">{{ member.name }}</td>
-                                <td class="px-4 py-3 text-slate-400">{{ member.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ formatRole(member.role) }}</td>
                                 <td class="px-4 py-3">{{ member.branch_name || '—' }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ member.phone }}</td>
                                 <td class="px-4 py-3">
                                     <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="member.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-                                        {{ member.status.charAt(0).toUpperCase() + member.status.slice(1) }}
+                                        {{ formatStatus(member.status) }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-slate-400">{{ member.join_date }}</td>
                                 <td class="px-4 py-3">
-                                    <Link :href="`/tenant/staff/${member.id}`" class="text-orange-400 hover:text-orange-300 text-sm">View</Link>
+                                    <Link :href="`/staff/${member.id}`" class="text-orange-400 hover:text-orange-300 text-sm">View</Link>
                                 </td>
                             </tr>
                         </tbody>

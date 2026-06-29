@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     member: Object,
@@ -11,6 +12,8 @@ const props = defineProps({
     canEdit: Boolean,
     canDelete: Boolean,
 });
+
+const recordRows = computed(() => props.records?.data || []);
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -32,9 +35,9 @@ const form = useForm({
 
 const submit = () => {
     if (props.editingRecord) {
-        form.put(`/tenant/assess/body-metrics/${props.editingRecord.id}`);
+        form.put(`/assess/body-metrics/${props.editingRecord.id}`);
     } else {
-        form.post('/tenant/assess/body-metrics');
+        form.post('/assess/body-metrics');
     }
 };
 </script>
@@ -50,7 +53,7 @@ const submit = () => {
                     <h1 class="mt-2 text-3xl font-semibold">Body Metrics</h1>
                     <p class="mt-1 text-slate-300">Track measurements, BMI, and next measurement dates.</p>
                 </div>
-                <Link :href="`/tenant/assess/body-metrics/progress?member_id=${selectedMemberId}`" class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5">
+                <Link :href="`/assess/body-metrics/progress?member_id=${selectedMemberId}`" class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5">
                     Progress Tracking
                 </Link>
             </div>
@@ -119,7 +122,7 @@ const submit = () => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="record in records" :key="record.id" class="hover:bg-white/5">
+                            <tr v-for="record in recordRows" :key="record.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3">{{ record.member?.name }}</td>
                                 <td class="px-4 py-3">{{ formatDate(record.assessment_date) }}</td>
                                 <td class="px-4 py-3">{{ record.payload?.weight_kg }}</td>
@@ -129,7 +132,7 @@ const submit = () => {
                                 <td class="px-4 py-3">{{ formatDate(record.next_assessment_date) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <Link v-if="canEdit" :href="`/tenant/assess/body-metrics?member_id=${record.member_id}&edit=${record.id}`" class="text-orange-400 hover:text-orange-300 text-sm">Edit</Link>
+                                        <Link v-if="canEdit" :href="`/assess/body-metrics?member_id=${record.member_id}&edit=${record.id}`" class="text-orange-400 hover:text-orange-300 text-sm">Edit</Link>
                                         <button v-if="canDelete" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
                                     </div>
                                 </td>

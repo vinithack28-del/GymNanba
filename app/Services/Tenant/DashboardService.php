@@ -65,7 +65,7 @@ class DashboardService
                 'label' => 'Active Leads',
                 'value' => number_format((clone $walkinBase)->enquiries()->whereIn('enquiry_status', ['open', 'followed_up'])->count()),
                 'sub' => 'Open and followed up enquiries',
-                'route' => route('tenant.attendance.walkins'),
+                'route' => route('tenant.walkins.index'),
                 'visible' => $user->canAccess('attendance.check_in|attendance.view_log'),
             ],
             'expired_not_renewed' => [

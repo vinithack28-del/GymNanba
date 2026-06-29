@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     activeTab: String,
@@ -8,6 +9,9 @@ const props = defineProps({
     payments: Object,
     branches: Object,
 });
+
+const paymentRows = computed(() => props.payments?.data || []);
+const totalDuePaise = computed(() => paymentRows.value.reduce((sum, payment) => sum + Number(payment?.due_paise || 0), 0));
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -30,14 +34,14 @@ const getStatusColor = (status) => {
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
                 <div class="inline-flex rounded-xl p-1 bg-slate-950/50 border border-white/10">
-                    <Link href="/tenant/payments?tab=dues" :class="['px-4 py-2 rounded-lg text-sm font-semibold transition', activeTab === 'dues' ? 'bg-white/5 text-slate-200' : 'text-slate-400']">
+                    <Link href="/payments?tab=dues" :class="['px-4 py-2 rounded-lg text-sm font-semibold transition', activeTab === 'dues' ? 'bg-white/5 text-slate-200' : 'text-slate-400']">
                         Dues
                     </Link>
-                    <Link href="/tenant/payments?tab=history" :class="['px-4 py-2 rounded-lg text-sm font-semibold transition', activeTab === 'history' ? 'bg-white/5 text-slate-200' : 'text-slate-400']">
+                    <Link href="/payments?tab=history" :class="['px-4 py-2 rounded-lg text-sm font-semibold transition', activeTab === 'history' ? 'bg-white/5 text-slate-200' : 'text-slate-400']">
                         History
                     </Link>
                 </div>
-                <Link href="/tenant/payments/collect" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
+                <Link href="/payments/collect" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                     + Collect Fee
                 </Link>
             </div>
@@ -101,7 +105,7 @@ const getStatusColor = (status) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/10 bg-white/5">
-                                <tr v-for="payment in payments" :key="payment.id" class="hover:bg-white/5">
+                                <tr v-for="payment in paymentRows" :key="payment.id" class="hover:bg-white/5">
                                     <td class="px-4 py-3 font-mono text-xs">{{ payment.receipt_number }}</td>
                                     <td class="px-4 py-3">{{ payment.member?.name || '—' }}</td>
                                     <td class="px-4 py-3 text-slate-400">{{ payment.plan?.name || '—' }}</td>
@@ -124,9 +128,9 @@ const getStatusColor = (status) => {
                 <div class="rounded-xl border border-red-400/20 bg-red-500/10 p-4 mb-6 flex items-center justify-between">
                     <div>
                         <p class="text-sm font-semibold text-red-400">Total Due</p>
-                        <p class="mt-0.5 text-xs text-red-300">{{ payments?.length || 0 }} members due</p>
+                        <p class="mt-0.5 text-xs text-red-300">{{ paymentRows.length || 0 }} members due</p>
                     </div>
-                    <p class="text-2xl font-bold text-red-400">₹0</p>
+                    <p class="text-2xl font-bold text-red-400">{{ formatCurrency(totalDuePaise) }}</p>
                 </div>
 
                 <div class="overflow-hidden rounded-xl border border-white/10 bg-white/5">
@@ -144,7 +148,7 @@ const getStatusColor = (status) => {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-white/10 bg-white/5">
-                                <tr v-for="payment in payments" :key="payment.id" class="hover:bg-white/5">
+                                <tr v-for="payment in paymentRows" :key="payment.id" class="hover:bg-white/5">
                                     <td class="px-4 py-3">{{ payment.member?.name || '—' }}</td>
                                     <td class="px-4 py-3 text-slate-400">{{ payment.plan?.name || '—' }}</td>
                                     <td class="px-4 py-3 text-right">{{ formatCurrency(payment.total_paise) }}</td>
@@ -152,7 +156,7 @@ const getStatusColor = (status) => {
                                     <td class="px-4 py-3 text-right text-red-400 font-semibold">{{ formatCurrency(payment.due_paise) }}</td>
                                     <td class="px-4 py-3 text-slate-400">{{ formatDate(payment.due_date) }}</td>
                                     <td class="px-4 py-3 text-right">
-                                        <Link :href="`/tenant/payments/collect?member_id=${payment.member_id}`" class="text-orange-400 hover:text-orange-300 text-sm">Collect</Link>
+                                        <Link :href="`/payments/collect?member_id=${payment.member_id}`" class="text-orange-400 hover:text-orange-300 text-sm">Collect</Link>
                                     </td>
                                 </tr>
                             </tbody>

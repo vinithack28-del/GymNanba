@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     records: Object,
@@ -10,6 +11,8 @@ const props = defineProps({
     canEdit: Boolean,
     canDelete: Boolean,
 });
+
+const recordRows = computed(() => props.records?.data || []);
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -31,9 +34,9 @@ const form = useForm({
 
 const submit = () => {
     if (props.editingRecord) {
-        form.put(`/tenant/assess/posture/${props.editingRecord.id}`);
+        form.put(`/assess/posture/${props.editingRecord.id}`);
     } else {
-        form.post('/tenant/assess/posture');
+        form.post('/assess/posture');
     }
 };
 </script>
@@ -131,10 +134,10 @@ const submit = () => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-if="!records || records.length === 0">
+                            <tr v-if="recordRows.length === 0">
                                 <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-400">No posture assessments found.</td>
                             </tr>
-                            <tr v-for="record in records" :key="record.id" class="hover:bg-white/5">
+                            <tr v-for="record in recordRows" :key="record.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3">{{ record.member?.name }}</td>
                                 <td class="px-4 py-3">{{ formatDate(record.assessment_date) }}</td>
                                 <td class="px-4 py-3">{{ record.status?.replace('_', ' ')?.replace(/\b\w/g, l => l.toUpperCase()) }}</td>
@@ -143,7 +146,7 @@ const submit = () => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <Link v-if="canEdit" :href="`/tenant/assess/posture?edit=${record.id}`" class="text-orange-400 hover:text-orange-300 text-sm">Edit</Link>
+                                        <Link v-if="canEdit" :href="`/assess/posture?edit=${record.id}`" class="text-orange-400 hover:text-orange-300 text-sm">Edit</Link>
                                         <button class="text-slate-400 hover:text-slate-300 text-sm">Print</button>
                                         <button v-if="canDelete" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
                                     </div>

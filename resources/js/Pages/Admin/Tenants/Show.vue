@@ -17,7 +17,7 @@ const getStatusColors = (status) => {
 };
 
 const latestSub = props.tenant.subscriptions?.sort((a, b) => b.id - a.id)[0];
-const totalPaid = props.tenant.payments?.reduce((sum, p) => sum + p.amount_paise, 0) / 100 || 0;
+const totalPaid = props.tenant.payments?.reduce((sum, p) => sum + p.amount_paise, 0) || 0;
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -136,24 +136,23 @@ const timeAgo = (date) => {
             <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                 <div class="space-y-6">
                     <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                        <h3 class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Owner & Contact</h3>
+                        <h3 class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Owners</h3>
+                        <div class="space-y-4">
+                            <div v-if="tenant.users && tenant.users.length > 0" v-for="(owner, index) in tenant.users.filter(u => u.role === 'tenant_owner')" :key="owner.id" class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <div class="mb-3 text-xs uppercase tracking-[0.18em] text-slate-400">{{ index === 0 ? 'Primary Owner' : `Additional Owner ${index}` }}</div>
+                                <div class="grid gap-3 text-sm">
+                                    <div class="flex justify-between gap-4"><span class="text-slate-400">Name:</span><span class="font-semibold">{{ owner.name }}</span></div>
+                                    <div class="flex justify-between gap-4"><span class="text-slate-400">Email:</span><span class="font-semibold">{{ owner.email }}</span></div>
+                                    <div class="flex justify-between gap-4"><span class="text-slate-400">Phone:</span><span class="font-semibold">{{ owner.phone || '—' }}</span></div>
+                                </div>
+                            </div>
+                            <div v-else class="text-sm text-slate-400">No owners found.</div>
+                        </div>
+                    </section>
+
+                    <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6">
+                        <h3 class="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-slate-400">Business Contact</h3>
                         <div class="grid grid-cols-2 gap-0">
-                            <div class="border-b border-r border-white/10 p-4">
-                                <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">Owner Name</p>
-                                <p class="text-sm font-semibold">{{ tenant.owner_name }}</p>
-                            </div>
-                            <div class="border-b border-white/10 p-4">
-                                <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">Owner Email</p>
-                                <p class="text-sm font-semibold">{{ tenant.owner_email }}</p>
-                            </div>
-                            <div class="border-b border-r border-white/10 p-4">
-                                <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">Login Email</p>
-                                <p class="text-sm font-semibold">{{ tenant.owner_user?.email || tenant.owner_email }}</p>
-                            </div>
-                            <div class="border-b border-white/10 p-4">
-                                <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">Phone</p>
-                                <p class="text-sm font-semibold">{{ tenant.phone || '—' }}</p>
-                            </div>
                             <div class="border-b border-r border-white/10 p-4">
                                 <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">GST Number</p>
                                 <p class="text-sm font-semibold font-mono">{{ tenant.gst_number || '—' }}</p>

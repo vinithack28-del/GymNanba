@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({
@@ -10,9 +10,49 @@ const props = defineProps({
     filters: Object,
 });
 
-const search = ref(props.filters.search || '');
-const status = ref(props.filters.status || '');
-const businessType = ref(props.filters.business_type || '');
+const search = ref(props.filters?.search || '');
+const status = ref(props.filters?.status || '');
+const businessType = ref(props.filters?.business_type || '');
+
+const applyFilters = () => {
+    router.get('/admin/tenants', {
+        search: search.value || undefined,
+        status: status.value || undefined,
+        business_type: businessType.value || undefined,
+        per_page: props.tenants?.per_page || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+const clearFilters = () => {
+    search.value = '';
+    status.value = '';
+    businessType.value = '';
+
+    router.get('/admin/tenants', {
+        per_page: props.tenants?.per_page || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+const updatePerPage = (perPage) => {
+    router.get('/admin/tenants', {
+        search: search.value || undefined,
+        status: status.value || undefined,
+        business_type: businessType.value || undefined,
+        per_page: perPage || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
 
 const getBadgeClass = (status) => {
     const classes = {
@@ -55,22 +95,8 @@ const getDaysLeftColor = (days) => {
         
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Tenants</p>
-                    <h1 class="mt-2 text-3xl font-semibold">Manage Gym Tenants</h1>
-                    <p class="mt-1 text-slate-300">View and manage all gym tenants on the platform.</p>
-                </div>
-                <Link
-                    href="/admin/tenants/new"
-                    class="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-orange-400"
-                >
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-                    Add New
-                </Link>
-            </div>
-
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-                <form method="GET" class="flex flex-wrap items-end gap-3">
+                <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
+                <form @submit.prevent="applyFilters" class="flex flex-wrap items-end gap-3">
                     <input type="text" name="search" v-model="search" placeholder="Search tenants..." class="flex-1 min-w-[200px] rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-orange-400">
                     <select name="status" v-model="status" class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none focus:border-orange-400">
                         <option value="">All Statuses</option>
@@ -81,14 +107,24 @@ const getDaysLeftColor = (days) => {
                         <option v-for="type in businessTypes" :key="type" :value="type">{{ type }}</option>
                     </select>
                     <button type="submit" class="rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-orange-400">Apply</button>
-                    <Link v-if="search || status || businessType" href="/admin/tenants" class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold transition hover:bg-white/10">Clear</Link>
+                    <button v-if="search || status || businessType" type="button" @click="clearFilters" class="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold transition hover:bg-white/10">Clear</button>
                 </form>
             </div>
+                <Link
+                    href="/admin/tenants/new"
+                    class="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-orange-400"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                    Add New
+                </Link>
+            </div>
+
+            
 
             <div class="overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5">
                 <div class="overflow-x-auto">
                     <table class="w-full divide-y divide-white/10 text-left text-sm">
-                        <thead class="bg-slate-950/60 text-slate-300">
+                        <thead class="app-table-head">
                             <tr>
                                 <th class="px-4 py-3 font-medium">Gym</th>
                                 <th class="px-4 py-3 font-medium">Owner</th>
@@ -112,7 +148,7 @@ const getDaysLeftColor = (days) => {
                                     <p class="text-xs text-slate-400">{{ tenant.owner_email }}</p>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span class="rounded bg-slate-950 px-2 py-1 text-xs font-mono text-slate-400">{{ tenant.subdomain }}.gymos.in</span>
+                                    <span class="app-panel rounded border border-white/10 px-2 py-1 text-xs font-mono app-muted">{{ tenant.subdomain }}.gymos.in</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <p>{{ tenant.latest_sub?.plan?.name || '—' }}</p>
@@ -155,7 +191,7 @@ const getDaysLeftColor = (days) => {
             <div v-if="tenants.data && tenants.data.length > 0" class="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
                 <p class="text-xs text-slate-400">Showing {{ tenants.from || 0 }} to {{ tenants.to || 0 }} of {{ tenants.total }} tenants</p>
                 <div class="flex items-center gap-4">
-                    <select class="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs outline-none focus:border-orange-400" @change="window.location.href=`/admin/tenants?per_page=${$event.target.value}`">
+                    <select class="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs outline-none focus:border-orange-400" @change="updatePerPage($event.target.value)">
                         <option :selected="tenants.per_page === 10" value="10">10 / page</option>
                         <option :selected="tenants.per_page === 25" value="25">25 / page</option>
                         <option :selected="tenants.per_page === 50" value="50">50 / page</option>

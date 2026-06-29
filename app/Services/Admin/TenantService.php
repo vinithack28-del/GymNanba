@@ -62,18 +62,34 @@ class TenantService
 
     public function getEditMeta(Tenant $tenant): array
     {
+        // Load all tenant owner users (role = 'tenant_owner' with this tenant_id)
+        $allOwners = User::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('role', 'tenant_owner')
+            ->get()
+            ->map(fn ($user) => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+            ])
+            ->toArray();
+
         return [
             'tenant'        => $tenant->load(['subscriptions.plan', 'ownerUser']),
             'plans'         => Plan::query()->where('status', 'active')->orderBy('price_paise')->get(),
             'languages'     => PlatformLanguage::query()->orderByDesc('is_active')->orderBy('display_name')->get(),
             'statuses'      => ['active', 'trial', 'trial_ended', 'subscription_expired', 'suspended', 'archived'],
             'businessTypes' => ['Gym', 'Yoga', 'Turf'],
+            'owners'        => $allOwners,
         ];
     }
 
     public function getDetails(Tenant $tenant): Tenant
     {
-        return $tenant->load(['subscriptions.plan', 'payments.admin', 'ownerUser']);
+        return $tenant->load(['subscriptions.plan', 'payments.admin', 'ownerUser'])
+            ->load(['users' => function ($query) {
+                $query->where('role', 'tenant_owner');
+            }]);
     }
 
     public function create(array $validated): Tenant
@@ -216,11 +232,13 @@ class TenantService
         $requiresProvisioning = $validated['database_mode'] === 'separate'
             && ($tenant->database_mode !== 'separate' || empty($tenant->database_name));
 
+        $primaryOwner = $validated['owners'][0] ?? null;
+
         $tenant->update([
             'gym_name' => $validated['gym_name'],
             'business_type' => $validated['business_type'],
-            'owner_name' => $validated['owner_name'],
-            'owner_email' => strtolower($validated['owner_email']),
+            'owner_name' => $primaryOwner['name'] ?? $validated['owner_name'],
+            'owner_email' => strtolower($primaryOwner['email'] ?? $validated['owner_email']),
             'phone' => $validated['phone'],
             'city' => $validated['city'],
             'state' => $validated['state'],
@@ -238,12 +256,74 @@ class TenantService
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        $tenant->ownerUser?->update([
-            'name' => $validated['owner_name'],
-            'email' => strtolower($validated['owner_email']),
-            'preferred_language' => $validated['default_language'],
-            ...(! empty($validated['owner_password']) ? ['password' => $validated['owner_password']] : []),
-        ]);
+        // Sync owners - handle multiple owners
+        if (! empty($validated['owners'])) {
+            $existingOwners = User::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('role', 'tenant_owner')
+                ->get();
+
+            $existingOwnerIds = $existingOwners->pluck('id')->toArray();
+            $newOwnerIds = [];
+
+            foreach ($validated['owners'] as $index => $ownerData) {
+                $password = $this->generateOwnerPassword($ownerData['email'], $ownerData['phone']);
+
+                // Try to find existing owner by email
+                $existingOwner = $existingOwners->firstWhere('email', strtolower($ownerData['email']));
+
+                if ($existingOwner) {
+                    // Update existing owner
+                    $existingOwner->update([
+                        'name' => $ownerData['name'],
+                        'email' => strtolower($ownerData['email']),
+                        'phone' => $ownerData['phone'],
+                        'preferred_language' => $validated['default_language'],
+                    ]);
+                    $newOwnerIds[] = $existingOwner->id;
+
+                    // Set as primary owner if first in list
+                    if ($index === 0) {
+                        $tenant->forceFill(['owner_user_id' => $existingOwner->id])->save();
+                    }
+                } else {
+                    // Create new owner
+                    $user = User::query()->create([
+                        'tenant_id'          => $tenant->id,
+                        'name'               => $ownerData['name'],
+                        'email'              => strtolower($ownerData['email']),
+                        'phone'              => $ownerData['phone'],
+                        'preferred_language' => $validated['default_language'],
+                        'role'               => 'tenant_owner',
+                        'password'           => $password,
+                    ]);
+                    $newOwnerIds[] = $user->id;
+
+                    // Set as primary owner if first in list
+                    if ($index === 0) {
+                        $tenant->forceFill(['owner_user_id' => $user->id])->save();
+                    }
+                }
+            }
+
+            // Delete owners that are no longer in the list
+            $ownersToDelete = array_diff($existingOwnerIds, $newOwnerIds);
+            if (! empty($ownersToDelete)) {
+                User::query()
+                    ->whereIn('id', $ownersToDelete)
+                    ->where('role', 'tenant_owner')
+                    ->where('tenant_id', $tenant->id)
+                    ->delete();
+            }
+        } else {
+            // Fallback to single owner update for backward compatibility
+            $tenant->ownerUser?->update([
+                'name' => $validated['owner_name'],
+                'email' => strtolower($validated['owner_email']),
+                'preferred_language' => $validated['default_language'],
+                ...(! empty($validated['owner_password']) ? ['password' => $validated['owner_password']] : []),
+            ]);
+        }
 
         // Update subscription plan / trial fields if provided
         if (! empty($validated['plan_id'])) {

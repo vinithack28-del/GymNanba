@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class StaffController extends Controller
 {
@@ -184,7 +185,7 @@ class StaffController extends Controller
         return redirect()->route('tenant.staff.roles')->with('status', 'Role deleted.');
     }
 
-    public function attendance(Request $request): View|StreamedResponse
+    public function attendance(Request $request): InertiaResponse|StreamedResponse
     {
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);

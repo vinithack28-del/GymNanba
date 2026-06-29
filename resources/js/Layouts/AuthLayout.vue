@@ -20,10 +20,10 @@ const toggleTheme = () => {
 </script>
 
 <template>
-    <div class="min-h-screen bg-slate-900 text-slate-100">
+    <div class="min-h-screen app-theme-shell">
         <Head :title="`${title} | GymNanba`" />
         
-        <header class="sticky top-0 z-30 border-b border-white/10 bg-slate-900/80 px-4 py-4 backdrop-blur lg:px-6">
+        <header class="sticky top-0 z-30 border-b app-topbar px-4 py-4 backdrop-blur lg:px-6">
             <div class="flex w-full items-center justify-between gap-4">
                 <div class="flex items-center gap-4">
                     <div class="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden bg-orange-500/20">

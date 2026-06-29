@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\PlatformLanguage;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,6 +41,21 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => app()->getLocale(),
+            'portalLanguages' => fn () => $this->getActivePortalLanguages(),
         ];
+    }
+
+    private function getActivePortalLanguages(): array
+    {
+        try {
+            return PlatformLanguage::query()
+                ->where('is_active', true)
+                ->orderBy('display_name')
+                ->get(['locale_code', 'display_name'])
+                ->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

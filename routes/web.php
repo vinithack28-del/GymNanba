@@ -69,6 +69,8 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
         Route::delete('/tenants/{tenant}', [TenantController::class, 'destroy'])->name('tenants.destroy');
         Route::get('/plans', [PlanController::class, 'index'])->name('plans.index');
         Route::post('/plans', [PlanController::class, 'store'])->name('plans.store');
+        Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
+        Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('plans.destroy');
         Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
         Route::post('/invoices/renewals', [AdminInvoiceController::class, 'storeRenewal'])->name('invoices.renewals.store');
@@ -183,6 +185,13 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::post('/{class}/attendance', [ClassController::class, 'storeAttendance'])->name('attendance.store');
         });
 
+        Route::prefix('walkins')->name('walkins.')->group(function (): void {
+            Route::get('/', [AttendanceController::class, 'walkins'])->name('index');
+            Route::post('/', [AttendanceController::class, 'storeWalkin'])->name('store');
+            Route::post('/{walkIn}/followup', [AttendanceController::class, 'storeFollowup'])->name('followup');
+            Route::get('/{walkIn}/followup-history', [AttendanceController::class, 'followupHistory'])->name('followup-history');
+        });
+
         Route::prefix('attendance')->name('attendance.')->group(function (): void {
             Route::get('/', fn () => redirect()->route('tenant.attendance.checkins'))->name('index');
             Route::get('/checkins', [AttendanceController::class, 'checkins'])->name('checkins');
@@ -191,10 +200,6 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::delete('/checkins/{log}', [AttendanceController::class, 'destroyCheckin'])->name('checkins.destroy');
             Route::get('/checkins/export', [AttendanceController::class, 'exportCheckins'])->name('checkins.export');
             Route::get('/member-search', [AttendanceController::class, 'memberSearch'])->name('member-search');
-            Route::get('/walkins', [AttendanceController::class, 'walkins'])->name('walkins');
-            Route::post('/walkins', [AttendanceController::class, 'storeWalkin'])->name('walkins.store');
-            Route::post('/walkins/{walkIn}/followup', [AttendanceController::class, 'storeFollowup'])->name('walkins.followup');
-            Route::get('/walkins/{walkIn}/followup-history', [AttendanceController::class, 'followupHistory'])->name('walkins.followup-history');
         });
 
         Route::prefix('assess')->name('assess.')->group(function (): void {

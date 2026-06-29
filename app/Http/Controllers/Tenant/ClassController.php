@@ -29,7 +29,7 @@ class ClassController extends Controller
     public function create(Request $request){
         $data = $this->service->formData($request->user());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return Inertia::render('Tenant/Classes/Form'$data);
+        return Inertia::render('Tenant/Classes/Form', $data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -147,7 +147,7 @@ class ClassController extends Controller
     public function attendance(Request $request, GymClass $class){
         $data = $this->service->showClass($request->user(), $class);
 
-        return Inertia::render('Tenant/Classes/Attendance'$data);
+        return Inertia::render('Tenant/Classes/Attendance', $data);
     }
 
     public function storeAttendance(Request $request, GymClass $class): RedirectResponse

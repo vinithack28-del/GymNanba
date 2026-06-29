@@ -28,7 +28,7 @@ class ExpenseController extends Controller
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->svc->list($request, $this->tenantId());
-        return Inertia::render('Tenant/Expenses/Index'$data);
+        return Inertia::render('Tenant/Expenses/Index', $data);
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ class ExpenseController extends Controller
         abort_unless($this->svc->canAdd(), 403);
         $data = $this->svc->formData($this->tenantId());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return Inertia::render('Tenant/Expenses/Create'$data);
+        return Inertia::render('Tenant/Expenses/Create', $data);
     }
 
     public function store(Request $request): RedirectResponse
