@@ -23,6 +23,7 @@ const branchLabel = props.branch?.name || 'All Branches';
 const activeRenewalTab = ref(Object.keys(props.renewalTabs || {})[0] || '');
 const expiredSearch = ref('');
 const renewalSearch = ref('');
+let chartLoader = null;
 
 const formatDate = (date) => {
     if (!date) return '—';
@@ -57,7 +58,9 @@ const setRenewalTab = (key) => {
     filterRenewals();
 };
 
-onMounted(() => {
+onMounted(async () => {
+    await ensureChartJs();
+
     if (props.revenueChart) {
         initRevenueChart();
     }
@@ -66,11 +69,36 @@ onMounted(() => {
     }
 });
 
+const ensureChartJs = async () => {
+    if (typeof window === 'undefined') return null;
+    if (window.Chart) return window.Chart;
+    if (chartLoader) return chartLoader;
+
+    chartLoader = new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-chartjs-cdn="true"]');
+        if (existing) {
+            existing.addEventListener('load', () => resolve(window.Chart));
+            existing.addEventListener('error', reject);
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+        script.async = true;
+        script.dataset.chartjsCdn = 'true';
+        script.onload = () => resolve(window.Chart);
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+
+    return chartLoader;
+};
+
 const initRevenueChart = () => {
     const ctx = document.getElementById('dashRevenueChart');
-    if (!ctx) return;
+    if (!ctx || !window.Chart) return;
     
-    new Chart(ctx, {
+    new window.Chart(ctx, {
         type: 'line',
         data: {
             labels: props.revenueChart.labels,
@@ -98,9 +126,9 @@ const initRevenueChart = () => {
 
 const initCheckinChart = () => {
     const ctx = document.getElementById('dashCheckinChart');
-    if (!ctx) return;
+    if (!ctx || !window.Chart) return;
     
-    new Chart(ctx, {
+    new window.Chart(ctx, {
         type: 'bar',
         data: {
             labels: props.checkinChart.labels,

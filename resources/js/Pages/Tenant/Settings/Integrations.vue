@@ -54,7 +54,7 @@ Object.keys(integrations.value).forEach(key => {
 
 const submitIntegration = (key) => {
     if (!forms.value[key]) return;
-    forms.value[key].put(`/tenant/settings/integrations/${key}`);
+    forms.value[key].put(`/settings/integrations/${key}`);
 };
 </script>
 
@@ -69,11 +69,11 @@ const submitIntegration = (key) => {
             </div>
 
             <div class="flex gap-2">
-                <Link href="/tenant/settings/account" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Account</Link>
-                <Link href="/tenant/settings/profile" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Profile</Link>
-                <Link href="/tenant/settings/integrations" class="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-slate-950">Integrations</Link>
-                <Link href="/tenant/settings/notifications" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Notifications</Link>
-                <Link href="/tenant/settings/security" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Security</Link>
+                <Link href="/settings/account" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Account</Link>
+                <Link href="/settings/profile" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Profile</Link>
+                <Link href="/settings/integrations" class="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-slate-950">Integrations</Link>
+                <Link href="/settings/language" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Language</Link>
+                <Link href="/settings/data" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Data</Link>
             </div>
 
             <div class="flex flex-col gap-4">

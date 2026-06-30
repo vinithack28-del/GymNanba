@@ -19,13 +19,13 @@ const passwordForm = useForm({
 });
 
 const submitProfile = () => {
-    profileForm.put('/tenant/settings/account', {
+    profileForm.put('/settings/account', {
         forceFormData: true,
     });
 };
 
 const submitPassword = () => {
-    passwordForm.put('/tenant/settings/account/password');
+    passwordForm.put('/settings/account/password');
 };
 </script>
 
@@ -40,11 +40,11 @@ const submitPassword = () => {
             </div>
 
             <div class="flex gap-2">
-                <Link href="/tenant/settings/account" class="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-slate-950">Account</Link>
-                <Link href="/tenant/settings/profile" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Profile</Link>
-                <Link href="/tenant/settings/integrations" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Integrations</Link>
-                <Link href="/tenant/settings/notifications" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Notifications</Link>
-                <Link href="/tenant/settings/security" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Security</Link>
+                <Link href="/settings/account" class="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-medium text-slate-950">Account</Link>
+                <Link href="/settings/profile" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Profile</Link>
+                <Link href="/settings/integrations" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Integrations</Link>
+                <Link href="/settings/language" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Language</Link>
+                <Link href="/settings/data" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">Data</Link>
             </div>
 
             <div class="flex flex-col gap-6">

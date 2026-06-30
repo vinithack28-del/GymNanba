@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     invoices: Object,
@@ -9,6 +10,8 @@ const props = defineProps({
     canEdit: Boolean,
     canDelete: Boolean,
 });
+
+const invoiceRows = computed(() => props.invoices?.data || []);
 
 const formatCurrency = (paise) => {
     if (!paise) return '₹0';
@@ -82,7 +85,7 @@ const getStatusColor = (status) => {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!invoices || invoices.length === 0" class="p-6 text-center text-sm text-slate-400">No invoices found.</div>
+                <div v-if="invoiceRows.length === 0" class="p-6 text-center text-sm text-slate-400">No invoices found.</div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950/60 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -99,7 +102,7 @@ const getStatusColor = (status) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="invoice in invoices" :key="invoice.id" class="hover:bg-white/5">
+                            <tr v-for="invoice in invoiceRows" :key="invoice.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-mono font-bold text-orange-400">{{ invoice.invoice_number }}</td>
                                 <td class="px-4 py-3">{{ formatDate(invoice.invoice_date) }}</td>
                                 <td class="px-4 py-3">{{ invoice.member?.name || '—' }}</td>

@@ -18,6 +18,11 @@ const isPosRole = computed(() => user.value?.role === 'pos');
 const portalTitle = computed(() => isSuperAdmin.value ? 'GymNanba Platform' : (tenant.value?.gym_name || 'GymNanba'));
 const portalEyebrow = computed(() => isSuperAdmin.value ? 'Platform operations' : (tenant.value?.gym_name || 'GymNanba'));
 const portalLanguages = computed(() => page.props.portalLanguages || []);
+const branchContext = computed(() => page.props.branchContext || null);
+const tenantBranches = computed(() => branchContext.value?.branches || []);
+const ownerCanSwitchBranch = computed(() => !!branchContext.value?.ownerCanSwitch);
+const selectedBranchId = computed(() => branchContext.value?.selectedBranchId ?? null);
+const selectedBranchName = computed(() => branchContext.value?.selectedBranchName || 'All branches');
 
 const theme = ref(localStorage.getItem('gymos-theme') || 'dark');
 const quickAddOpen = ref(false);
@@ -26,9 +31,13 @@ const userMenuOpen = ref(false);
 const localeForm = useForm({
     locale_code: page.props.locale || user.value?.preferred_language || 'en-IN',
 });
+const branchForm = useForm({
+    branch_id: '',
+});
 
 const userMenuRef = ref(null);
 const quickAddRef = ref(null);
+const branchSwitcherRef = ref(null);
 
 const navSections = ref([]);
 const expandedSections = ref({});
@@ -79,6 +88,9 @@ const handleClickOutside = (event) => {
     if (quickAddRef.value && !quickAddRef.value.contains(event.target)) {
         quickAddOpen.value = false;
     }
+    if (branchSwitcherRef.value && !branchSwitcherRef.value.contains(event.target)) {
+        branchSwitcherOpen.value = false;
+    }
 };
 
 const toggleTheme = () => {
@@ -109,6 +121,16 @@ const toggleUserMenu = () => {
     userMenuOpen.value = !userMenuOpen.value;
     quickAddOpen.value = false;
     branchSwitcherOpen.value = false;
+};
+
+const switchBranch = (branchId) => {
+    branchForm.branch_id = branchId;
+    branchForm.post('/switch-branch', {
+        preserveScroll: true,
+        onFinish: () => {
+            branchSwitcherOpen.value = false;
+        },
+    });
 };
 
 const closeAllMenus = () => {
@@ -439,6 +461,40 @@ const quickActions = computed(() => {
                         <svg v-if="theme === 'dark'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
                         <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07 6.7 17.3M17.3 6.7l1.77-1.77"/></svg>
                     </button>
+
+                    <div v-if="!isSuperAdmin && tenantBranches.length > 0">
+                        <div v-if="ownerCanSwitchBranch" class="relative" ref="branchSwitcherRef">
+                            <button @click="toggleBranchSwitcher" class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-300 transition hover:opacity-90">
+                                <svg class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
+                                <span class="hidden md:inline">{{ selectedBranchName }}</span>
+                                <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+                            <div v-if="branchSwitcherOpen" class="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border app-panel-strong p-1 shadow-xl">
+                                <p class="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500">Switch Branch</p>
+                                <button @click="switchBranch('all')" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-white/5" :class="selectedBranchId === null ? 'text-orange-400' : 'text-slate-300'">
+                                    <span class="text-orange-400">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                                    </span>
+                                    <span class="flex-1 text-left">All branches</span>
+                                    <svg v-if="selectedBranchId === null" class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                </button>
+                                <button v-for="branch in tenantBranches" :key="branch.id" @click="switchBranch(branch.id)" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-white/5" :class="selectedBranchId === branch.id ? 'text-orange-400' : 'text-slate-300'">
+                                    <span class="text-orange-400">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
+                                    </span>
+                                    <span class="flex-1 text-left">
+                                        {{ branch.name }}
+                                        <span v-if="branch.is_primary" class="ml-2 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-400">Primary</span>
+                                    </span>
+                                    <svg v-if="selectedBranchId === branch.id" class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div v-else class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-300">
+                            <svg class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+                            <span class="hidden md:inline">{{ selectedBranchName }}</span>
+                        </div>
+                    </div>
 
                     <div class="relative" ref="userMenuRef">
                         <button @click="toggleUserMenu" class="flex items-center gap-2.5 rounded-2xl border app-panel px-3 py-2 text-sm transition hover:opacity-90">

@@ -1,12 +1,15 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     summary: Object,
     products: Object,
     canManageStock: Boolean,
 });
+
+const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
     if (!paise) return '₹0';
@@ -45,7 +48,7 @@ const formatCurrency = (paise) => {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!products || products.length === 0" class="p-6 text-center text-sm text-slate-400">No products found.</div>
+                <div v-if="productRows.length === 0" class="p-6 text-center text-sm text-slate-400">No products found.</div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950/60 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -60,7 +63,7 @@ const formatCurrency = (paise) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="product in products" :key="product.id" class="hover:bg-white/5">
+                            <tr v-for="product in productRows" :key="product.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-semibold">{{ product.name }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ product.sku || '—' }}</td>
                                 <td class="px-4 py-3">{{ product.category }}</td>

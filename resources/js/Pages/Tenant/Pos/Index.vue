@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     products: Object,
@@ -9,6 +10,8 @@ const props = defineProps({
     statuses: Object,
     canManageProducts: Boolean,
 });
+
+const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
     if (!paise) return '₹0';
@@ -66,7 +69,7 @@ const formatCurrency = (paise) => {
                 </div>
             </div>
 
-            <div v-if="!products || products.length === 0" class="flex min-h-24 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-20 text-center">
+            <div v-if="productRows.length === 0" class="flex min-h-24 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-20 text-center">
                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">🛒</div>
                 <p class="text-base font-bold">No products found</p>
                 <p class="text-sm text-slate-400">Get started by adding your first product.</p>
@@ -74,7 +77,7 @@ const formatCurrency = (paise) => {
             </div>
 
             <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <div v-for="product in products" :key="product.id" class="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+                <div v-for="product in productRows" :key="product.id" class="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
                     <div class="flex h-32 items-center justify-center bg-slate-950/50">
                         <svg class="h-8 w-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 8.5a2 2 0 0 1-2 1.5H9a2 2 0 0 1-2-1.6L5.2 4H3"/><circle cx="9" cy="20" r="1.2"/><circle cx="18" cy="20" r="1.2"/></svg>
                     </div>

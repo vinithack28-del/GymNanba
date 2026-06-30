@@ -89,7 +89,7 @@ class SettingController extends Controller
                 'last_active'  => \Carbon\Carbon::createFromTimestamp($s->last_activity)->diffForHumans(),
             ]);
 
-        return Inertia::render('Tenant/Settings/Account', compact('user', 'sessions'));
+        return Inertia::render('Tenant/Settings/Index', compact('user', 'sessions'));
     }
 
     public function updateAccount(UpdateAccountRequest $request): RedirectResponse

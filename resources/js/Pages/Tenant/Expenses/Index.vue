@@ -1,6 +1,7 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     expenses: Object,
@@ -9,6 +10,12 @@ const props = defineProps({
     canAdd: Boolean,
     canEdit: Boolean,
     canDelete: Boolean,
+});
+
+const expenseRows = computed(() => props.expenses?.data || []);
+const exportHref = computed(() => {
+    const query = typeof window !== 'undefined' ? window.location.search : '';
+    return `/tenant/expenses/export${query}`;
 });
 
 const formatCurrency = (paise) => {
@@ -33,7 +40,7 @@ const formatDate = (date) => {
                     <p class="mt-0.5 text-sm text-slate-400">Track and manage gym expenses</p>
                 </div>
                 <div class="flex gap-2">
-                    <Link :href="`/tenant/expenses/export?${$page.props.url.split('?')[1] || ''}`" class="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
+                    <Link :href="exportHref" class="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
                         ↓ CSV
                     </Link>
                     <Link v-if="canAdd" href="/tenant/expenses/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
@@ -94,7 +101,7 @@ const formatDate = (date) => {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!expenses || expenses.length === 0" class="p-6 text-center text-sm text-slate-400">No expenses found.</div>
+                <div v-if="expenseRows.length === 0" class="p-6 text-center text-sm text-slate-400">No expenses found.</div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950/60 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -108,7 +115,7 @@ const formatDate = (date) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="expense in expenses" :key="expense.id" class="hover:bg-white/5">
+                            <tr v-for="expense in expenseRows" :key="expense.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3">{{ formatDate(expense.expense_date) }}</td>
                                 <td class="px-4 py-3">{{ expense.category }}</td>
                                 <td class="px-4 py-3">{{ expense.description }}</td>

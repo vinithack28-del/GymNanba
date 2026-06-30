@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Branch;
 use App\Models\PlatformLanguage;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -43,6 +44,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'locale' => app()->getLocale(),
             'portalLanguages' => fn () => $this->getActivePortalLanguages(),
+            'branchContext' => fn () => $this->getBranchContext($request),
         ];
     }
 
@@ -56,6 +58,49 @@ class HandleInertiaRequests extends Middleware
                 ->toArray();
         } catch (\Throwable) {
             return [];
+        }
+    }
+
+    private function getBranchContext(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (! $user || $user->isSuperAdmin() || ! $user->tenant_id) {
+            return null;
+        }
+
+        try {
+            $branches = Branch::forTenant($user->tenant_id)
+                ->active()
+                ->orderByRaw('is_primary DESC, name ASC')
+                ->get(['id', 'name', 'is_primary']);
+
+            $ownerCanSwitch = $user->isGymOwner();
+            $selectedBranchId = $ownerCanSwitch
+                ? session('gymos_selected_branch_id')
+                : $user->branch_id;
+
+            $selectedBranch = $selectedBranchId
+                ? $branches->firstWhere('id', $selectedBranchId)
+                : null;
+
+            if ($ownerCanSwitch && $selectedBranchId && ! $selectedBranch) {
+                session()->forget('gymos_selected_branch_id');
+                $selectedBranchId = null;
+            }
+
+            return [
+                'ownerCanSwitch' => $ownerCanSwitch,
+                'selectedBranchId' => $selectedBranchId,
+                'selectedBranchName' => $selectedBranch?->name,
+                'branches' => $branches->map(fn (Branch $branch) => [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'is_primary' => (bool) $branch->is_primary,
+                ])->values()->all(),
+            ];
+        } catch (\Throwable) {
+            return null;
         }
     }
 }

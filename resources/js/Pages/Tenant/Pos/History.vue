@@ -1,11 +1,14 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     sales: Object,
     summary: Object,
 });
+
+const saleRows = computed(() => props.sales?.data || []);
 
 const formatCurrency = (paise) => {
     if (!paise) return '₹0';
@@ -49,7 +52,7 @@ const formatDate = (date) => {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
-                <div v-if="!sales || sales.length === 0" class="p-6 text-center text-sm text-slate-400">No sales found.</div>
+                <div v-if="saleRows.length === 0" class="p-6 text-center text-sm text-slate-400">No sales found.</div>
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-slate-950/60 text-xs font-bold uppercase tracking-[0.08em] text-slate-400">
@@ -65,7 +68,7 @@ const formatDate = (date) => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
-                            <tr v-for="sale in sales" :key="sale.id" class="hover:bg-white/5">
+                            <tr v-for="sale in saleRows" :key="sale.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-mono font-bold text-orange-400">{{ sale.sale_number }}</td>
                                 <td class="px-4 py-3">{{ formatDate(sale.created_at) }}</td>
                                 <td class="px-4 py-3">{{ sale.member?.name || 'Walk-in' }}</td>

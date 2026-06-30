@@ -19,7 +19,25 @@ class BranchController extends Controller
         $branches = Branch::forTenant($tenant->id)
             ->withCount(['members'])
             ->orderByRaw("is_primary DESC, created_at ASC")
-            ->get();
+            ->get()
+            ->map(fn (Branch $branch) => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address1' => $branch->address1,
+                'address2' => $branch->address2,
+                'city' => $branch->city,
+                'state' => $branch->state,
+                'pin' => $branch->pin,
+                'phone' => $branch->phone,
+                'manager_name' => $branch->manager_name,
+                'status' => $branch->status,
+                'is_primary' => (bool) $branch->is_primary,
+                'members_count' => (int) ($branch->members_count ?? 0),
+                'active_members_count' => (int) $branch->active_members_count,
+                'amenities' => $branch->amenities ?? [],
+                'amenities_list' => $branch->amenities_list,
+            ])
+            ->values();
 
         [$planLimit, $planName] = $this->planLimit($tenant);
 
@@ -30,6 +48,7 @@ class BranchController extends Controller
             'activeCount' => $branches->where('status', 'active')->count(),
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),
+            'credentials' => $request->session()->get('branch_credentials'),
         ]);
     }
 

@@ -64,6 +64,9 @@ class MemberController extends Controller
 
         $perPage = in_array((int) $request->get('per_page'), [10, 25, 50, 100]) ? (int) $request->get('per_page') : 25;
         $members = $query->with('plan:id,name,allow_freeze,max_freeze_days')->paginate($perPage)->withQueryString();
+        $members->getCollection()->transform(function (Member $member) {
+            return $member->append(['effective_status', 'status_label', 'balance_rupees', 'initials']);
+        });
 
         $plans = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
 
@@ -81,6 +84,11 @@ class MemberController extends Controller
 
     public function show(Request $request, Member $member){
         $this->authorizeMember($request, $member);
+
+        $member->load([
+            'branch:id,name',
+            'plan:id,name,allow_freeze,max_freeze_days,duration_type,duration_value,duration_days',
+        ])->append(['effective_status', 'status_label', 'balance_rupees', 'initials']);
 
         $payments = Payment::with(['plan', 'splits', 'collectedBy'])
             ->where('member_id', $member->id)

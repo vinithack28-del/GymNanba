@@ -44,7 +44,7 @@ class PosController extends Controller
         $products = $query->orderBy('name')->paginate(18)->withQueryString();
         $base = PosProduct::query()->forTenant($user->tenant_id);
 
-        return Inertia::render('Tenant/Pos/Products', [
+        return Inertia::render('Tenant/Pos/Index', [
             'products' => $products,
             'stats' => [
                 'total' => (clone $base)->count(),
@@ -62,7 +62,7 @@ class PosController extends Controller
         $user = $request->user();
         $this->ensureCanManageProducts($user);
 
-        return Inertia::render('Tenant/Pos/ProductForm', [
+        return Inertia::render('Tenant/Pos/Create', [
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,
             'gstRates' => PosProduct::GST_RATES,
@@ -86,7 +86,7 @@ class PosController extends Controller
         $this->ensureCanManageProducts($user);
         $this->ensureTenantProduct($user, $product);
 
-        return Inertia::render('Tenant/Pos/ProductForm', [
+        return Inertia::render('Tenant/Pos/Create', [
             'product' => $product,
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,
@@ -136,7 +136,7 @@ class PosController extends Controller
         $sales = $salesQuery->orderByDesc('created_at')->paginate(12)->withQueryString();
         $tallyDate = $request->get('tally_date', now()->toDateString());
 
-        return Inertia::render('Tenant/Pos/Sales', [
+        return Inertia::render('Tenant/Pos/History', [
             'products' => PosProduct::query()
                 ->forTenant($user->tenant_id)
                 ->where('status', 'active')
@@ -172,7 +172,7 @@ class PosController extends Controller
         $this->ensureTenantSale($user, $sale);
         $this->ensureSalesAccess($user);
 
-        return Inertia::render('Tenant/Pos/SaleShow', [
+        return Inertia::render('Tenant/Pos/Show', [
             'sale' => $sale->load(['branch', 'member', 'seller', 'refundActor', 'items.product']),
             'canRefund' => $this->canRefund($user) && !$sale->refunded_at,
         ]);
@@ -254,7 +254,7 @@ class PosController extends Controller
 
         $base = PosProduct::query()->forTenant($user->tenant_id);
 
-        return Inertia::render('Tenant/Pos/Stock', [
+        return Inertia::render('Tenant/Pos/Report', [
             'products' => $products,
             'selectedProduct' => $selectedProduct,
             'productOptions' => PosProduct::query()->forTenant($user->tenant_id)->where('status', 'active')->orderBy('name')->get(),

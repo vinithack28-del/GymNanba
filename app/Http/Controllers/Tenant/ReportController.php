@@ -33,7 +33,7 @@ class ReportController extends Controller
     public function revenue(Request $request){
         abort_unless($this->svc->canRevenue(), 403);
         $data = $this->svc->revenue($request, $this->tenantId());
-        return Inertia::render('Tenant/Reports/Revenue'$data);
+        return Inertia::render('Tenant/Reports/Revenue', $data);
     }
 
     public function exportRevenue(Request $request): Response
@@ -53,7 +53,7 @@ class ReportController extends Controller
     public function members(Request $request){
         abort_unless($this->svc->canMembers(), 403);
         $data = $this->svc->members($request, $this->tenantId());
-        return Inertia::render('Tenant/Reports/Members'$data);
+        return Inertia::render('Tenant/Reports/Members', $data);
     }
 
     public function exportMembers(Request $request): Response
@@ -73,7 +73,7 @@ class ReportController extends Controller
     public function attendance(Request $request){
         abort_unless($this->svc->canAttendance(), 403);
         $data = $this->svc->attendance($request, $this->tenantId());
-        return Inertia::render('Tenant/Reports/Attendance'$data);
+        return Inertia::render('Tenant/Reports/Attendance', $data);
     }
 
     public function exportAttendance(Request $request): Response
@@ -93,7 +93,7 @@ class ReportController extends Controller
     public function staff(Request $request){
         abort_unless($this->svc->canStaff(), 403);
         $data = $this->svc->staff($request, $this->tenantId());
-        return Inertia::render('Tenant/Reports/Staff'$data);
+        return Inertia::render('Tenant/Reports/Staff', $data);
     }
 
     public function exportStaff(Request $request): Response

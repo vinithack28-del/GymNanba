@@ -351,6 +351,16 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
 
             Route::redirect('/', '/settings/profile')->name('index');
         });
+
+        // Legacy settings URLs kept for backward compatibility with older Vue links.
+        Route::redirect('/tenant/settings/account', '/settings/account');
+        Route::redirect('/tenant/settings/profile', '/settings/profile');
+        Route::redirect('/tenant/settings/integrations', '/settings/integrations');
+        Route::redirect('/tenant/settings/notifications', '/settings/integrations');
+        Route::redirect('/tenant/settings/security', '/settings/account');
+        Route::redirect('/tenant/branches', '/branches');
+        Route::redirect('/tenant/branches/create', '/branches/create');
+        Route::redirect('/tenant/branches/{branch}/edit', '/branches/{branch}/edit');
     });
 });
 
