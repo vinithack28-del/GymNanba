@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\EnsureTenantUser;
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequirePermission;
 use App\Http\Middleware\SetPermissionTeam;
 use App\Http\Middleware\SetLocale;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
+            HandleInertiaRequests::class,
             SetLocale::class,
             SetPermissionTeam::class,
         ]);

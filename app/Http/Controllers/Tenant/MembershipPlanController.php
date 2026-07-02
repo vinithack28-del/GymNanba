@@ -5,15 +5,16 @@ namespace App\Http\Controllers\Tenant;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GymMembershipPlan;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class MembershipPlanController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
+        abort_unless($request->user()->canAccess('members.view|members.add|members.edit|members.delete'), 403);
+
         $tenant = $request->user()->tenant;
 
         $query = GymMembershipPlan::forTenant($tenant->id)
@@ -46,31 +47,53 @@ class MembershipPlanController extends Controller
             'archived' => GymMembershipPlan::forTenant($tenant->id)->where('status', 'archived')->count(),
         ];
 
-        return view('tenant.plans.index', compact('plans', 'branches', 'counts'));
+        return Inertia::render('Tenant/MembershipPlans/Index', [
+            'plans' => $plans,
+            'branches' => $branches,
+            'counts' => $counts,
+            'canAdd' => $request->user()->canAccess('members.add'),
+            'canEdit' => $request->user()->canAccess('members.edit'),
+            'canDelete' => $request->user()->canAccess('members.delete'),
+        ]);
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
+        abort_unless($request->user()->canAccess('members.add'), 403);
+
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
+        $defaultBranchIds = $this->defaultBranchIds($request, $branches);
+        $selectedBranchId = $request->user()->effectiveBranchId();
+        $hasSpecificBranchContext = $selectedBranchId && $branches->contains('id', $selectedBranchId);
+        $branchOptions = $hasSpecificBranchContext
+            ? $branches->where('id', $selectedBranchId)->values()
+            : $branches;
+        $showBranchSelector = ($branches->count() > 1 && $defaultBranchIds->isEmpty()) || $hasSpecificBranchContext;
 
-        return view('tenant.plans.form', compact('branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/MembershipPlans/Form', [
+            'branches' => $branchOptions,
+            'defaultGstRate' => $defaultGstRate,
+            'defaultBranchIds' => $defaultBranchIds->values()->all(),
+            'showBranchSelector' => $showBranchSelector,
+        ]);
     }
 
-    public function edit(Request $request, GymMembershipPlan $plan): View
-    {
+    public function edit(Request $request, GymMembershipPlan $plan){
+        abort_unless($request->user()->canAccess('members.edit'), 403);
         $this->authorizePlan($request, $plan);
         $tenant   = $request->user()->tenant;
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $plan->load('branches');
         $defaultGstRate = (float) config('gym.default_gst_rate', 18);
 
-        return view('tenant.plans.form', compact('plan', 'branches', 'defaultGstRate'));
+        return Inertia::render('Tenant/MembershipPlans/Form', compact('plan', 'branches', 'defaultGstRate'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->canAccess('members.add'), 403);
+
         $tenant   = $request->user()->tenant;
         $validated = $this->validatePlan($request, $tenant->id);
 
@@ -86,6 +109,11 @@ class MembershipPlanController extends Controller
             $plan->branches()->sync(
                 Branch::forTenant($tenant->id)->whereIn('id', $request->input('branch_ids'))->pluck('id')
             );
+        } else {
+            $plan->branches()->sync($this->defaultBranchIds(
+                $request,
+                Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get()
+            ));
         }
 
         return redirect()->route('tenant.plans.index')
@@ -94,6 +122,7 @@ class MembershipPlanController extends Controller
 
     public function update(Request $request, GymMembershipPlan $plan): RedirectResponse
     {
+        abort_unless($request->user()->canAccess('members.edit'), 403);
         $this->authorizePlan($request, $plan);
         $tenant    = $request->user()->tenant;
         $validated = $this->validatePlan($request, $tenant->id, $plan->id);
@@ -116,6 +145,7 @@ class MembershipPlanController extends Controller
 
     public function duplicate(Request $request, GymMembershipPlan $plan): RedirectResponse
     {
+        abort_unless($request->user()->canAccess('members.add'), 403);
         $this->authorizePlan($request, $plan);
         $tenant = $request->user()->tenant;
 
@@ -139,6 +169,7 @@ class MembershipPlanController extends Controller
 
     public function archive(Request $request, GymMembershipPlan $plan): RedirectResponse
     {
+        abort_unless($request->user()->canAccess('members.delete'), 403);
         $this->authorizePlan($request, $plan);
 
         $activeCount = $plan->active_member_count;
@@ -225,5 +256,20 @@ class MembershipPlanController extends Controller
     private function authorizePlan(Request $request, GymMembershipPlan $plan): void
     {
         abort_unless($plan->tenant_id === $request->user()->tenant?->id, 403);
+    }
+
+    private function defaultBranchIds(Request $request, $branches)
+    {
+        if ($branches->count() === 1) {
+            return collect([$branches->first()->id]);
+        }
+
+        $selectedBranchId = $request->user()->effectiveBranchId();
+
+        if ($selectedBranchId && $branches->contains('id', $selectedBranchId)) {
+            return collect([$selectedBranchId]);
+        }
+
+        return collect();
     }
 }

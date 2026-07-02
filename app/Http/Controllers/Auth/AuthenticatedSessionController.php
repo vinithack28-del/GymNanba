@@ -7,7 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\AuthenticationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -18,9 +18,9 @@ class AuthenticatedSessionController extends Controller
     /**
      * Show the login form.
      */
-    public function create(): View
+    public function create()
     {
-        return view('auth.login');
+        return Inertia::render('Auth/Login');
     }
 
     /**

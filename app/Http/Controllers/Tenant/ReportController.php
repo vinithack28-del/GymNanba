@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenant\ReportService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class ReportController extends Controller
 {
@@ -19,9 +19,8 @@ class ReportController extends Controller
 
     // ── Landing ───────────────────────────────────────────────────────────────
 
-    public function index(): View
-    {
-        return view('tenant.reports.index', [
+    public function index(){
+        return Inertia::render('Tenant/Reports/Index', [
             'canRevenue'    => $this->svc->canRevenue(),
             'canMembers'    => $this->svc->canMembers(),
             'canAttendance' => $this->svc->canAttendance(),
@@ -31,11 +30,10 @@ class ReportController extends Controller
 
     // ── Revenue ───────────────────────────────────────────────────────────────
 
-    public function revenue(Request $request): View
-    {
+    public function revenue(Request $request){
         abort_unless($this->svc->canRevenue(), 403);
         $data = $this->svc->revenue($request, $this->tenantId());
-        return view('tenant.reports.revenue', $data);
+        return Inertia::render('Tenant/Reports/Revenue', $data);
     }
 
     public function exportRevenue(Request $request): Response
@@ -52,11 +50,10 @@ class ReportController extends Controller
 
     // ── Members ───────────────────────────────────────────────────────────────
 
-    public function members(Request $request): View
-    {
+    public function members(Request $request){
         abort_unless($this->svc->canMembers(), 403);
         $data = $this->svc->members($request, $this->tenantId());
-        return view('tenant.reports.members', $data);
+        return Inertia::render('Tenant/Reports/Members', $data);
     }
 
     public function exportMembers(Request $request): Response
@@ -73,11 +70,10 @@ class ReportController extends Controller
 
     // ── Attendance ────────────────────────────────────────────────────────────
 
-    public function attendance(Request $request): View
-    {
+    public function attendance(Request $request){
         abort_unless($this->svc->canAttendance(), 403);
         $data = $this->svc->attendance($request, $this->tenantId());
-        return view('tenant.reports.attendance', $data);
+        return Inertia::render('Tenant/Reports/Attendance', $data);
     }
 
     public function exportAttendance(Request $request): Response
@@ -94,11 +90,10 @@ class ReportController extends Controller
 
     // ── Staff ─────────────────────────────────────────────────────────────────
 
-    public function staff(Request $request): View
-    {
+    public function staff(Request $request){
         abort_unless($this->svc->canStaff(), 403);
         $data = $this->svc->staff($request, $this->tenantId());
-        return view('tenant.reports.staff', $data);
+        return Inertia::render('Tenant/Reports/Staff', $data);
     }
 
     public function exportStaff(Request $request): Response

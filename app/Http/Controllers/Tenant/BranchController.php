@@ -6,36 +6,53 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Member;
 use App\Models\User;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
 
 class BranchController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
 
         $branches = Branch::forTenant($tenant->id)
             ->withCount(['members'])
             ->orderByRaw("is_primary DESC, created_at ASC")
-            ->get();
+            ->get()
+            ->map(fn (Branch $branch) => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address1' => $branch->address1,
+                'address2' => $branch->address2,
+                'city' => $branch->city,
+                'state' => $branch->state,
+                'pin' => $branch->pin,
+                'phone' => $branch->phone,
+                'manager_name' => $branch->manager_name,
+                'status' => $branch->status,
+                'is_primary' => (bool) $branch->is_primary,
+                'members_count' => (int) ($branch->members_count ?? 0),
+                'active_members_count' => (int) $branch->active_members_count,
+                'amenities' => $branch->amenities ?? [],
+                'amenities_list' => $branch->amenities_list,
+            ])
+            ->values();
 
         [$planLimit, $planName] = $this->planLimit($tenant);
 
-        return view('tenant.branches.index', [
+        return Inertia::render('Tenant/Branches/Index', [
             'branches'    => $branches,
             'planLimit'   => $planLimit,
             'planName'    => $planName,
             'activeCount' => $branches->where('status', 'active')->count(),
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),
+            'credentials' => $request->session()->get('branch_credentials'),
         ]);
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         $tenant = $request->user()->tenant;
         [$planLimit] = $this->planLimit($tenant);
         $activeCount = Branch::forTenant($tenant->id)->active()->count();
@@ -45,17 +62,16 @@ class BranchController extends Controller
                 ->withErrors(['limit' => "Branch limit reached. Upgrade your plan to add more branches."]);
         }
 
-        return view('tenant.branches.form', [
+        return Inertia::render('Tenant/Branches/Form', [
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),
         ]);
     }
 
-    public function edit(Request $request, Branch $branch): View
-    {
+    public function edit(Request $request, Branch $branch){
         $this->authorizeBranch($request, $branch);
 
-        return view('tenant.branches.form', [
+        return Inertia::render('Tenant/Branches/Form', [
             'branch'      => $branch,
             'states'      => Branch::indianStates(),
             'amenityOpts' => Branch::amenityOptions(),

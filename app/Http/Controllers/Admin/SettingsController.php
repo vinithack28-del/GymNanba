@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePlatformLanguageRequest;
 use App\Models\PlatformLanguage;
 use App\Services\Admin\SettingsService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
 
 class SettingsController extends Controller
 {
@@ -15,9 +15,9 @@ class SettingsController extends Controller
     {
     }
 
-    public function index(): View
+    public function index()
     {
-        return view('admin.settings.index', $this->settingsService->getIndexData());
+        return Inertia::render('Admin/Settings/Index', $this->settingsService->getIndexData());
     }
 
     public function updateLanguage(UpdatePlatformLanguageRequest $request, PlatformLanguage $language): RedirectResponse

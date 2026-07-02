@@ -11,17 +11,16 @@ use App\Models\Payment;
 use App\Models\PaymentSplit;
 use App\Models\WalkIn;
 use App\Services\Tenant\PaymentService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class MemberController extends Controller
 {
     public function __construct(private readonly PaymentService $paymentService) {}
 
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
         $today  = now()->toDateString();
 
@@ -65,6 +64,9 @@ class MemberController extends Controller
 
         $perPage = in_array((int) $request->get('per_page'), [10, 25, 50, 100]) ? (int) $request->get('per_page') : 25;
         $members = $query->with('plan:id,name,allow_freeze,max_freeze_days')->paginate($perPage)->withQueryString();
+        $members->getCollection()->transform(function (Member $member) {
+            return $member->append(['effective_status', 'status_label', 'balance_rupees', 'initials']);
+        });
 
         $plans = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
 
@@ -74,15 +76,19 @@ class MemberController extends Controller
             ? MemberRegistration::forTenant($tenant->id)->pending()->count()
             : 0;
 
-        return view('tenant.members.index', compact(
+        return Inertia::render('Tenant/Members/Index', compact(
             'stats', 'members', 'plans', 'today', 'selectedBranch',
             'registrationUrl', 'pendingRegistrationCount'
         ));
     }
 
-    public function show(Request $request, Member $member): View
-    {
+    public function show(Request $request, Member $member){
         $this->authorizeMember($request, $member);
+
+        $member->load([
+            'branch:id,name',
+            'plan:id,name,allow_freeze,max_freeze_days,duration_type,duration_value,duration_days',
+        ])->append(['effective_status', 'status_label', 'balance_rupees', 'initials']);
 
         $payments = Payment::with(['plan', 'splits', 'collectedBy'])
             ->where('member_id', $member->id)
@@ -90,11 +96,10 @@ class MemberController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('tenant.members.show', compact('member', 'payments'));
+        return Inertia::render('Tenant/Members/Show', compact('member', 'payments'));
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         $tenant = $request->user()->tenant;
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
@@ -107,7 +112,7 @@ class MemberController extends Controller
                 ->find($walkinId);
         }
 
-        return view('tenant.members.form', compact('plans', 'branches', 'selectedBranchId', 'prefill'));
+        return Inertia::render('Tenant/Members/Form', compact('plans', 'branches', 'selectedBranchId', 'prefill'));
     }
 
     public function walkinLookup(Request $request): JsonResponse
@@ -139,14 +144,13 @@ class MemberController extends Controller
         ]);
     }
 
-    public function edit(Request $request, Member $member): View
-    {
+    public function edit(Request $request, Member $member){
         $this->authorizeMember($request, $member);
         $tenant = $request->user()->tenant;
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
         $selectedBranchId = session('gymos_selected_branch_id');
-        return view('tenant.members.form', compact('member', 'plans', 'branches', 'selectedBranchId'));
+        return Inertia::render('Tenant/Members/Form', compact('member', 'plans', 'branches', 'selectedBranchId'));
     }
 
     public function store(Request $request): RedirectResponse

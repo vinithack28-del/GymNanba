@@ -6,25 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Models\Equipment;
 use App\Models\EquipmentServiceRecord;
 use App\Models\Staff;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class EquipmentController extends Controller
 {
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         abort_unless($request->user()->canAccess('equipment.add'), 403);
 
-        return view('tenant.equipment.form', [
+        return Inertia::render('Tenant/Equipment/Form', [
             'types' => Equipment::TYPES,
             'statuses' => Equipment::STATUSES,
         ]);
     }
 
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         abort_unless($request->user()->canAccess('equipment.view'), 403);
 
         $tenantId = $request->user()->tenant->id;
@@ -71,7 +69,7 @@ class EquipmentController extends Controller
         $canDelete       = $request->user()->canAccess('equipment.delete');
         $canServiceRecord = $request->user()->canAccess('equipment.service_record');
 
-        return view('tenant.equipment.index', compact(
+        return Inertia::render('Tenant/Equipment/Index', compact(
             'equipment', 'summary', 'canAdd', 'canEdit', 'canDelete', 'canServiceRecord'
         ));
     }

@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Staff;
 use App\Services\Tenant\StaffService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 
 class StaffController extends Controller
 {
@@ -18,19 +19,17 @@ class StaffController extends Controller
     {
     }
 
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
-        return view('tenant.staff.index', $this->staffService->list($request->user(), $request));
+        return Inertia::render('Tenant/Staff/Index', $this->staffService->list($request->user(), $request));
     }
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return view('tenant.staff.form', [
+        return Inertia::render('Tenant/Staff/Form', [
             'branches'         => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles'            => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes'       => Staff::ID_PROOF_TYPES,
@@ -53,17 +52,15 @@ class StaffController extends Controller
             ->with('status', "Staff member {$result['staff']->name} created. Temporary password: {$result['password']}");
     }
 
-    public function show(Request $request, Staff $staff): View
-    {
-        return view('tenant.staff.show', $this->staffService->profile($request->user(), $staff));
+    public function show(Request $request, Staff $staff){
+        return Inertia::render('Tenant/Staff/Show', $this->staffService->profile($request->user(), $staff));
     }
 
-    public function edit(Request $request, Staff $staff): View
-    {
+    public function edit(Request $request, Staff $staff){
         $this->staffService->ensureVisible($request->user(), $staff);
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return view('tenant.staff.form', [
+        return Inertia::render('Tenant/Staff/Form', [
             'staff' => $staff->load('branch'),
             'branches' => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles' => $this->staffService->roleOptions($request->user()->tenant_id),
@@ -112,21 +109,19 @@ class StaffController extends Controller
                 : "{$staff->name} deleted.");
     }
 
-    public function roles(Request $request): View
-    {
+    public function roles(Request $request){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return view('tenant.staff.roles', [
+        return Inertia::render('Tenant/Staff/Roles', [
             'roles'       => $this->staffService->rolePermissions($request->user()),
             'staffCounts' => $this->staffService->staffCountsByRole($request->user()),
         ]);
     }
 
-    public function createRole(Request $request): View
-    {
+    public function createRole(Request $request){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return view('tenant.staff.roles-form', [
+        return Inertia::render('Tenant/Staff/RolesForm', [
             'roleRow'        => null,
             'defaultModules' => $this->staffService->defaultPermissionModules(),
         ]);
@@ -150,13 +145,12 @@ class StaffController extends Controller
         return redirect()->route('tenant.staff.roles')->with('status', 'Role created.');
     }
 
-    public function editRole(Request $request, string $role): View
-    {
+    public function editRole(Request $request, string $role){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
         $roleRow = $this->staffService->singleRolePermission($request->user(), $role);
 
-        return view('tenant.staff.roles-form', [
+        return Inertia::render('Tenant/Staff/RolesForm', [
             'roleRow'        => $roleRow,
             'defaultModules' => $this->staffService->permissionModulesForRole($role),
             'staffCount'     => $this->staffService->staffCountsByRole($request->user())[$roleRow->role] ?? 0,
@@ -191,7 +185,7 @@ class StaffController extends Controller
         return redirect()->route('tenant.staff.roles')->with('status', 'Role deleted.');
     }
 
-    public function attendance(Request $request): View|StreamedResponse
+    public function attendance(Request $request): InertiaResponse|StreamedResponse
     {
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
@@ -204,7 +198,7 @@ class StaffController extends Controller
             }, 'staff_attendance.csv', ['Content-Type' => 'text/csv']);
         }
 
-        return view('tenant.staff.attendance', $this->staffService->attendance($request->user(), $request));
+        return Inertia::render('Tenant/Staff/Attendance', $this->staffService->attendance($request->user(), $request));
     }
 
     public function storeAttendance(Request $request): RedirectResponse

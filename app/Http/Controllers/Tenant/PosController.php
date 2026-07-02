@@ -11,7 +11,6 @@ use App\Models\PosSaleItem;
 use App\Models\PosStockMovement;
 use App\Models\Staff;
 use App\Models\User;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,11 +19,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class PosController extends Controller
 {
-    public function products(Request $request): View
-    {
+    public function products(Request $request){
         $user = $request->user();
         $this->ensureProductAccess($user);
 
@@ -45,7 +44,7 @@ class PosController extends Controller
         $products = $query->orderBy('name')->paginate(18)->withQueryString();
         $base = PosProduct::query()->forTenant($user->tenant_id);
 
-        return view('tenant.pos.products', [
+        return Inertia::render('Tenant/Pos/Index', [
             'products' => $products,
             'stats' => [
                 'total' => (clone $base)->count(),
@@ -59,12 +58,11 @@ class PosController extends Controller
         ]);
     }
 
-    public function createProduct(Request $request): View
-    {
+    public function createProduct(Request $request){
         $user = $request->user();
         $this->ensureCanManageProducts($user);
 
-        return view('tenant.pos.product-form', [
+        return Inertia::render('Tenant/Pos/Create', [
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,
             'gstRates' => PosProduct::GST_RATES,
@@ -83,13 +81,12 @@ class PosController extends Controller
         return redirect()->route('tenant.pos.products')->with('status', "Product {$product->name} created.");
     }
 
-    public function editProduct(Request $request, PosProduct $product): View
-    {
+    public function editProduct(Request $request, PosProduct $product){
         $user = $request->user();
         $this->ensureCanManageProducts($user);
         $this->ensureTenantProduct($user, $product);
 
-        return view('tenant.pos.product-form', [
+        return Inertia::render('Tenant/Pos/Create', [
             'product' => $product,
             'categories' => PosProduct::CATEGORIES,
             'units' => PosProduct::UNITS,
@@ -122,8 +119,7 @@ class PosController extends Controller
         return back()->with('status', "{$product->name} marked as {$nextStatus}.");
     }
 
-    public function sales(Request $request): View
-    {
+    public function sales(Request $request){
         $user = $request->user();
         $this->ensureSalesAccess($user);
 
@@ -140,7 +136,7 @@ class PosController extends Controller
         $sales = $salesQuery->orderByDesc('created_at')->paginate(12)->withQueryString();
         $tallyDate = $request->get('tally_date', now()->toDateString());
 
-        return view('tenant.pos.sales', [
+        return Inertia::render('Tenant/Pos/History', [
             'products' => PosProduct::query()
                 ->forTenant($user->tenant_id)
                 ->where('status', 'active')
@@ -171,13 +167,12 @@ class PosController extends Controller
             ->with('status', "Sale {$sale->bill_number} created.");
     }
 
-    public function showSale(Request $request, PosSale $sale): View
-    {
+    public function showSale(Request $request, PosSale $sale){
         $user = $request->user();
         $this->ensureTenantSale($user, $sale);
         $this->ensureSalesAccess($user);
 
-        return view('tenant.pos.sale-show', [
+        return Inertia::render('Tenant/Pos/Show', [
             'sale' => $sale->load(['branch', 'member', 'seller', 'refundActor', 'items.product']),
             'canRefund' => $this->canRefund($user) && !$sale->refunded_at,
         ]);
@@ -230,8 +225,7 @@ class PosController extends Controller
         return back()->with('status', "Sale {$sale->bill_number} refunded.");
     }
 
-    public function stock(Request $request): View
-    {
+    public function stock(Request $request){
         $user = $request->user();
         $this->ensureStockAccess($user);
 
@@ -260,7 +254,7 @@ class PosController extends Controller
 
         $base = PosProduct::query()->forTenant($user->tenant_id);
 
-        return view('tenant.pos.stock', [
+        return Inertia::render('Tenant/Pos/Report', [
             'products' => $products,
             'selectedProduct' => $selectedProduct,
             'productOptions' => PosProduct::query()->forTenant($user->tenant_id)->where('status', 'active')->orderBy('name')->get(),

@@ -65,6 +65,11 @@ class Tenant extends Model
         return $this->belongsTo(User::class, 'owner_user_id');
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'tenant_id');
+    }
+
     public function memberRegistrations(): HasMany
     {
         return $this->hasMany(MemberRegistration::class);

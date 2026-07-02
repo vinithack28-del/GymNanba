@@ -7,9 +7,9 @@ use App\Http\Requests\Admin\StoreTenantRequest;
 use App\Http\Requests\Admin\UpdateTenantRequest;
 use App\Models\Tenant;
 use App\Services\Admin\TenantService;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class TenantController extends Controller
 {
@@ -17,18 +17,18 @@ class TenantController extends Controller
     {
     }
 
-    public function index(Request $request): View
+    public function index(Request $request)
     {
-        return view('admin.tenants.index', [
+        return Inertia::render('Admin/Tenants/Index', [
             'tenants' => $this->tenantService->paginate($request->only(['search', 'status', 'business_type', 'per_page'])),
             'statuses' => ['active', 'trial', 'trial_ended', 'subscription_expired', 'suspended', 'archived'],
             'businessTypes' => ['Gym', 'Yoga', 'Turf'],
         ]);
     }
 
-    public function create(): View
+    public function create()
     {
-        return view('admin.tenants.create', $this->tenantService->getCreationMeta());
+        return Inertia::render('Admin/Tenants/Create', $this->tenantService->getCreationMeta());
     }
 
     public function store(StoreTenantRequest $request): RedirectResponse
@@ -38,16 +38,16 @@ class TenantController extends Controller
         return redirect()->route('admin.tenants.show', $tenant)->with('status', 'Tenant created successfully. Owner login is ready.');
     }
 
-    public function show(Tenant $tenant): View
+    public function show(Tenant $tenant)
     {
-        return view('admin.tenants.show', [
+        return Inertia::render('Admin/Tenants/Show', [
             'tenant' => $this->tenantService->getDetails($tenant),
         ]);
     }
 
-    public function edit(Tenant $tenant): View
+    public function edit(Tenant $tenant)
     {
-        return view('admin.tenants.edit', $this->tenantService->getEditMeta($tenant));
+        return Inertia::render('Admin/Tenants/Edit', $this->tenantService->getEditMeta($tenant));
     }
 
     public function update(UpdateTenantRequest $request, Tenant $tenant): RedirectResponse
@@ -57,9 +57,9 @@ class TenantController extends Controller
         return redirect()->route('admin.tenants.show', $tenant)->with('status', 'Tenant updated successfully.');
     }
 
-    public function deletePage(Tenant $tenant): View
+    public function deletePage(Tenant $tenant)
     {
-        return view('admin.tenants.delete', [
+        return Inertia::render('Admin/Tenants/Delete', [
             'tenant' => $tenant,
         ]);
     }

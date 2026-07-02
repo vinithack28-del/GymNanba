@@ -6,14 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GymMembershipPlan;
 use App\Models\Member;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class RenewalController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
         $today  = now()->toDateString();
 
@@ -41,6 +40,7 @@ class RenewalController extends Controller
         $tab  = $request->get('tab', '7days');
         $from = $request->get('from');
         $to   = $request->get('to');
+        $planId = $request->get('plan_id');
 
         $query = $base();
 
@@ -56,7 +56,7 @@ class RenewalController extends Controller
             default   => $query->whereDate('expiry_date', '<=', now()->addDays(30)->toDateString()),
         };
 
-        if ($planId = $request->get('plan_id')) {
+        if ($planId) {
             $query->where('plan_id', $planId);
         }
 
@@ -67,8 +67,8 @@ class RenewalController extends Controller
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
 
-        return view('tenant.renewals.index', compact(
-            'stats', 'members', 'plans', 'branches', 'today', 'tab', 'from', 'to', 'selectedBranch'
+        return Inertia::render('Tenant/Renewals/Index', compact(
+            'stats', 'members', 'plans', 'branches', 'today', 'tab', 'from', 'to', 'selectedBranch', 'planId'
         ));
     }
 

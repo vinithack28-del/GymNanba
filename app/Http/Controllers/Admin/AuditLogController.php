@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Admin\AuditLogService;
-use Illuminate\Contracts\View\View;
+use Inertia\Inertia;
 
 class AuditLogController extends Controller
 {
@@ -12,9 +12,9 @@ class AuditLogController extends Controller
     {
     }
 
-    public function index(): View
+    public function index()
     {
-        return view('admin.audit-log.index', [
+        return Inertia::render('Admin/AuditLog/Index', [
             'logs' => $this->auditLogService->paginate(),
         ]);
     }

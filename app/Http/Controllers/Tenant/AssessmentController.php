@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Member;
 use App\Models\MemberAssessment;
 use Carbon\Carbon;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Inertia\Inertia;
 
 class AssessmentController extends Controller
 {
@@ -34,21 +34,19 @@ class AssessmentController extends Controller
         ['key' => 'supervised_only', 'label' => 'Has supervised activity been recommended in the last 12 months?', 'trigger' => 7],
     ];
 
-    public function report(Request $request): View
-    {
+    public function report(Request $request){
         $this->authorizeModule($request->user(), 'assessment_report', 'view');
 
         $member = $this->selectedMember($request);
         $records = $member ? $this->latestAssessmentRecords($request->user(), $member) : collect();
 
-        return view('tenant.assess.report', $this->baseViewData($request, 'assessment_report', $member) + [
+        return Inertia::render('Tenant/Assess/Report', $this->baseViewData($request, 'assessment_report', $member) + [
             'records' => $records,
             'summary' => $member ? $this->reportSummary($records) : null,
         ]);
     }
 
-    public function questionnaire(Request $request): View
-    {
+    public function questionnaire(Request $request){
         $this->authorizeModule($request->user(), 'parq', 'view');
 
         $query = $this->baseRecordQuery($request->user(), MemberAssessment::TYPE_PARQ)
@@ -72,31 +70,29 @@ class AssessmentController extends Controller
 
         $perPage = in_array((int) $request->get('per_page'), [10, 25, 50, 100], true) ? (int) $request->get('per_page') : 25;
 
-        return view('tenant.assess.questionnaire', $this->baseViewData($request, 'parq', null) + [
+        return Inertia::render('Tenant/Assess/Questionnaire', $this->baseViewData($request, 'parq', null) + [
             'records' => $query->paginate($perPage)->withQueryString(),
         ]);
     }
 
-    public function questionnaireCreate(Request $request): View
-    {
+    public function questionnaireCreate(Request $request){
         $this->authorizeModule($request->user(), 'parq', 'add');
 
         $member = $this->selectedMember($request);
         $record = $member ? $this->singleRecord($request->user(), $member->id, MemberAssessment::TYPE_PARQ) : null;
 
-        return view('tenant.assess.questionnaire-form', $this->baseViewData($request, 'parq', $member) + [
+        return Inertia::render('Tenant/Assess/QuestionnaireForm', $this->baseViewData($request, 'parq', $member) + [
             'record' => $record,
             'questions' => self::PARQ_QUESTIONS,
             'followups' => self::PARQ_FOLLOWUPS,
         ]);
     }
 
-    public function questionnaireEdit(Request $request, MemberAssessment $record): View
-    {
+    public function questionnaireEdit(Request $request, MemberAssessment $record){
         $this->authorizeRecord($request->user(), 'parq', 'edit', $record);
         $record->load('member');
 
-        return view('tenant.assess.questionnaire-form', $this->baseViewData($request, 'parq', $record->member) + [
+        return Inertia::render('Tenant/Assess/QuestionnaireForm', $this->baseViewData($request, 'parq', $record->member) + [
             'record' => $record,
             'questions' => self::PARQ_QUESTIONS,
             'followups' => self::PARQ_FOLLOWUPS,
@@ -171,8 +167,7 @@ class AssessmentController extends Controller
             ->with('status', 'PAR-Q+ questionnaire saved.');
     }
 
-    public function nutrition(Request $request): View
-    {
+    public function nutrition(Request $request){
         $this->authorizeModule($request->user(), 'nutrition', 'view');
 
         $member = $this->selectedMember($request);
@@ -183,7 +178,7 @@ class AssessmentController extends Controller
             ? $plans->firstWhere('id', $request->integer('edit'))
             : null;
 
-        return view('tenant.assess.nutrition', $this->baseViewData($request, 'nutrition', $member) + [
+        return Inertia::render('Tenant/Assess/Nutrition', $this->baseViewData($request, 'nutrition', $member) + [
             'plans' => $plans,
             'editingPlan' => $editing,
         ]);
@@ -256,8 +251,7 @@ class AssessmentController extends Controller
             ->with('status', 'Diet plan updated.');
     }
 
-    public function bodyMetrics(Request $request): View
-    {
+    public function bodyMetrics(Request $request){
         $this->authorizeModule($request->user(), 'body_metrics', 'view');
 
         $query = $this->baseRecordQuery($request->user(), MemberAssessment::TYPE_BODY_METRICS)
@@ -275,7 +269,7 @@ class AssessmentController extends Controller
 
         $perPage = in_array((int) $request->get('per_page'), [10, 25, 50, 100], true) ? (int) $request->get('per_page') : 25;
 
-        return view('tenant.assess.body-metrics', $this->baseViewData($request, 'body_metrics', $this->selectedMember($request)) + [
+        return Inertia::render('Tenant/Assess/BodyMetrics', $this->baseViewData($request, 'body_metrics', $this->selectedMember($request)) + [
             'records' => $query->paginate($perPage)->withQueryString(),
             'editingRecord' => $request->filled('edit')
                 ? $this->baseRecordQuery($request->user(), MemberAssessment::TYPE_BODY_METRICS)->find($request->integer('edit'))
@@ -353,21 +347,19 @@ class AssessmentController extends Controller
             ->with('status', 'Body metrics updated.');
     }
 
-    public function bodyMetricsProgress(Request $request): View
-    {
+    public function bodyMetricsProgress(Request $request){
         $this->authorizeModule($request->user(), 'body_metrics', 'view');
         $member = $this->selectedMember($request);
         $records = $member
             ? $this->recordsForMember($request->user(), $member->id, MemberAssessment::TYPE_BODY_METRICS)
             : collect();
 
-        return view('tenant.assess.body-metrics-progress', $this->baseViewData($request, 'body_metrics', $member) + [
+        return Inertia::render('Tenant/Assess/BodyMetricsProgress', $this->baseViewData($request, 'body_metrics', $member) + [
             'records' => $records,
         ]);
     }
 
-    public function posture(Request $request): View
-    {
+    public function posture(Request $request){
         $this->authorizeModule($request->user(), 'posture', 'view');
 
         $query = $this->baseRecordQuery($request->user(), MemberAssessment::TYPE_POSTURE)
@@ -383,7 +375,7 @@ class AssessmentController extends Controller
 
         $records = $query->paginate(25)->withQueryString();
 
-        return view('tenant.assess.posture', $this->baseViewData($request, 'posture', $this->selectedMember($request)) + [
+        return Inertia::render('Tenant/Assess/Posture', $this->baseViewData($request, 'posture', $this->selectedMember($request)) + [
             'records' => $records,
             'editingRecord' => $request->filled('edit')
                 ? $this->baseRecordQuery($request->user(), MemberAssessment::TYPE_POSTURE)->find($request->integer('edit'))
@@ -456,8 +448,7 @@ class AssessmentController extends Controller
         return redirect()->route('tenant.assess.posture')->with('status', 'Posture assessment updated.');
     }
 
-    public function balance(Request $request): View
-    {
+    public function balance(Request $request){
         $this->authorizeModule($request->user(), 'balance', 'view');
         $member = $this->selectedMember($request);
         $records = $member
@@ -465,7 +456,7 @@ class AssessmentController extends Controller
             : collect();
         $editing = $member && $request->filled('edit') ? $records->firstWhere('id', $request->integer('edit')) : null;
 
-        return view('tenant.assess.balance', $this->baseViewData($request, 'balance', $member) + [
+        return Inertia::render('Tenant/Assess/Balance', $this->baseViewData($request, 'balance', $member) + [
             'records' => $records,
             'editingRecord' => $editing,
         ]);
@@ -552,8 +543,7 @@ class AssessmentController extends Controller
         return back()->with('status', 'Insight generated.');
     }
 
-    public function vitals(Request $request): View
-    {
+    public function vitals(Request $request){
         $this->authorizeModule($request->user(), 'vitals', 'view');
         $member = $this->selectedMember($request);
         $records = $member
@@ -561,7 +551,7 @@ class AssessmentController extends Controller
             : collect();
         $editing = $member && $request->filled('edit') ? $records->firstWhere('id', $request->integer('edit')) : null;
 
-        return view('tenant.assess.vitals', $this->baseViewData($request, 'vitals', $member) + [
+        return Inertia::render('Tenant/Assess/Vitals', $this->baseViewData($request, 'vitals', $member) + [
             'records' => $records,
             'editingRecord' => $editing,
         ]);
@@ -621,8 +611,7 @@ class AssessmentController extends Controller
         return redirect()->route('tenant.assess.vitals', ['member_id' => $member->id])->with('status', 'Vitals record updated.');
     }
 
-    public function fitness(Request $request): View
-    {
+    public function fitness(Request $request){
         $this->authorizeModule($request->user(), 'fitness', 'view');
         $member = $this->selectedMember($request);
         $tab = in_array($request->get('tab'), ['cardio', 'strength', 'endurance', 'flexibility'], true)
@@ -632,7 +621,7 @@ class AssessmentController extends Controller
         $records = $member ? $this->recordsForMember($request->user(), $member->id, $type) : collect();
         $editing = $member && $request->filled('edit') ? $records->firstWhere('id', $request->integer('edit')) : null;
 
-        return view('tenant.assess.fitness', $this->baseViewData($request, 'fitness', $member) + [
+        return Inertia::render('Tenant/Assess/Fitness', $this->baseViewData($request, 'fitness', $member) + [
             'tab' => $tab,
             'records' => $records,
             'editingRecord' => $editing,
@@ -691,8 +680,7 @@ class AssessmentController extends Controller
         return redirect()->route('tenant.assess.fitness', ['member_id' => $member->id, 'tab' => $tab])->with('status', 'Fitness test updated.');
     }
 
-    public function goalForecasting(Request $request): View
-    {
+    public function goalForecasting(Request $request){
         $this->authorizeModule($request->user(), 'goal_forecasting', 'view');
         $member = $this->selectedMember($request);
         $result = null;
@@ -709,7 +697,7 @@ class AssessmentController extends Controller
             $result = $this->goalForecast($member, $validated);
         }
 
-        return view('tenant.assess.goal-forecasting', $this->baseViewData($request, 'goal_forecasting', $member) + [
+        return Inertia::render('Tenant/Assess/GoalForecasting', $this->baseViewData($request, 'goal_forecasting', $member) + [
             'result' => $result,
             'latestBodyMetrics' => $member ? $this->latestRecord($request->user(), $member->id, MemberAssessment::TYPE_BODY_METRICS) : null,
         ]);

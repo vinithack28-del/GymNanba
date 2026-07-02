@@ -6,13 +6,13 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class PasswordChangeController extends Controller
 {
-    public function edit(): View
+    public function edit()
     {
-        return view('auth.force-password-change');
+        return Inertia::render('Auth/ForcePasswordChange');
     }
 
     public function update(Request $request): RedirectResponse

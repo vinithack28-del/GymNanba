@@ -9,7 +9,7 @@ use App\Services\Tenant\ClassService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class ClassController extends Controller
 {
@@ -17,21 +17,19 @@ class ClassController extends Controller
 
     // ── Timetable ─────────────────────────────────────────────────────────────
 
-    public function timetable(Request $request): View
-    {
+    public function timetable(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
-        return view('tenant.classes.timetable', $this->service->timetable($request->user(), $request));
+        return Inertia::render('Tenant/Classes/Timetable', $this->service->timetable($request->user(), $request));
     }
 
     // ── Create / Edit ─────────────────────────────────────────────────────────
 
-    public function create(Request $request): View
-    {
+    public function create(Request $request){
         $data = $this->service->formData($request->user());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return view('tenant.classes.form', $data);
+        return Inertia::render('Tenant/Classes/Form', $data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -64,9 +62,8 @@ class ClassController extends Controller
                          ->with('status', __('classes.flash.created'));
     }
 
-    public function edit(Request $request, GymClass $class): View
-    {
-        return view('tenant.classes.form', array_merge(
+    public function edit(Request $request, GymClass $class){
+        return Inertia::render('Tenant/Classes/Form', array_merge(
             $this->service->formData($request->user(), $class),
             ['editing' => true]
         ));
@@ -113,16 +110,14 @@ class ClassController extends Controller
 
     // ── Show class ────────────────────────────────────────────────────────────
 
-    public function show(Request $request, GymClass $class): View
-    {
-        return view('tenant.classes.show', $this->service->showClass($request->user(), $class));
+    public function show(Request $request, GymClass $class){
+        return Inertia::render('Tenant/Classes/Show', $this->service->showClass($request->user(), $class));
     }
 
     // ── Booking ───────────────────────────────────────────────────────────────
 
-    public function book(Request $request): View
-    {
-        return view('tenant.classes.book', $this->service->bookingPage($request->user(), $request));
+    public function book(Request $request){
+        return Inertia::render('Tenant/Classes/Book', $this->service->bookingPage($request->user(), $request));
     }
 
     public function storeBooking(Request $request, GymClass $class): RedirectResponse
@@ -149,11 +144,10 @@ class ClassController extends Controller
 
     // ── Attendance ────────────────────────────────────────────────────────────
 
-    public function attendance(Request $request, GymClass $class): View
-    {
+    public function attendance(Request $request, GymClass $class){
         $data = $this->service->showClass($request->user(), $class);
 
-        return view('tenant.classes.attendance', $data);
+        return Inertia::render('Tenant/Classes/Attendance', $data);
     }
 
     public function storeAttendance(Request $request, GymClass $class): RedirectResponse
@@ -172,9 +166,8 @@ class ClassController extends Controller
 
     // ── Trainers ──────────────────────────────────────────────────────────────
 
-    public function trainers(Request $request): View
-    {
-        return view('tenant.classes.trainers', $this->service->trainers($request->user(), $request));
+    public function trainers(Request $request){
+        return Inertia::render('Tenant/Classes/Trainers', $this->service->trainers($request->user(), $request));
     }
 
     // ── AJAX member search ────────────────────────────────────────────────────

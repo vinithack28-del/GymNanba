@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class AttendanceController extends Controller
 {
@@ -19,20 +19,19 @@ class AttendanceController extends Controller
 
     // ── Check-ins ─────────────────────────────────────────────────────────────
 
-    public function checkins(Request $request): View
-    {
+    public function checkins(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
 
         if ($request->get('view') === 'sheet') {
             $data = $this->service->sheetView($request->user(), $request);
-            return view('tenant.attendance.checkins', array_merge($data, ['viewMode' => 'sheet']));
+            return Inertia::render('Tenant/Attendance/Checkins', array_merge($data, ['viewMode' => 'sheet']));
         }
 
         $data = $this->service->listCheckins($request->user(), $request);
 
-        return view('tenant.attendance.checkins', array_merge($data, ['viewMode' => 'list']));
+        return Inertia::render('Tenant/Attendance/Checkins', array_merge($data, ['viewMode' => 'list']));
     }
 
     public function storeCheckin(Request $request): JsonResponse|RedirectResponse
@@ -102,14 +101,13 @@ class AttendanceController extends Controller
 
     // ── Walk-ins ─────────────────────────────────────────────────────────────
 
-    public function walkins(Request $request): View
-    {
+    public function walkins(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->service->listWalkins($request->user(), $request);
 
-        return view('tenant.attendance.walkins', $data);
+        return Inertia::render('Tenant/Attendance/Walkins', $data);
     }
 
     public function storeWalkin(Request $request): RedirectResponse

@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\View\View;
+use Inertia\Inertia;
 
 class ExpenseController extends Controller
 {
@@ -22,24 +22,22 @@ class ExpenseController extends Controller
 
     // ── List ──────────────────────────────────────────────────────────────────
 
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         abort_unless($this->svc->canAdd(), 403);
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
         $data = $this->svc->list($request, $this->tenantId());
-        return view('tenant.expenses.index', $data);
+        return Inertia::render('Tenant/Expenses/Index', $data);
     }
 
     // ── Create ────────────────────────────────────────────────────────────────
 
-    public function create(): View
-    {
+    public function create(){
         abort_unless($this->svc->canAdd(), 403);
         $data = $this->svc->formData($this->tenantId());
         $data['selectedBranchId'] = session('gymos_selected_branch_id');
-        return view('tenant.expenses.create', $data);
+        return Inertia::render('Tenant/Expenses/Create', $data);
     }
 
     public function store(Request $request): RedirectResponse
@@ -76,13 +74,12 @@ class ExpenseController extends Controller
 
     // ── Edit ──────────────────────────────────────────────────────────────────
 
-    public function edit(Expense $expense): View
-    {
+    public function edit(Expense $expense){
         abort_if($expense->tenant_id !== $this->tenantId(), 404);
         abort_unless($this->svc->canEdit($expense), 403);
 
         $data = $this->svc->formData($this->tenantId());
-        return view('tenant.expenses.edit', array_merge($data, compact('expense')));
+        return Inertia::render('Tenant/Expenses/Edit', array_merge($data, compact('expense')));
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse

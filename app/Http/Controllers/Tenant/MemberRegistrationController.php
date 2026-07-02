@@ -7,15 +7,14 @@ use App\Mail\RegistrationLinkMail;
 use App\Models\GymMembershipPlan;
 use App\Models\Member;
 use App\Models\MemberRegistration;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
 class MemberRegistrationController extends Controller
 {
-    public function index(Request $request): View
-    {
+    public function index(Request $request){
         $tenant = $request->user()->tenant;
         $tenant->ensureRegistrationToken();
 
@@ -35,7 +34,7 @@ class MemberRegistrationController extends Controller
         $plans           = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $registrationUrl = $tenant->registration_url;
 
-        return view('tenant.members.registrations', compact(
+        return Inertia::render('Tenant/Members/Registrations', compact(
             'registrations', 'counts', 'status', 'registrationUrl', 'plans', 'tenant'
         ));
     }
