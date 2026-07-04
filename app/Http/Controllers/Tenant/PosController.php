@@ -919,3 +919,4 @@ class PosController extends Controller
         return in_array($user->role, ['tenant_owner', 'branch_manager', 'accountant'], true);
     }
 }
+

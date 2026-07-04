@@ -16,3 +16,4 @@ class SetPermissionTeam
         return $next($request);
     }
 }
+

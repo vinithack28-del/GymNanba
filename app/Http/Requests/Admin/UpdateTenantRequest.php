@@ -62,3 +62,4 @@ class UpdateTenantRequest extends FormRequest
         ]);
     }
 }
+

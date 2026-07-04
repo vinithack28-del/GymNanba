@@ -14,7 +14,7 @@ const props = defineProps({
 });
 
 const staffRows = computed(() => props.staff?.data || []);
-const formatRole = (role) => String(role || '—').replaceAll('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+const formatRole = (role) => String(role || 'â€”').replaceAll('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 const formatStatus = (status) => {
     const value = String(status || 'inactive');
     return value.charAt(0).toUpperCase() + value.slice(1);
@@ -27,7 +27,6 @@ const formatStatus = (status) => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Staff</h1>
                 <p class="mt-1 text-slate-300">Manage gym staff, trainers, and employees.</p>
             </div>
@@ -97,7 +96,7 @@ const formatStatus = (status) => {
                             <tr v-for="member in staffRows" :key="member.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-semibold">{{ member.name }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ formatRole(member.role) }}</td>
-                                <td class="px-4 py-3">{{ member.branch_name || '—' }}</td>
+                                <td class="px-4 py-3">{{ member.branch_name || 'â€”' }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ member.phone }}</td>
                                 <td class="px-4 py-3">
                                     <span class="rounded-full px-2 py-1 text-xs font-semibold" :class="member.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
@@ -116,3 +115,4 @@ const formatStatus = (status) => {
         </div>
     </AppLayout>
 </template>
+

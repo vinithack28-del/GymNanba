@@ -11,3 +11,4 @@ class Permission extends SpatiePermission
         'guard_name',
     ];
 }
+

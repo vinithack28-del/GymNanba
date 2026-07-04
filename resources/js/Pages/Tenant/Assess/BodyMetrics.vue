@@ -16,8 +16,8 @@ const props = defineProps({
 const recordRows = computed(() => props.records?.data || []);
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const form = useForm({
@@ -128,7 +128,7 @@ const submit = () => {
                                 <td class="px-4 py-3">{{ record.payload?.weight_kg }}</td>
                                 <td class="px-4 py-3">{{ record.payload?.height_cm }}</td>
                                 <td class="px-4 py-3">{{ record.payload?.bmi }}</td>
-                                <td class="px-4 py-3">{{ record.payload?.body_fat_pct || '—' }}</td>
+                                <td class="px-4 py-3">{{ record.payload?.body_fat_pct || 'â€”' }}</td>
                                 <td class="px-4 py-3">{{ formatDate(record.next_assessment_date) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
@@ -144,3 +144,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

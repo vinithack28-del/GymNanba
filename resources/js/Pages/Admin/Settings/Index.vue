@@ -49,7 +49,7 @@ const toggleLanguage = (language) => {
                         <p class="text-sm text-slate-400">Language registry</p>
                         <h3 class="mt-2 text-2xl font-semibold">Platform languages</h3>
                     </div>
-                    <span class="rounded-full bg-slate-950/70 px-3 py-1 text-xs text-slate-300">Enable only if completeness ≥ 90%</span>
+                    <span class="rounded-full bg-slate-950/70 px-3 py-1 text-xs text-slate-300">Enable only if completeness â‰¥ 90%</span>
                 </div>
 
                 <div class="mt-6 space-y-4">
@@ -62,7 +62,7 @@ const toggleLanguage = (language) => {
                                         {{ language.is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </div>
-                                <p class="mt-2 text-sm text-slate-400">{{ language.locale_code }} · Completeness {{ language.completeness_pct }}%</p>
+                                <p class="mt-2 text-sm text-slate-400">{{ language.locale_code }} Â· Completeness {{ language.completeness_pct }}%</p>
                             </div>
 
                             <button

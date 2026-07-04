@@ -19,7 +19,7 @@ class InvoiceController extends Controller
         return request()->user()->tenant->id;
     }
 
-    // ── List ──────────────────────────────────────────────────────────────────
+    // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function index(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
@@ -29,7 +29,7 @@ class InvoiceController extends Controller
         return Inertia::render('Tenant/Invoices/Index', $data);
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────
+    // â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function create(){
         abort_unless($this->svc->canCreate(), 403);
@@ -61,14 +61,14 @@ class InvoiceController extends Controller
             ->with('status', __('invoices.flash.created', ['number' => $invoice->invoice_number]));
     }
 
-    // ── Show / print ──────────────────────────────────────────────────────────
+    // â”€â”€ Show / print â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function show(Invoice $invoice){
         $data = $this->svc->show($invoice, $this->tenantId());
         return Inertia::render('Tenant/Invoices/Show', $data);
     }
 
-    // ── Void ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Void â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function void(Request $request, Invoice $invoice): RedirectResponse
     {
@@ -85,7 +85,7 @@ class InvoiceController extends Controller
             ->with('status', __('invoices.flash.voided', ['number' => $invoice->invoice_number]));
     }
 
-    // ── Member search (AJAX) ──────────────────────────────────────────────────
+    // â”€â”€ Member search (AJAX) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function memberSearch(Request $request): JsonResponse
     {
@@ -96,7 +96,7 @@ class InvoiceController extends Controller
         return response()->json($this->svc->memberSearch($term, $this->tenantId()));
     }
 
-    // ── Line-item totals (AJAX) ───────────────────────────────────────────────
+    // â”€â”€ Line-item totals (AJAX) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function computeTotals(Request $request): JsonResponse
     {
@@ -104,3 +104,4 @@ class InvoiceController extends Controller
         return response()->json($this->svc->computeTotals($lineItems));
     }
 }
+

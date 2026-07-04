@@ -7,7 +7,7 @@ const props = defineProps({
 </script>
 
 <template>
-    <Head :title="`Registration Submitted — ${tenant.gym_name}`" />
+    <Head :title="`Registration Submitted â€” ${tenant.gym_name}`" />
     
     <div class="flex min-h-screen items-center justify-center bg-slate-100 p-6">
         <div class="w-full max-w-[460px] rounded-3xl bg-white p-10 text-center shadow-xl">

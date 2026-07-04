@@ -35,3 +35,4 @@ class UpdatePlanRequest extends FormRequest
         ];
     }
 }
+

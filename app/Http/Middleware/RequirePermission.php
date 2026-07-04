@@ -27,7 +27,7 @@ class RequirePermission
         }
 
         foreach ($permissions as $permissionGroup) {
-            // owner_only sentinel — non-owners are denied immediately
+            // owner_only sentinel â€” non-owners are denied immediately
             if ($permissionGroup === 'owner_only') {
                 abort(403, 'This page is restricted to the gym owner.');
             }
@@ -43,3 +43,4 @@ class RequirePermission
         abort(403, 'You do not have permission to access this page.');
     }
 }
+

@@ -34,22 +34,34 @@ class EquipmentController extends Controller
             $query->where('branch_id', $branchId);
         }
 
-        if ($search = $request->get('search')) {
+        $search = trim((string) $request->get('search', ''));
+        $type = (string) $request->get('type', '');
+        $status = (string) $request->get('status', '');
+        $perPage = (int) $request->get('per_page', 25);
+        if (! in_array($perPage, [10, 25, 50, 100], true)) {
+            $perPage = 25;
+        }
+
+        if ($search !== '') {
             $s = '%' . $search . '%';
             $query->where(fn ($q) => $q->where('name', 'ilike', $s)
                 ->orWhere('brand', 'ilike', $s)
                 ->orWhere('model', 'ilike', $s));
         }
 
-        if ($type = $request->get('type')) {
+        if ($type !== '') {
             $query->where('type', $type);
         }
 
-        if ($status = $request->get('status')) {
+        if ($status !== '') {
             $query->where('status', $status);
         }
 
-        $equipment = $query->orderBy('name')->get();
+        $equipment = $query
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Equipment $item) => $this->equipmentPayload($item, false));
 
         // Summary counts (unfiltered for same branch scope)
         $summaryBase = Equipment::where('tenant_id', $tenantId);
@@ -68,9 +80,18 @@ class EquipmentController extends Controller
         $canEdit         = $request->user()->canAccess('equipment.edit');
         $canDelete       = $request->user()->canAccess('equipment.delete');
         $canServiceRecord = $request->user()->canAccess('equipment.service_record');
+        $types = Equipment::TYPES;
+        $statuses = Equipment::STATUSES;
+        $serviceTypes = EquipmentServiceRecord::TYPES;
+        $filters = [
+            'search' => $search,
+            'type' => $type,
+            'status' => $status,
+            'per_page' => $perPage,
+        ];
 
         return Inertia::render('Tenant/Equipment/Index', compact(
-            'equipment', 'summary', 'canAdd', 'canEdit', 'canDelete', 'canServiceRecord'
+            'equipment', 'summary', 'types', 'statuses', 'serviceTypes', 'filters', 'canAdd', 'canEdit', 'canDelete', 'canServiceRecord'
         ));
     }
 
@@ -223,7 +244,7 @@ class EquipmentController extends Controller
         return response()->json(['deleted' => true]);
     }
 
-    // ── Summary endpoint for stats refresh ────────────────────────────────────
+    // Summary endpoint for stats refresh.
 
     public function summary(Request $request): JsonResponse
     {
@@ -243,14 +264,14 @@ class EquipmentController extends Controller
         ]);
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // Helpers.
 
     private function authorizeEquipment(Request $request, Equipment $equipment): void
     {
         abort_unless($equipment->tenant_id === $request->user()->tenant?->id, 404);
     }
 
-    private function equipmentPayload(Equipment $equipment): array
+    private function equipmentPayload(Equipment $equipment, bool $includeServiceRecords = true): array
     {
         $types    = Equipment::TYPES;
         $statuses = Equipment::STATUSES;
@@ -263,21 +284,23 @@ class EquipmentController extends Controller
             'brand'                => $equipment->brand,
             'model'                => $equipment->model,
             'purchase_date'        => $equipment->purchase_date?->toDateString(),
-            'purchase_date_fmt'    => $equipment->purchase_date?->format('d M Y'),
+            'purchase_date_fmt'    => $equipment->purchase_date?->format('d-m-Y'),
             'warranty_expiry'      => $equipment->warranty_expiry?->toDateString(),
-            'warranty_expiry_fmt'  => $equipment->warranty_expiry?->format('d M Y'),
+            'warranty_expiry_fmt'  => $equipment->warranty_expiry?->format('d-m-Y'),
             'warranty_expired'     => $equipment->isWarrantyExpired(),
             'purchase_price_paise' => $equipment->purchase_price_paise,
             'purchase_price_fmt'   => $equipment->purchase_price_paise !== null
-                                        ? '₹' . number_format($equipment->purchase_price_paise / 100, 0)
+                                        ? 'Rs. ' . number_format($equipment->purchase_price_paise / 100, 0)
                                         : null,
             'status'               => $equipment->status,
             'status_label'         => $statuses[$equipment->status] ?? $equipment->status,
             'location'             => $equipment->location,
             'notes'                => $equipment->notes,
             'branch_name'          => $equipment->branch?->name,
-            'created_at'           => $equipment->created_at?->format('d M Y'),
-            'service_records'      => $equipment->serviceRecords->map(fn ($r) => $this->recordPayload($r))->values(),
+            'created_at'           => $equipment->created_at?->format('d-m-Y'),
+            'service_records'      => $includeServiceRecords
+                ? $equipment->serviceRecords->map(fn ($r) => $this->recordPayload($r))->values()
+                : [],
         ];
     }
 
@@ -287,13 +310,14 @@ class EquipmentController extends Controller
         return [
             'id'               => $record->id,
             'service_date'     => $record->service_date->toDateString(),
-            'service_date_fmt' => $record->service_date->format('d M Y'),
+            'service_date_fmt' => $record->service_date->format('d-m-Y'),
             'service_type'     => $record->service_type,
             'service_type_label' => $types[$record->service_type] ?? $record->service_type,
             'cost_paise'       => $record->cost_paise,
-            'cost_fmt'         => '₹' . number_format($record->cost_paise / 100, 0),
+            'cost_fmt'         => 'Rs. ' . number_format($record->cost_paise / 100, 0),
             'service_provider' => $record->service_provider,
             'notes'            => $record->notes,
         ];
     }
 }
+

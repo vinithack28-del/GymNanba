@@ -74,3 +74,4 @@ class Expense extends Model
         return $query->where('branch_id', $branchId);
     }
 }
+

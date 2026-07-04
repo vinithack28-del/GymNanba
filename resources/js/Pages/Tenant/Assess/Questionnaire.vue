@@ -10,8 +10,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getRiskBadgeClass = (risk) => {
@@ -67,7 +67,7 @@ const getYesNoBadgeClass = (value) => {
 
             <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                 <div v-if="!questionnaires || questionnaires.length === 0" class="flex flex-col items-center gap-4 p-12 text-center">
-                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">📋</div>
+                    <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">ðŸ“‹</div>
                     <p class="text-lg font-bold">No questionnaires found</p>
                     <p class="text-sm text-slate-400">Create your first questionnaire to get started.</p>
                 </div>

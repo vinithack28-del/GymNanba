@@ -13,8 +13,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const form = useForm({
@@ -179,7 +179,7 @@ const tabs = [
                             <tr v-for="record in records" :key="record.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3">{{ formatDate(record.assessment_date) }}</td>
                                 <td class="px-4 py-3">{{ record.title }}</td>
-                                <td class="px-4 py-3">{{ record.payload?.vo2max || record.payload?.test_value || record.payload?.reps || record.payload?.distance_cm || '—' }}</td>
+                                <td class="px-4 py-3">{{ record.payload?.vo2max || record.payload?.test_value || record.payload?.reps || record.payload?.distance_cm || 'â€”' }}</td>
                                 <td class="px-4 py-3">{{ formatDate(record.next_assessment_date) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">

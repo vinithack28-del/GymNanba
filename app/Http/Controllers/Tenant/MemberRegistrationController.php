@@ -24,6 +24,11 @@ class MemberRegistrationController extends Controller
             ->with('confirmedBy')
             ->latest()
             ->paginate(20);
+        $registrations->getCollection()->transform(function (MemberRegistration $registration) {
+            $registration->setAttribute('confirmed_by_name', $registration->confirmedBy?->name);
+
+            return $registration;
+        });
 
         $counts = [
             'pending'   => MemberRegistration::forTenant($tenant->id)->where('status', 'pending')->count(),
@@ -32,6 +37,7 @@ class MemberRegistrationController extends Controller
         ];
 
         $plans           = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
+        $plans->each->append(['duration_label', 'total_price_paise', 'gst_amount_paise']);
         $registrationUrl = $tenant->registration_url;
 
         return Inertia::render('Tenant/Members/Registrations', compact(
@@ -111,13 +117,18 @@ class MemberRegistrationController extends Controller
         $tenant->ensureRegistrationToken();
 
         $request->validate(['email' => 'required|email|max:255']);
+        $email = trim($request->email);
+        $registrationUrl = $tenant->registration_url
+            . (str_contains($tenant->registration_url, '?') ? '&' : '?')
+            . http_build_query(['email' => $email]);
 
-        Mail::to($request->email)->send(new RegistrationLinkMail(
+        Mail::to($email)->send(new RegistrationLinkMail(
             gymName:         $tenant->gym_name,
-            registrationUrl: $tenant->registration_url,
+            registrationUrl: $registrationUrl,
             city:            $tenant->city ?? '',
         ));
 
-        return back()->with('email_sent', "Registration link sent to {$request->email}.");
+        return back()->with('email_sent', "Registration link sent to {$email}.");
     }
 }
+

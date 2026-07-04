@@ -24,7 +24,7 @@ class StoreRenewalRequest extends FormRequest
             'paid_at'           => ['required', 'date'],
             'notes'             => ['nullable', 'string', 'max:255'],
 
-            // Split rows — at least one required
+            // Split rows â€” at least one required
             'splits'            => ['required', 'array', 'min:1'],
             'splits.*.method'   => ['required', Rule::in($methods)],
             'splits.*.amount'   => ['required', 'numeric', 'min:0.01'],
@@ -42,3 +42,4 @@ class StoreRenewalRequest extends FormRequest
         ];
     }
 }
+

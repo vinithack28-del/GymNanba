@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
-    // ── Check-in log ─────────────────────────────────────────────────────────
+    // â”€â”€ Check-in log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function listCheckins(object $user, Request $request): array
     {
@@ -66,10 +66,12 @@ class AttendanceService
     {
         $member = Member::query()
             ->forTenant($user->tenant_id)
+            ->with('plan')
             ->findOrFail($validated['member_id']);
 
         // Block inactive members
         abort_if($member->status === 'inactive', 422, 'Member is inactive and cannot check in.');
+        abort_if($member->expiry_date && $member->expiry_date->isPast(), 422, 'Membership has expired. Renew before check-in.');
 
         // Check for already open check-in today
         $openToday = AttendanceLog::query()
@@ -81,6 +83,17 @@ class AttendanceService
 
         if ($openToday && ! ($validated['force'] ?? false)) {
             abort(409, 'Member already has an open check-in today.');
+        }
+
+        if ($member->plan?->isSessionBased()) {
+            $sessionLimit = (int) $member->plan->session_limit;
+            $usedSessions = $this->memberUsedSessions($member);
+
+            abort_if(
+                $usedSessions >= $sessionLimit,
+                422,
+                "Session limit reached ({$usedSessions}/{$sessionLimit}). Renew before check-in."
+            );
         }
 
         $branchId = $this->resolveBranch($user, $validated['branch_id'] ?? null)
@@ -178,7 +191,7 @@ class AttendanceService
         return implode("\n", $lines);
     }
 
-    // ── Walk-ins ─────────────────────────────────────────────────────────────
+    // â”€â”€ Walk-ins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function listWalkins(object $user, Request $request): array
     {
@@ -230,6 +243,7 @@ class AttendanceService
             ->get()
             ->filter(fn (GymMembershipPlan $plan) => $plan->isOneDayPass())
             ->values();
+        $dayPassPlans->each->append(['duration_label', 'total_price_paise', 'gst_amount_paise']);
 
         return [
             'logs'               => $logs,
@@ -245,6 +259,7 @@ class AttendanceService
             'todayFollowup'      => $todayFollowup,
             'todayFollowupCount' => $todayFollowupCount,
             'canManage'          => $this->canManage($user),
+            'canAddMembers'      => method_exists($user, 'canAccess') ? $user->canAccess('members.add') : $this->canManage($user),
         ];
     }
 
@@ -331,7 +346,7 @@ class AttendanceService
         });
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function checkinStats(int $tenantId, string $date, ?int $branchId): array
     {
@@ -354,14 +369,23 @@ class AttendanceService
             ->first();
 
         $peakHour = $byHour
-            ? sprintf('%02d:00–%02d:00 (%d)', $byHour->hour, $byHour->hour + 1, $byHour->cnt)
-            : '—';
+            ? sprintf('%02d:00â€“%02d:00 (%d)', $byHour->hour, $byHour->hour + 1, $byHour->cnt)
+            : 'â€”';
 
         return [
             'total'     => $total,
             'unique'    => $unique,
             'peak_hour' => $peakHour,
         ];
+    }
+
+    private function memberUsedSessions(Member $member): int
+    {
+        return AttendanceLog::query()
+            ->where('tenant_id', $member->tenant_id)
+            ->where('member_id', $member->id)
+            ->when($member->start_date, fn ($q) => $q->whereDate('checked_in_at', '>=', $member->start_date->toDateString()))
+            ->count();
     }
 
     public function canManage(object $user): bool
@@ -482,13 +506,13 @@ class AttendanceService
             : null;
 
         $referenceSummary = collect($meta)
-            ->map(fn (array $row) => strtoupper($row['method']) . ': ₹' . number_format($row['amount_paise'] / 100, 2) . (filled($row['reference']) ? ' (' . $row['reference'] . ')' : ''))
+            ->map(fn (array $row) => strtoupper($row['method']) . ': â‚¹' . number_format($row['amount_paise'] / 100, 2) . (filled($row['reference']) ? ' (' . $row['reference'] . ')' : ''))
             ->implode(', ');
 
         return [$meta, $methodSummary, $referenceSummary !== '' ? mb_substr($referenceSummary, 0, 100) : null, $paidPaise];
     }
 
-    // ── Sheet view ────────────────────────────────────────────────────────────
+    // â”€â”€ Sheet view â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function sheetView(object $user, Request $request): array
     {
@@ -504,7 +528,7 @@ class AttendanceService
         $today = today();
         $days  = $start->daysInMonth;
 
-        // ── Members query ──────────────────────────────────────────────────────
+        // â”€â”€ Members query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $query = Member::where('tenant_id', $tenantId)->orderBy('name');
 
         if ($search) {
@@ -523,7 +547,7 @@ class AttendanceService
 
         $members = $query->paginate($perPage)->withQueryString();
 
-        // ── Global stats across ALL matching members for the month ─────────────
+        // â”€â”€ Global stats across ALL matching members for the month â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $allMemberIds = (clone $query)->pluck('id');
 
         $pastDaysInMonth = $start->gt($today) ? 0 : (int) min($days, $today->diffInDays($start) + 1);
@@ -553,7 +577,7 @@ class AttendanceService
             'past_days'       => $pastDaysInMonth,
         ];
 
-        // ── Fetch check-in dates for this page's members in the month ──────────
+        // â”€â”€ Fetch check-in dates for this page's members in the month â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $memberIds = $members->getCollection()->pluck('id');
 
         $checkinDates = AttendanceLog::where('tenant_id', $tenantId)
@@ -565,7 +589,7 @@ class AttendanceService
             ->groupBy('member_id')
             ->map(fn ($rows) => $rows->pluck('day')->toArray());
 
-        // ── Build per-member grid ──────────────────────────────────────────────
+        // â”€â”€ Build per-member grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         $grid = [];
         foreach ($members as $member) {
             $memberDays = $checkinDates->get($member->id, []);
@@ -603,3 +627,4 @@ class AttendanceService
         ];
     }
 }
+

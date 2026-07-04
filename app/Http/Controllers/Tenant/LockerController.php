@@ -23,13 +23,18 @@ class LockerController extends Controller
 
         $tenantId = $request->user()->tenant->id;
         $branchId = $request->user()->effectiveBranchId();
+        $branches = Branch::forTenant($tenantId)->active()->orderByRaw('is_primary DESC, name ASC')->get();
 
         $query = Locker::query()
             ->with(['branch', 'currentAssignment.member'])
             ->forTenant($tenantId)
             ->when($branchId, fn ($q) => $q->where('branch_id', $branchId));
 
-        if ($search = trim((string) $request->get('search', ''))) {
+        $search = trim((string) $request->get('search', ''));
+        $availability = (string) $request->get('availability', '');
+        $status = (string) $request->get('status', '');
+
+        if ($search !== '') {
             $term = '%' . $search . '%';
             $query->where(function ($q) use ($term): void {
                 $q->where('locker_number', 'ilike', $term)
@@ -42,11 +47,11 @@ class LockerController extends Controller
             });
         }
 
-        if ($availability = $request->get('availability')) {
+        if ($availability !== '') {
             $query->where('availability', $availability);
         }
 
-        if ($status = $request->get('status')) {
+        if ($status !== '') {
             $query->where('status', $status);
         }
 
@@ -74,19 +79,14 @@ class LockerController extends Controller
             'canAssign' => $request->user()->canAccess('locker.assign'),
             'canEdit' => $request->user()->canAccess('locker.edit'),
             'canDelete' => $request->user()->canAccess('locker.delete'),
-        ]);
-    }
-
-    public function create(Request $request){
-        abort_unless($request->user()->canAccess('locker.add'), 403);
-
-        $tenant = $request->user()->tenant;
-        $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
-
-        return Inertia::render('Tenant/Lockers/Form', [
             'branches' => $branches,
-            'selectedBranchId' => $request->user()->effectiveBranchId(),
-            'statuses' => Locker::STATUSES,
+            'selectedBranchId' => $branchId,
+            'filters' => [
+                'search' => $search,
+                'availability' => $availability,
+                'status' => $status,
+                'per_page' => $perPage,
+            ],
         ]);
     }
 
@@ -100,7 +100,7 @@ class LockerController extends Controller
             'assignments.member',
         ]);
 
-        return Inertia::render('Tenant/Lockers/Show', [
+        return Inertia::render('Tenant/Lockers/Assignment', [
             'locker' => $locker,
             'lockerData' => $this->lockerPayload($request, $locker),
             'canAssign' => $request->user()->canAccess('locker.assign'),
@@ -130,7 +130,7 @@ class LockerController extends Controller
             'locker_number' => $validated['locker_number'],
             'location' => $validated['location'] ?? null,
             'availability' => 'available',
-            'status' => $validated['status'],
+            'status' => $validated['status'] ?? 'active',
             'notes' => $validated['notes'] ?? null,
             'created_by' => $staffId,
         ]);
@@ -411,7 +411,7 @@ class LockerController extends Controller
                     }),
             ],
             'location' => ['nullable', 'string', 'max:200'],
-            'status' => ['required', Rule::in(array_keys(Locker::STATUSES))],
+            'status' => [$locker ? 'required' : 'nullable', Rule::in(array_keys(Locker::STATUSES))],
             'notes' => ['nullable', 'string', 'max:1000'],
         ], [
             'locker_number.required' => 'Please enter a locker number',
@@ -441,6 +441,7 @@ class LockerController extends Controller
             'status_label' => Locker::STATUSES[$locker->status] ?? ucfirst($locker->status),
             'notes' => $locker->notes,
             'branch_name' => $locker->branch?->name,
+            'created_at' => $locker->created_at?->toDateString(),
             'current_assignment' => $currentAssignment ? [
                 'id' => $currentAssignment->id,
                 'member_id' => $currentAssignment->member_id,
@@ -448,8 +449,8 @@ class LockerController extends Controller
                 'member_code' => $currentAssignment->member?->member_code,
                 'member_phone' => $currentAssignment->member?->phone,
                 'member_url' => $currentAssignment->member ? route('tenant.members.show', $currentAssignment->member) : null,
-                'from_date' => $currentAssignment->from_date?->format('d M Y'),
-                'to_date' => $currentAssignment->to_date?->format('d M Y'),
+                'from_date' => $currentAssignment->from_date?->format('d-m-Y'),
+                'to_date' => $currentAssignment->to_date?->format('d-m-Y'),
                 'days_so_far' => $this->daysHeld($currentAssignment),
                 'notes' => $currentAssignment->notes,
             ] : null,
@@ -458,10 +459,10 @@ class LockerController extends Controller
                     'member_name' => $assignment->member?->name,
                     'member_code' => $assignment->member?->member_code,
                     'member_url' => $assignment->member ? route('tenant.members.show', $assignment->member) : null,
-                    'from_date' => $assignment->from_date?->format('d M Y'),
+                    'from_date' => $assignment->from_date?->format('d-m-Y'),
                     'to_date' => $assignment->released_at
-                        ? $assignment->to_date?->format('d M Y')
-                        : ($assignment->to_date?->format('d M Y') ?? '—'),
+                        ? $assignment->to_date?->format('d-m-Y')
+                        : ($assignment->to_date?->format('d-m-Y') ?? 'â€”'),
                     'days' => $this->daysHeld($assignment),
                     'is_current' => $assignment->released_at === null,
                 ];
@@ -488,3 +489,4 @@ class LockerController extends Controller
         return $from->diffInDays($end) + 1;
     }
 }
+

@@ -21,7 +21,7 @@ class RegistrationLinkMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Join {$this->gymName} — Complete Your Registration",
+            subject: "Join {$this->gymName} â€” Complete Your Registration",
         );
     }
 
@@ -32,3 +32,4 @@ class RegistrationLinkMail extends Mailable
         );
     }
 }
+

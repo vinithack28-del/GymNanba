@@ -8,13 +8,13 @@ const props = defineProps({
 });
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(2);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '').replaceAll('/', '-');
 };
 
 const printReceipt = () => {
@@ -28,7 +28,6 @@ const printReceipt = () => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Receipt {{ sale.bill_number }}</h1>
                 <p class="mt-1 text-slate-300">Review line items, payment method, tax, and linked member details for this bill.</p>
             </div>
@@ -56,7 +55,7 @@ const printReceipt = () => {
                         <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Staff</p>
                             <p class="mt-2 font-semibold">{{ sale.seller?.name || 'Owner / system' }}</p>
-                            <p class="mt-1 text-sm text-slate-400">{{ sale.branch?.name || '—' }}</p>
+                            <p class="mt-1 text-sm text-slate-400">{{ sale.branch?.name || 'â€”' }}</p>
                         </div>
                         <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Method</p>
@@ -129,3 +128,4 @@ const printReceipt = () => {
         </div>
     </AppLayout>
 </template>
+

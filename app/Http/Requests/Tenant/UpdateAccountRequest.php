@@ -17,3 +17,4 @@ class UpdateAccountRequest extends FormRequest
         ];
     }
 }
+

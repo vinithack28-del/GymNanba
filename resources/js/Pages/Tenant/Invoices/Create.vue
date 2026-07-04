@@ -58,7 +58,7 @@ const submit = () => {
                     <p class="mt-0.5 text-sm text-slate-400">Create a new invoice for a member</p>
                 </div>
                 <Link href="/tenant/invoices" class="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
-                    ← Invoices
+                    â† Invoices
                 </Link>
             </div>
 
@@ -71,8 +71,8 @@ const submit = () => {
                         </div>
                         <div v-if="showMemberCard" class="mt-3 rounded-lg border border-white/10 bg-slate-950/50 p-3">
                             <p class="font-medium text-sm">{{ selectedMember?.name }}</p>
-                            <p class="mt-0.5 text-xs text-slate-400">{{ selectedMember?.phone }} • {{ selectedMember?.member_code }}</p>
-                            <button @click="clearMember" class="mt-2 text-xs text-slate-400">✕ Change member</button>
+                            <p class="mt-0.5 text-xs text-slate-400">{{ selectedMember?.phone }} â€¢ {{ selectedMember?.member_code }}</p>
+                            <button @click="clearMember" class="mt-2 text-xs text-slate-400">âœ• Change member</button>
                         </div>
                     </div>
 
@@ -95,7 +95,7 @@ const submit = () => {
                         <div class="mt-4">
                             <label class="mb-1 block text-xs font-medium text-slate-400">Branch</label>
                             <select v-model="form.branch_id" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
-                                <option value="">— No Branch —</option>
+                                <option value="">â€” No Branch â€”</option>
                                 <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
                             </select>
                         </div>
@@ -116,7 +116,7 @@ const submit = () => {
                                         <input v-model="item.quantity" type="number" min="1" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs font-medium text-slate-400">Rate (₹)</label>
+                                        <label class="mb-1 block text-xs font-medium text-slate-400">Rate (â‚¹)</label>
                                         <input v-model="item.rate_paise" type="number" step="0.01" placeholder="0.00" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                 </div>
@@ -153,15 +153,15 @@ const submit = () => {
                         <div class="flex flex-col gap-3">
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-400">Subtotal</span>
-                                <span>₹0.00</span>
+                                <span>â‚¹0.00</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-slate-400">GST</span>
-                                <span>₹0.00</span>
+                                <span>â‚¹0.00</span>
                             </div>
                             <div class="flex justify-between text-lg font-bold">
                                 <span>Total</span>
-                                <span>₹0.00</span>
+                                <span>â‚¹0.00</span>
                             </div>
                         </div>
                     </div>

@@ -65,3 +65,4 @@ class Locker extends Model
         return $this->availability === 'occupied';
     }
 }
+

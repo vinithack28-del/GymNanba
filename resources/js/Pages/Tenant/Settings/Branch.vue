@@ -42,7 +42,7 @@ const submit = () => {
                         <div class="mb-4">
                             <label class="mb-1 block text-xs font-medium text-slate-400">Default Branch</label>
                             <select v-model="form.default_branch_id" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
-                                <option value="">Select a branch…</option>
+                                <option value="">Select a branchâ€¦</option>
                                 <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
                             </select>
                         </div>
@@ -66,10 +66,11 @@ const submit = () => {
                         </div>
                     </div>
                     <Link href="/tenant/branches" class="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    Manage Branches →
+                    Manage Branches â†’
                 </Link>
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
+

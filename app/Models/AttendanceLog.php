@@ -82,3 +82,4 @@ class AttendanceLog extends Model
         return $query->where('branch_id', $branchId);
     }
 }
+

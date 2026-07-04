@@ -31,3 +31,4 @@ class PlatformLanguage extends Model
         ];
     }
 }
+

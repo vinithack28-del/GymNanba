@@ -42,3 +42,4 @@ class EquipmentServiceRecord extends Model
         return $this->belongsTo(Equipment::class);
     }
 }
+

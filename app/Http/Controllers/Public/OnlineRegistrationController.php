@@ -13,18 +13,19 @@ class OnlineRegistrationController extends Controller
 {
     public function show(string $token)
     {
-        $tenant = Tenant::where('registration_token', $token)
-            ->where('status', 'active')
-            ->firstOrFail();
+        $tenant = $this->findRegistrableTenant($token);
+        $invitedEmail = request()->query('email');
 
-        return Inertia::render('Public/Registration/Show', compact('tenant', 'token'));
+        return Inertia::render('Public/Registration/Show', compact('tenant', 'token', 'invitedEmail'));
     }
 
     public function submit(Request $request, string $token): RedirectResponse
     {
-        $tenant = Tenant::where('registration_token', $token)
-            ->where('status', 'active')
-            ->firstOrFail();
+        $tenant = $this->findRegistrableTenant($token);
+
+        if ($invitedEmail = $request->query('email')) {
+            $request->merge(['email' => $invitedEmail]);
+        }
 
         $validated = $request->validate([
             'name'    => 'required|string|min:2|max:100',
@@ -46,8 +47,16 @@ class OnlineRegistrationController extends Controller
 
     public function success(string $token)
     {
-        $tenant = Tenant::where('registration_token', $token)->firstOrFail();
+        $tenant = $this->findRegistrableTenant($token);
 
         return Inertia::render('Public/Registration/Success', compact('tenant'));
     }
+
+    private function findRegistrableTenant(string $token): Tenant
+    {
+        return Tenant::where('registration_token', $token)
+            ->whereIn('status', ['active', 'trial'])
+            ->firstOrFail();
+    }
 }
+

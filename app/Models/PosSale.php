@@ -107,3 +107,4 @@ class PosSale extends Model
             ->implode(', ');
     }
 }
+

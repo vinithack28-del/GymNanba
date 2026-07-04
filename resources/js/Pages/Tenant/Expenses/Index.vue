@@ -19,13 +19,13 @@ const exportHref = computed(() => {
 });
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(0);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(0);
 };
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 </script>
 
@@ -41,7 +41,7 @@ const formatDate = (date) => {
                 </div>
                 <div class="flex gap-2">
                     <Link :href="exportHref" class="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
-                        ↓ CSV
+                        â†“ CSV
                     </Link>
                     <Link v-if="canAdd" href="/tenant/expenses/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         + Add Expense
@@ -56,7 +56,7 @@ const formatDate = (date) => {
                         <p class="mt-0.5 text-2xl font-bold">{{ formatCurrency(summary?.thisTotal) }}</p>
                     </div>
                     <div v-if="summary?.vsLastPct !== null" class="rounded-full px-3 py-1 text-sm font-medium" :class="summary.vsLastPct > 0 ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400'">
-                        {{ summary.vsLastPct > 0 ? '↑' : '↓' }} {{ Math.abs(summary.vsLastPct) }}% vs last month
+                        {{ summary.vsLastPct > 0 ? 'â†‘' : 'â†“' }} {{ Math.abs(summary.vsLastPct) }}% vs last month
                     </div>
                 </div>
 
@@ -119,7 +119,7 @@ const formatDate = (date) => {
                                 <td class="px-4 py-3">{{ formatDate(expense.expense_date) }}</td>
                                 <td class="px-4 py-3">{{ expense.category }}</td>
                                 <td class="px-4 py-3">{{ expense.description }}</td>
-                                <td class="px-4 py-3">{{ expense.branch?.name || '—' }}</td>
+                                <td class="px-4 py-3">{{ expense.branch?.name || 'â€”' }}</td>
                                 <td class="px-4 py-3 text-right">{{ formatCurrency(expense.amount_paise) }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
@@ -135,3 +135,4 @@ const formatDate = (date) => {
         </div>
     </AppLayout>
 </template>
+

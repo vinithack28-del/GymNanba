@@ -19,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 class PaymentService
 {
-    // ── Access control ────────────────────────────────────────────────────────
+    // â”€â”€ Access control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function canVoid(): bool
     {
@@ -31,7 +31,7 @@ class PaymentService
         return in_array(Auth::user()->role, ['tenant_owner', 'accountant', 'receptionist', 'branch_manager', 'branch_admin']);
     }
 
-    // ── Collect page ──────────────────────────────────────────────────────────
+    // â”€â”€ Collect page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function collectPage(int $tenantId): array
     {
@@ -39,13 +39,14 @@ class PaymentService
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
+        $plans->each->append(['duration_label', 'total_price_paise', 'gst_amount_paise']);
 
         $branches = Branch::forTenant($tenantId)->active()->orderBy('name')->get();
 
         return compact('plans', 'branches');
     }
 
-    // ── Store payment ─────────────────────────────────────────────────────────
+    // â”€â”€ Store payment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function storePayment(Request $request, int $tenantId): Payment
     {
@@ -61,6 +62,7 @@ class PaymentService
         $amountPaise = (int) round($request->amount * 100);
         $gstPaise = 0;
         $collectingPendingDue = ! $plan && $member->balance_paise < 0;
+        $remainingPendingDueDate = null;
 
         if ($plan && $member->balance_paise < 0) {
             throw ValidationException::withMessages([
@@ -78,19 +80,44 @@ class PaymentService
                     'amount' => 'Collected amount cannot exceed the pending due amount.',
                 ]);
             }
+            if ($paidPaise < $outstandingDuePaise) {
+                if (! $request->filled('due_date')) {
+                    throw ValidationException::withMessages([
+                        'due_date' => 'Please select the due date to collect the remaining pending amount.',
+                    ]);
+                }
+
+                $remainingPendingDueDate = $request->due_date;
+            }
             // For due settlements, record only the amount actually collected.
             $amountPaise = $paidPaise;
+        } else {
+            throw ValidationException::withMessages([
+                'plan_id' => 'Select a plan or collect pending dues first.',
+            ]);
         }
 
         $totalPaise = $amountPaise + $gstPaise;
 
+        if ($plan && $paidPaise > $totalPaise) {
+            throw ValidationException::withMessages([
+                'amount' => 'Collected amount cannot exceed the selected plan amount.',
+            ]);
+        }
+
         // Due / partial
-        $isPartial = ! $collectingPendingDue && $request->boolean('is_partial') && $paidPaise < $totalPaise;
+        $isPartial = ! $collectingPendingDue && $paidPaise < $totalPaise;
         $duePaise  = 0;
         $dueDate   = null;
         if ($isPartial) {
+            if (! $request->filled('due_date')) {
+                throw ValidationException::withMessages([
+                    'due_date' => 'Please select the due date to collect the balance amount.',
+                ]);
+            }
+
             $duePaise = max(0, $totalPaise - $paidPaise);
-            $dueDate = $request->due_date ?: null;
+            $dueDate = $request->due_date;
         }
 
         // Primary method: single method name or 'split'
@@ -102,7 +129,7 @@ class PaymentService
             $request, $tenantId, $member, $plan,
             $amountPaise, $gstPaise, $totalPaise,
             $paidPaise, $isPartial, $duePaise, $dueDate,
-            $primaryMethod, $splits, $user, $collectingPendingDue
+            $primaryMethod, $splits, $user, $collectingPendingDue, $remainingPendingDueDate
         ) {
             $receipt = $this->generateReceiptNumber($tenantId);
             $staff   = Staff::where('user_id', $user->id)->where('tenant_id', $tenantId)->first();
@@ -142,7 +169,7 @@ class PaymentService
             }
 
             if ($collectingPendingDue && $paidPaise > 0) {
-                $this->applyPaymentToOutstandingDues($member, $paidPaise);
+                $this->applyPaymentToOutstandingDues($member, $paidPaise, $remainingPendingDueDate);
             }
 
             // When paying for a specific plan, upgrade the member's active plan
@@ -173,7 +200,7 @@ class PaymentService
         });
     }
 
-    private function applyPaymentToOutstandingDues(Member $member, int $paidPaise): void
+    private function applyPaymentToOutstandingDues(Member $member, int $paidPaise, ?string $remainingDueDate = null): void
     {
         $remaining = $paidPaise;
 
@@ -203,6 +230,8 @@ class PaymentService
             $duePayment->is_partial = $duePayment->due_paise > 0;
             if ($duePayment->due_paise === 0) {
                 $duePayment->due_date = null;
+            } elseif ($remainingDueDate) {
+                $duePayment->due_date = $remainingDueDate;
             }
             $duePayment->save();
 
@@ -216,14 +245,15 @@ class PaymentService
         }
     }
 
-    // ── Payment history ───────────────────────────────────────────────────────
+    // â”€â”€ Payment history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function history(Request $request, int $tenantId): array
     {
         $user = Auth::user();
 
         $query = Payment::with(['member', 'branch', 'plan', 'collectedBy'])
-            ->where('payments.tenant_id', $tenantId);
+            ->where('payments.tenant_id', $tenantId)
+            ->where('payments.total_paise', '>', 0);
 
         // Branch restriction for branch roles
         if (in_array($user->role, ['branch_manager', 'branch_admin'])) {
@@ -272,6 +302,7 @@ class PaymentService
         // Daily summary for current filter
         $summaryQuery = Payment::where('payments.tenant_id', $tenantId)
             ->where('payments.status', 'active')
+            ->where('payments.total_paise', '>', 0)
             ->whereDate('payments.payment_date', today());
 
         if ($request->branch_id) {
@@ -292,7 +323,6 @@ class PaymentService
             $dueQuery = Payment::with(['member', 'member.branch', 'plan'])
                 ->where('payments.tenant_id', $tenantId)
                 ->where('payments.status', 'active')
-                ->where('payments.is_partial', true)
                 ->where('payments.due_paise', '>', 0);
 
             if (in_array($user->role, ['branch_manager', 'branch_admin'])) {
@@ -317,23 +347,19 @@ class PaymentService
                 });
             }
 
+            $totalDuePaise = (clone $dueQuery)->sum('payments.due_paise');
+
             $duePayments = $dueQuery
                 ->orderByRaw('payments.due_date IS NULL, payments.due_date ASC')
                 ->orderByDesc('payments.due_paise')
                 ->paginate(25, ['*'], 'dues_page')
                 ->withQueryString();
-
-            $totalDuePaise = Payment::where('tenant_id', $tenantId)
-                ->where('status', 'active')
-                ->where('is_partial', true)
-                ->where('due_paise', '>', 0)
-                ->sum('due_paise');
         }
 
         return compact('payments', 'branches', 'todaySummary', 'activeTab', 'duePayments', 'totalDuePaise');
     }
 
-    // ── Pending dues ──────────────────────────────────────────────────────────
+    // â”€â”€ Pending dues â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function dues(Request $request, int $tenantId): array
     {
@@ -342,7 +368,6 @@ class PaymentService
         $query = Payment::with(['member', 'member.branch', 'plan'])
             ->where('payments.tenant_id', $tenantId)
             ->where('payments.status', 'active')
-            ->where('payments.is_partial', true)
             ->where('payments.due_paise', '>', 0);
 
         if (in_array($user->role, ['branch_manager', 'branch_admin'])) {
@@ -377,14 +402,13 @@ class PaymentService
 
         $totalDuePaise = Payment::where('tenant_id', $tenantId)
             ->where('status', 'active')
-            ->where('is_partial', true)
             ->where('due_paise', '>', 0)
             ->sum('due_paise');
 
         return compact('payments', 'branches', 'totalDuePaise');
     }
 
-    // ── Void payment ──────────────────────────────────────────────────────────
+    // â”€â”€ Void payment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function voidPayment(Payment $payment, Request $request, int $tenantId): void
     {
@@ -427,7 +451,7 @@ class PaymentService
         });
     }
 
-    // ── Receipt data ──────────────────────────────────────────────────────────
+    // â”€â”€ Receipt data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function receiptData(Payment $payment, int $tenantId): array
     {
@@ -440,7 +464,7 @@ class PaymentService
         return compact('payment', 'tenant');
     }
 
-    // ── Member search (AJAX) ──────────────────────────────────────────────────
+    // â”€â”€ Member search (AJAX) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function memberSearch(string $term, int $tenantId): array
     {
@@ -459,6 +483,7 @@ class PaymentService
                 'phone'         => $m->phone,
                 'member_code'   => $m->member_code,
                 'plan_id'       => $m->plan_id,
+                'plan_name'     => $m->plan_name,
                 'branch_id'     => $m->branch_id,
                 'balance_paise' => $m->balance_paise,
                 'pending_due_paise' => max(0, (int) -$m->balance_paise),
@@ -466,7 +491,7 @@ class PaymentService
             ->all();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function generateReceiptNumber(int $tenantId): string
     {
@@ -486,3 +511,4 @@ class PaymentService
         ]);
     }
 }
+

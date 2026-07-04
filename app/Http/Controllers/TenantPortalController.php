@@ -70,3 +70,4 @@ class TenantPortalController extends Controller
         ];
     }
 }
+

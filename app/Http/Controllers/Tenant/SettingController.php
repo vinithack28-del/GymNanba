@@ -23,7 +23,7 @@ class SettingController extends Controller
         abort_unless(Auth::user()->role === 'tenant_owner', 403);
     }
 
-    // ─── Gym Profile ────────────────────────────────────────────────────────
+    // â”€â”€â”€ Gym Profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function profile(){
         $this->ownerOnly();
@@ -72,7 +72,7 @@ class SettingController extends Controller
             ->with('success', __('settings.profile.saved'));
     }
 
-    // ─── My Account ─────────────────────────────────────────────────────────
+    // â”€â”€â”€ My Account â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function account(){
         $this->ownerOnly();
@@ -149,7 +149,7 @@ class SettingController extends Controller
         return back()->with('success', __('settings.account.other_sessions_terminated'));
     }
 
-    // ─── Integrations ────────────────────────────────────────────────────────
+    // â”€â”€â”€ Integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function integrations(){
         $this->ownerOnly();
@@ -213,7 +213,7 @@ class SettingController extends Controller
         return response()->json(['test_passed' => true, 'message' => 'Connection OK']);
     }
 
-    // ─── Language ────────────────────────────────────────────────────────────
+    // â”€â”€â”€ Language â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function language(){
         $this->ownerOnly();
@@ -236,7 +236,7 @@ class SettingController extends Controller
             ->with('success', __('settings.language.saved'));
     }
 
-    // ─── Billing & Subscription (view-only) ──────────────────────────────────
+    // â”€â”€â”€ Billing & Subscription (view-only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function subscription(){
         $this->ownerOnly();
@@ -246,7 +246,7 @@ class SettingController extends Controller
         return Inertia::render('Tenant/Settings/Subscription', compact('tenant', 'subscription'));
     }
 
-    // ─── Data & Privacy ──────────────────────────────────────────────────────
+    // â”€â”€â”€ Data & Privacy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function data(){
         $this->ownerOnly();
@@ -273,7 +273,7 @@ class SettingController extends Controller
             ->with('success', __('settings.data.deletion_requested'));
     }
 
-    // ─── Private helpers ─────────────────────────────────────────────────────
+    // â”€â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function parseDevice(string $ua): string
     {
@@ -330,3 +330,4 @@ class SettingController extends Controller
         ];
     }
 }
+

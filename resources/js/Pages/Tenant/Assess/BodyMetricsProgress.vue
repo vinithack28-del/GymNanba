@@ -8,8 +8,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 </script>
 
@@ -33,7 +33,7 @@ const formatDate = (date) => {
                     <div v-for="record in records?.slice(0, 3)" :key="record.id" class="rounded-lg border border-white/10 bg-slate-950/50 p-4">
                         <p class="text-xs font-semibold text-slate-400">{{ formatDate(record.assessment_date) }}</p>
                         <p class="mt-1 text-lg font-bold">Weight {{ record.payload?.weight_kg }} kg</p>
-                        <p class="text-xs text-slate-400">BMI {{ record.payload?.bmi }} · Body fat {{ record.payload?.body_fat_pct || '—' }}</p>
+                        <p class="text-xs text-slate-400">BMI {{ record.payload?.bmi }} Â· Body fat {{ record.payload?.body_fat_pct || 'â€”' }}</p>
                     </div>
                 </div>
 
@@ -53,7 +53,7 @@ const formatDate = (date) => {
                                     <td class="px-4 py-3">{{ formatDate(record.assessment_date) }}</td>
                                     <td class="px-4 py-3">{{ record.payload?.weight_kg }}</td>
                                     <td class="px-4 py-3">{{ record.payload?.bmi }}</td>
-                                    <td class="px-4 py-3">{{ record.payload?.body_fat_pct || '—' }}</td>
+                                    <td class="px-4 py-3">{{ record.payload?.body_fat_pct || 'â€”' }}</td>
                                 </tr>
                             </tbody>
                         </table>

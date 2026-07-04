@@ -29,13 +29,13 @@ const days = {
 };
 
 const amenityIcons = {
-    pool: '🏊',
-    steam: '💨',
-    parking: '🅿',
-    locker: '🔒',
-    cafeteria: '☕',
-    ac: '❄',
-    wifi: '📶',
+    pool: 'ðŸŠ',
+    steam: 'ðŸ’¨',
+    parking: 'ðŸ…¿',
+    locker: 'ðŸ”’',
+    cafeteria: 'â˜•',
+    ac: 'â„',
+    wifi: 'ðŸ“¶',
 };
 
 const defaultHours = {
@@ -299,10 +299,6 @@ const submit = () => {
                 </div>
 
                 <div class="branch-wizard__body">
-                    <div v-if="Object.keys(form.errors).length" class="branch-server-error">
-                        {{ Object.values(form.errors)[0] }}
-                    </div>
-
                     <section v-show="currentStep === 1" class="branch-step-panel">
                         <div class="branch-grid-form">
                             <div class="branch-field branch-field--full">
@@ -398,7 +394,7 @@ const submit = () => {
                                 :class="{ 'is-selected': form.amenities.includes(key) }"
                             >
                                 <input v-model="form.amenities" type="checkbox" :value="key">
-                                <span class="branch-amenity-pill__icon">{{ amenityIcons[key] || '✓' }}</span>
+                                <span class="branch-amenity-pill__icon">{{ amenityIcons[key] || 'âœ“' }}</span>
                                 <span>{{ label }}</span>
                             </label>
                         </div>
@@ -643,6 +639,12 @@ const submit = () => {
     border-color: var(--app-brand);
 }
 
+.branch-field:has(.branch-field-error) input,
+.branch-field:has(.branch-field-error) select {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
 .branch-field-error {
     color: #ff8b89;
     font-size: 0.82rem;
@@ -853,3 +855,4 @@ const submit = () => {
     }
 }
 </style>
+

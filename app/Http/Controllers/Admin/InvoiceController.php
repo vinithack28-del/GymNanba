@@ -48,3 +48,4 @@ class InvoiceController extends Controller
             ->with('status', 'Manual payment recorded.');
     }
 }
+

@@ -25,14 +25,16 @@ const canToggleAllBranches = computed(() => !isEdit && props.showBranchSelector 
 const form = useForm({
     name: props.plan?.name || '',
     description: props.plan?.description || '',
+    validity_mode: props.plan?.session_limit ? 'sessions' : 'duration',
     duration_value: props.plan?.duration_value || 1,
     duration_type: props.plan?.duration_type || 'days',
+    session_limit: props.plan?.session_limit || '',
     price_rupees: props.plan?.price_paise ? (props.plan.price_paise / 100).toFixed(2) : '',
     gst_applicable: props.plan?.gst_applicable || false,
     gst_rate: props.plan?.gst_rate || props.defaultGstRate || 18,
     max_members: props.plan?.max_members ?? 0,
     grace_days: props.plan?.grace_days ?? 0,
-    allow_freeze: props.plan?.allow_freeze ?? true,
+    allow_freeze: props.plan?.allow_freeze ?? false,
     max_freeze_days: props.plan?.max_freeze_days ?? 30,
     inclusions: Array.isArray(props.plan?.inclusions) ? props.plan.inclusions.join(', ') : '',
     branch_ids: props.plan?.branches?.map(b => b.id) || props.defaultBranchIds || [],
@@ -68,12 +70,11 @@ const submit = () => {
         <div class="flex flex-col gap-5">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Memberships / Plans</p>
-                    <h1 class="mt-2 text-3xl font-semibold">{{ pageTitle }}</h1>
+                    <h1 class="text-3xl font-semibold">{{ pageTitle }}</h1>
                     <p class="mt-1 text-slate-300">{{ pageSub }}</p>
                 </div>
                 <Link href="/plans" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    <span>←</span> Back to plans
+                    <span>â†</span> Back to plans
                 </Link>
             </div>
 
@@ -85,21 +86,37 @@ const submit = () => {
                     </div>
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-sm font-medium">Description</label>
-                        <textarea v-model="form.description" rows="3" placeholder="Short description shown to members…" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" maxlength="500"></textarea>
+                        <textarea v-model="form.description" rows="3" placeholder="Short description shown to membersâ€¦" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" maxlength="500"></textarea>
                     </div>
                     <div>
+                        <label class="mb-2 block text-sm font-medium">Validity Type <span class="text-red-400">*</span></label>
+                        <select v-model="form.validity_mode" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
+                            <option value="duration">Duration based</option>
+                            <option value="sessions">Session based</option>
+                        </select>
+                        <p v-if="form.errors.validity_mode" class="mt-1 text-xs font-semibold text-red-400">{{ form.errors.validity_mode }}</p>
+                    </div>
+                    <div v-if="form.validity_mode === 'sessions'">
+                        <label class="mb-2 block text-sm font-medium">No. of Sessions <span class="text-red-400">*</span></label>
+                        <input v-model="form.session_limit" type="number" min="1" max="10000" placeholder="e.g. 12" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
+                        <p class="mt-1 text-xs text-slate-400">Attendance will stop after this many check-ins.</p>
+                        <p v-if="form.errors.session_limit" class="mt-1 text-xs font-semibold text-red-400">{{ form.errors.session_limit }}</p>
+                    </div>
+                    <div v-if="form.validity_mode === 'duration'">
                         <label class="mb-2 block text-sm font-medium">Duration Value <span class="text-red-400">*</span></label>
                         <input v-model="form.duration_value" type="number" min="1" max="730" placeholder="e.g. 30" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
+                        <p v-if="form.errors.duration_value" class="mt-1 text-xs font-semibold text-red-400">{{ form.errors.duration_value }}</p>
                     </div>
-                    <div>
+                    <div v-if="form.validity_mode === 'duration'">
                         <label class="mb-2 block text-sm font-medium">Duration Type <span class="text-red-400">*</span></label>
                         <select v-model="form.duration_type" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                             <option value="days">Days</option>
                             <option value="months">Months</option>
                         </select>
+                        <p v-if="form.errors.duration_type" class="mt-1 text-xs font-semibold text-red-400">{{ form.errors.duration_type }}</p>
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-medium">Price (₹) <span class="text-red-400">*</span></label>
+                        <label class="mb-2 block text-sm font-medium">Price (â‚¹) <span class="text-red-400">*</span></label>
                         <input v-model="form.price_rupees" type="number" min="0" step="0.01" placeholder="e.g. 1000" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>
@@ -173,3 +190,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

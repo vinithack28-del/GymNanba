@@ -18,3 +18,4 @@ class UpdatePlatformLanguageRequest extends FormRequest
         ];
     }
 }
+

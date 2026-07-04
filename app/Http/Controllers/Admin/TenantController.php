@@ -72,3 +72,4 @@ class TenantController extends Controller
         return redirect()->route('admin.tenants.index')->with('status', "{$tenantName} deleted successfully.");
     }
 }
+

@@ -57,7 +57,7 @@ class Integration extends Model
         if (blank($val)) {
             return '';
         }
-        return substr($val, 0, 4) . str_repeat('•', max(0, strlen($val) - 4));
+        return substr($val, 0, 4) . str_repeat('â€¢', max(0, strlen($val) - 4));
     }
 
     private function getRawSecrets(): array
@@ -71,3 +71,4 @@ class Integration extends Model
         return $this->status === 'connected';
     }
 }
+

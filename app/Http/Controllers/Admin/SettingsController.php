@@ -34,3 +34,4 @@ class SettingsController extends Controller
         return redirect()->route('admin.settings.index')->with('status', 'Language status updated.');
     }
 }
+

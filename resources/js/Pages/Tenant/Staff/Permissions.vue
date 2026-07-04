@@ -31,7 +31,6 @@ const custCount = totalRoles - sysCount;
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                     <h1 class="mt-2 text-3xl font-semibold">Staff Roles</h1>
                     <p class="mt-1 text-slate-300">Manage staff roles and permissions.</p>
                 </div>
@@ -87,3 +86,4 @@ const custCount = totalRoles - sysCount;
         </div>
     </AppLayout>
 </template>
+

@@ -8,8 +8,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const toggleAttendance = (bookingId) => {
@@ -30,11 +30,11 @@ const markAllPresent = () => {
                 <div>
                     <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Classes</p>
                     <h1 class="mt-2 text-3xl font-semibold">Class Attendance</h1>
-                    <p class="mt-1 text-slate-300">{{ classData?.name }} · {{ classData?.day }} at {{ classData?.time }}</p>
+                    <p class="mt-1 text-slate-300">{{ classData?.name }} Â· {{ classData?.day }} at {{ classData?.time }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <Link :href="`/tenant/classes/${classData?.id}`" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                        ← Back to Class
+                        â† Back to Class
                     </Link>
                     <button @click="markAllPresent" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         Mark All Present

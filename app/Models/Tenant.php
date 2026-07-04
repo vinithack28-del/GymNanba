@@ -100,3 +100,4 @@ class Tenant extends Model
         return "{$this->subdomain}.{$sharedDomain}";
     }
 }
+

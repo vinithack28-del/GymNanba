@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 const props = defineProps({
@@ -15,6 +15,14 @@ const currentTab = computed(() => props.tab || 'renewal_due');
 const tenantSearch = ref('');
 const selectedTenantId = ref('');
 const tenantDropdownOpen = ref(false);
+const page = usePage();
+const translations = computed(() => page.props.translations?.common || {});
+
+const t = (key, fallback = '') => {
+    return key.split('.').reduce((value, part) => value?.[part], translations.value) || fallback;
+};
+
+const trAmount = (key, fallback, amount) => t(key, fallback).replace(':amount', amount);
 
 const renewalsDueMap = computed(() => {
     const map = new Map();
@@ -137,10 +145,10 @@ const renewalStatusTone = computed(() => {
 
 const renewalStatusMessage = computed(() => {
     if (!selectedPlan.value) return '';
-    if (renewalAmountPaise.value <= 0) return 'Enter a payment amount to process renewal.';
-    if (renewalExcessPaise.value > 0) return `Excess payment of ${formatCurrency(renewalExcessPaise.value)} is not allowed.`;
-    if (renewalShortPaise.value > 0) return `Part payment - subscription will be marked partial. Balance due ${formatCurrency(renewalShortPaise.value)}.`;
-    return 'Full payment - subscription will be activated.';
+    if (renewalAmountPaise.value <= 0) return t('admin.invoices.status_enter_amount', 'Enter a payment amount to process renewal.');
+    if (renewalExcessPaise.value > 0) return trAmount('admin.invoices.status_excess', 'Excess payment of :amount is not allowed.', formatCurrency(renewalExcessPaise.value));
+    if (renewalShortPaise.value > 0) return trAmount('admin.invoices.status_part', 'Part payment - subscription will be marked partial. Balance due :amount.', formatCurrency(renewalShortPaise.value));
+    return t('admin.invoices.status_full', 'Full payment - subscription will be activated.');
 });
 
 const canSubmitRenewal = computed(() =>
@@ -157,8 +165,8 @@ const partPaymentAmountPaise = computed(() =>
 const formatCurrency = (paise) => `Rs. ${(Number(paise || 0) / 100).toFixed(2)}`;
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getDaysLeft = (expDate) => {
@@ -248,117 +256,116 @@ const submitPartPayment = () => {
 
 <template>
     <AppLayout>
-        <Head title="Invoices & Payments" />
+        <Head :title="t('admin.invoices.title', 'Invoices & Payments')" />
 
-        <div class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Finance</p>
-                <h1 class="mt-2 text-3xl font-semibold">Invoices & Payments</h1>
-                <p class="mt-1 text-slate-300">Process renewals, record part payments, and review collection history.</p>
+                <h1 class="text-2xl font-semibold">{{ t('admin.invoices.title', 'Invoices & Payments') }}</h1>
+                <p class="mt-0.5 max-w-3xl text-sm text-slate-300">{{ t('admin.invoices.subtitle', 'Process renewals, record part payments, and review collection history.') }}</p>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap gap-1.5">
                 <Link
                     href="/admin/invoices?tab=renewal_due"
-                    :class="['rounded-full border px-4 py-2 text-sm font-semibold transition', currentTab === 'renewal_due' ? 'border-orange-500 bg-orange-500 text-slate-950' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10']"
+                    :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition', currentTab === 'renewal_due' ? 'border-orange-500 bg-orange-500 text-slate-950' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10']"
                 >
-                    Renewal Due
+                    {{ t('admin.invoices.renewal_due', 'Renewal Due') }}
                     <span v-if="renewalsDue?.length" class="ml-2 rounded-full bg-black/20 px-1 py-0.5 text-xs">{{ renewalsDue.length }}</span>
                 </Link>
                 <Link
                     href="/admin/invoices?tab=history"
-                    :class="['rounded-full border px-4 py-2 text-sm font-semibold transition', currentTab === 'history' ? 'border-orange-500 bg-orange-500 text-slate-950' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10']"
+                    :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition', currentTab === 'history' ? 'border-orange-500 bg-orange-500 text-slate-950' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10']"
                 >
-                    Payment History
+                    {{ t('admin.invoices.payment_history', 'Payment History') }}
                 </Link>
             </div>
 
-            <div v-if="currentTab === 'renewal_due'" class="grid gap-6 xl:grid-cols-[1fr_1.4fr]">
-                <form @submit.prevent="submitRenewal" class="rounded-[2rem] border border-white/10 bg-white/5 p-6">
+            <div v-if="currentTab === 'renewal_due'" class="grid gap-4 xl:grid-cols-[0.95fr_1.35fr]">
+                <form @submit.prevent="submitRenewal" class="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-[0.07em] text-slate-200">Process Renewal</p>
-                        <p class="mb-4 text-sm text-slate-400">Choose a tenant, pick a plan, enter amount. Part payments allowed.</p>
+                        <p class="mb-1 text-xs font-semibold uppercase tracking-[0.07em] text-slate-200">{{ t('admin.invoices.process_renewal', 'Process Renewal') }}</p>
+                        <p class="mb-3 text-xs text-slate-400">{{ t('admin.invoices.process_renewal_help', 'Choose a tenant, pick a plan, enter amount. Part payments allowed.') }}</p>
                     </div>
 
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Tenant</label>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.tenant', 'Tenant') }}</label>
                             <div class="relative">
                                 <input
                                     v-model="tenantSearch"
                                     type="text"
-                                    placeholder="Type to search gym name..."
+                                    :placeholder="t('admin.invoices.tenant_search_placeholder', 'Type to search gym name...')"
                                     class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 pr-11 text-sm text-slate-300 outline-none focus:border-orange-400"
                                     @focus="tenantDropdownOpen = true"
                                 >
-                                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">▾</span>
+                                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">â–¾</span>
                                 <div v-if="tenantDropdownOpen" class="absolute left-0 right-0 top-full z-20 mt-2 max-h-52 overflow-y-auto rounded-2xl border app-panel-strong shadow-xl">
                                     <button
                                         v-for="tenant in filteredTenants"
                                         :key="tenant.id"
                                         type="button"
                                         @mousedown.prevent="selectTenant(tenant)"
-                                        class="flex w-full items-center justify-between px-4 py-3 text-left text-sm transition hover:bg-white/5"
+                                        class="flex w-full items-center justify-between px-3 py-2 text-left text-sm transition hover:bg-white/5"
                                         :class="String(selectedTenantId) === String(tenant.id) ? 'bg-orange-500/10' : ''"
                                     >
                                         <span class="font-medium">{{ tenant.gym_name }}</span>
                                         <span class="text-xs text-slate-400">{{ tenant.subdomain }}.gymos.in</span>
                                     </button>
-                                    <div v-if="filteredTenants.length === 0" class="px-4 py-3 text-sm text-slate-400">
-                                        No matching tenants found.
+                                    <div v-if="filteredTenants.length === 0" class="px-3 py-2 text-sm text-slate-400">
+                                        {{ t('admin.invoices.no_matching_tenants', 'No matching tenants found.') }}
                                     </div>
                                 </div>
                             </div>
                             <p v-if="renewalForm.errors.tenant_id" class="mt-1 text-xs text-red-400">{{ renewalForm.errors.tenant_id }}</p>
                         </div>
 
-                        <div v-if="selectedTenantDue" class="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300">
-                            Expiry: {{ formatDate(selectedTenantDue._sub?.end_date || selectedTenantDue._sub?.trial_end_date) }} · Status: {{ selectedTenantDue._sub?.status || '—' }}
+                        <div v-if="selectedTenantDue" class="rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
+                            {{ t('admin.invoices.expiry', 'Expiry') }}: {{ formatDate(selectedTenantDue._sub?.end_date || selectedTenantDue._sub?.trial_end_date) }} Â· {{ t('status', 'Status') }}: {{ selectedTenantDue._sub?.status || 'â€”' }}
                         </div>
 
                         <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Plan</label>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.plan', 'Plan') }}</label>
                             <select v-model="renewalForm.plan_id" @change="onPlanChange" :disabled="hasPendingBalance" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400 disabled:cursor-not-allowed disabled:opacity-50">
-                                <option value="">Select plan...</option>
+                                <option value="">{{ t('admin.invoices.select_plan', 'Select plan...') }}</option>
                                 <option v-for="plan in plans" :key="plan.id" :value="String(plan.id)">
                                     {{ plan.name }} - {{ plan.billing_cycle }} - {{ formatCurrency(plan.price_paise) }}
                                 </option>
                             </select>
-                            <p v-if="hasPendingBalance" class="mt-1 text-xs text-amber-400">Plan cannot be changed while a balance is pending.</p>
+                            <p v-if="hasPendingBalance" class="mt-1 text-xs font-semibold text-red-500">{{ t('admin.invoices.plan_locked_balance', 'Plan cannot be changed while a balance is pending.') }}</p>
                             <p v-if="renewalForm.errors.plan_id" class="mt-1 text-xs text-red-400">{{ renewalForm.errors.plan_id }}</p>
                         </div>
 
-                        <div v-if="selectedPlan" class="rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-sm">
+                        <div v-if="selectedPlan" class="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-sm">
                             <div class="flex justify-between text-slate-400">
-                                <span>Plan price</span>
+                                <span>{{ t('admin.invoices.plan_price', 'Plan price') }}</span>
                                 <span class="text-slate-200">{{ formatCurrency(selectedPlan.price_paise) }}</span>
                             </div>
-                            <div v-if="effectiveDuePaise !== Number(selectedPlan.price_paise)" class="mt-2 flex justify-between text-amber-400">
-                                <span>Remaining balance</span>
+                            <div v-if="effectiveDuePaise !== Number(selectedPlan.price_paise)" class="mt-2 flex justify-between text-red-500">
+                                <span>{{ t('admin.invoices.remaining_balance', 'Remaining balance') }}</span>
                                 <span class="font-semibold">{{ formatCurrency(effectiveDuePaise) }}</span>
                             </div>
                             <div class="mt-2 flex justify-between text-slate-400">
-                                <span>Paying now</span>
+                                <span>{{ t('admin.invoices.paying_now', 'Paying now') }}</span>
                                 <span class="text-slate-200">{{ formatCurrency(renewalAmountPaise) }}</span>
                             </div>
                             <div class="mt-2 flex justify-between font-semibold">
-                                <span class="text-slate-300">Balance due</span>
+                                <span class="text-slate-300">{{ t('admin.invoices.balance_due', 'Balance due') }}</span>
                                 <span :class="renewalBalancePaise > 0 ? 'text-amber-400' : 'text-emerald-400'">{{ formatCurrency(renewalBalancePaise) }}</span>
                             </div>
-                            <p class="mt-3 text-sm" :class="renewalStatusTone">
+                            <p class="mt-2 text-xs" :class="renewalStatusTone">
                                 {{ renewalStatusMessage }}
                             </p>
                         </div>
 
                         <div>
                             <div class="mb-2 flex items-center justify-between">
-                                <label class="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Payment</label>
+                                <label class="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.payment', 'Payment') }}</label>
                             </div>
 
                             <div class="space-y-2">
-                                <div v-for="(split, index) in renewalForm.splits" :key="`renewal-${index}`" class="grid items-end gap-2 rounded-2xl border border-white/10 bg-slate-950/50 p-3 lg:grid-cols-[1.1fr_1fr_1.2fr_auto]">
+                                <div v-for="(split, index) in renewalForm.splits" :key="`renewal-${index}`" class="grid items-end gap-2 rounded-xl border border-white/10 bg-slate-950/50 p-2.5 lg:grid-cols-[1.1fr_1fr_1.2fr_auto]">
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Method</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.method', 'Method') }}</label>
                                         <select v-model="split.method" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                             <option>Cash</option>
                                             <option>Bank transfer</option>
@@ -367,68 +374,68 @@ const submitPartPayment = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Amount (₹)</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (â‚¹)</label>
                                         <input v-model="split.amount" type="number" step="0.01" min="0.01" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Reference</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.reference', 'Reference') }}</label>
                                         <input v-model="split.reference" type="text" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
-                                    <button type="button" @click="removeRenewalSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">✕</button>
+                                    <button type="button" @click="removeRenewalSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">âœ•</button>
                                 </div>
                             </div>
-                            <button type="button" @click="addRenewalSplit" class="mt-3 w-full rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm font-semibold text-slate-400 hover:border-orange-400 hover:text-orange-400">
-                                + Add Payment Method
+                            <button type="button" @click="addRenewalSplit" class="mt-2 w-full rounded-lg border border-dashed border-white/10 px-3 py-2 text-xs font-semibold text-slate-400 hover:border-orange-400 hover:text-orange-400">
+                                + {{ t('admin.invoices.add_payment_method', 'Add Payment Method') }}
                             </button>
                             <p v-if="renewalForm.errors.splits" class="mt-1 text-xs text-red-400">{{ renewalForm.errors.splits }}</p>
                         </div>
 
                         <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Date</label>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.date', 'Date') }}</label>
                             <input v-model="renewalForm.paid_at" type="date" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                         </div>
 
                         <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Notes</label>
-                            <input v-model="renewalForm.notes" type="text" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" placeholder="Optional">
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.notes', 'Notes') }}</label>
+                            <input v-model="renewalForm.notes" type="text" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" :placeholder="t('admin.invoices.optional', 'Optional')">
                         </div>
 
-                        <button type="submit" class="w-full rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60" :disabled="renewalForm.processing || !canSubmitRenewal">
-                            {{ renewalForm.processing ? 'Processing...' : 'Process Renewal' }}
+                        <button type="submit" class="w-full rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60" :disabled="renewalForm.processing || !canSubmitRenewal">
+                            {{ renewalForm.processing ? t('admin.invoices.processing', 'Processing...') : t('admin.invoices.process_renewal', 'Process Renewal') }}
                         </button>
                     </div>
                 </form>
 
-                <div class="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                    <div class="mb-4 flex items-center gap-3">
-                        <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-200">Tenants Due for Renewal</p>
+                <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div class="mb-3 flex items-center gap-2">
+                        <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-200">{{ t('admin.invoices.tenants_due_for_renewal', 'Tenants Due for Renewal') }}</p>
                         <span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-300">{{ renewalsDue?.length || 0 }}</span>
                     </div>
 
-                    <div v-if="!renewalsDue || renewalsDue.length === 0" class="py-8 text-center text-sm text-slate-400">
-                        No renewals due. All subscriptions are current.
+                    <div v-if="!renewalsDue || renewalsDue.length === 0" class="py-5 text-center text-sm text-slate-400">
+                        {{ t('admin.invoices.no_renewals_due', 'No renewals due. All subscriptions are current.') }}
                     </div>
 
-                    <div v-else class="flex flex-col gap-3">
+                    <div v-else class="flex flex-col gap-2">
                         <button
                             v-for="tenant in renewalsDue"
                             :key="tenant.id"
                             type="button"
                             @click="selectTenant(tenant)"
-                            class="rounded-[1.2rem] border border-white/10 bg-slate-950/50 p-4 text-left transition hover:border-orange-400"
+                            class="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-left transition hover:border-orange-400"
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-sm font-semibold">{{ tenant.gym_name }}</p>
-                                    <p class="mt-1 text-xs text-slate-400">{{ tenant._sub?.plan?.name || '—' }}</p>
+                                    <p class="mt-1 text-xs text-slate-400">{{ tenant._sub?.plan?.name || 'â€”' }}</p>
                                 </div>
                                 <span class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase" :class="getDueBadgeClass(getDaysLeft(tenant._sub?.end_date || tenant._sub?.trial_end_date))">
-                                    {{ Math.abs(getDaysLeft(tenant._sub?.end_date || tenant._sub?.trial_end_date) || 0) }}d left
+                                    {{ Math.abs(getDaysLeft(tenant._sub?.end_date || tenant._sub?.trial_end_date) || 0) }} {{ t('admin.invoices.day_left', 'd left') }}
                                 </span>
                             </div>
                             <div class="mt-2 flex justify-between text-xs text-slate-400">
-                                <span>Expires: {{ formatDate(tenant._sub?.end_date || tenant._sub?.trial_end_date) }}</span>
-                                <span v-if="tenant._balance_paise > 0" class="font-semibold text-amber-400">Balance: {{ formatCurrency(tenant._balance_paise) }}</span>
+                                <span>{{ t('admin.invoices.expires', 'Expires') }}: {{ formatDate(tenant._sub?.end_date || tenant._sub?.trial_end_date) }}</span>
+                                <span v-if="tenant._balance_paise > 0" class="font-semibold text-amber-400">{{ t('admin.invoices.balance', 'Balance') }}: {{ formatCurrency(tenant._balance_paise) }}</span>
                                 <span v-else>{{ formatCurrency(tenant._sub?.plan?.price_paise) }} / {{ tenant._sub?.plan?.billing_cycle }}</span>
                             </div>
                         </button>
@@ -436,32 +443,32 @@ const submitPartPayment = () => {
                 </div>
             </div>
 
-            <div v-if="currentTab === 'history'" class="flex flex-col gap-6">
-                <div v-if="partialSubscriptions.length" class="rounded-[2rem] border border-amber-500/30 bg-amber-500/5 p-6">
-                    <p class="mb-4 text-xs font-semibold uppercase tracking-[0.07em] text-amber-400">Pending Part Payments</p>
-                    <form @submit.prevent="submitPartPayment" class="grid gap-4">
+            <div v-if="currentTab === 'history'" class="flex flex-col gap-4">
+                <div v-if="partialSubscriptions.length" class="rounded-2xl border border-red-500/25 bg-red-500/5 p-4">
+                    <p class="mb-3 text-xs font-semibold uppercase tracking-[0.07em] text-red-500">{{ t('admin.invoices.pending_part_payments', 'Pending Part Payments') }}</p>
+                    <form @submit.prevent="submitPartPayment" class="grid gap-3">
                         <div>
-                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Subscription</label>
+                            <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.subscription', 'Subscription') }}</label>
                             <select v-model="partPaymentForm.subscription_id" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
-                                <option value="">Select subscription...</option>
+                                <option value="">{{ t('admin.invoices.select_subscription', 'Select subscription...') }}</option>
                                 <option v-for="subscription in partialSubscriptions" :key="subscription.id" :value="String(subscription.id)">
-                                    {{ subscription.tenantName }} - {{ subscription.planName }} ({{ formatCurrency(subscription.duePaise) }} due)
+                                    {{ subscription.tenantName }} - {{ subscription.planName }} ({{ formatCurrency(subscription.duePaise) }} {{ t('admin.invoices.due', 'due') }})
                                 </option>
                             </select>
                         </div>
 
                         <div>
                             <div class="mb-2 flex items-center justify-between">
-                                <label class="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Payment</label>
+                                <label class="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.payment', 'Payment') }}</label>
                                 <button type="button" @click="addPartSplit" class="rounded-xl border border-dashed border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:border-orange-400 hover:text-orange-400">
-                                    + Add Payment Method
+                                    + {{ t('admin.invoices.add_payment_method', 'Add Payment Method') }}
                                 </button>
                             </div>
 
                             <div class="space-y-2">
-                                <div v-for="(split, index) in partPaymentForm.splits" :key="`part-${index}`" class="grid items-end gap-2 rounded-2xl border border-white/10 bg-slate-950/50 p-3 lg:grid-cols-[1.1fr_1fr_1.2fr_auto]">
+                                <div v-for="(split, index) in partPaymentForm.splits" :key="`part-${index}`" class="grid items-end gap-2 rounded-xl border border-white/10 bg-slate-950/50 p-2.5 lg:grid-cols-[1.1fr_1fr_1.2fr_auto]">
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Method</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.method', 'Method') }}</label>
                                         <select v-model="split.method" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                             <option>Cash</option>
                                             <option>Bank transfer</option>
@@ -470,93 +477,96 @@ const submitPartPayment = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Amount (₹)</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (â‚¹)</label>
                                         <input v-model="split.amount" type="number" step="0.01" min="0.01" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">Reference</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.reference', 'Reference') }}</label>
                                         <input v-model="split.reference" type="text" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
-                                    <button type="button" @click="removePartSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">✕</button>
+                                    <button type="button" @click="removePartSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">âœ•</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid gap-3 md:grid-cols-2">
                             <div>
-                                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Date</label>
+                                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.date', 'Date') }}</label>
                                 <input v-model="partPaymentForm.paid_at" type="date" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                             </div>
                             <div>
-                                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">Notes</label>
+                                <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">{{ t('admin.invoices.notes', 'Notes') }}</label>
                                 <input v-model="partPaymentForm.notes" type="text" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                             </div>
                         </div>
 
-                        <button type="submit" class="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400" :disabled="partPaymentForm.processing">
-                            {{ partPaymentForm.processing ? 'Recording...' : 'Record Part Payment' }}
+                        <button type="submit" class="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400" :disabled="partPaymentForm.processing">
+                            {{ partPaymentForm.processing ? t('admin.invoices.recording', 'Recording...') : t('admin.invoices.record_part_payment', 'Record Part Payment') }}
                         </button>
                     </form>
                 </div>
 
-                <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
-                    <div class="border-b border-white/10 px-6 py-4">
-                        <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-200">Payment History</p>
-                    </div>
+                <div class="overflow-hidden rounded-2xl border border-white/10 bg-white/5">
                     <div class="overflow-x-auto">
-                        <table class="w-full divide-y divide-white/10 text-left text-sm">
-                            <thead class="bg-slate-950/60 text-slate-300">
+                        <table class="w-full min-w-[940px] divide-y divide-white/10 text-left text-sm">
+                            <thead class="app-table-head">
                                 <tr>
-                                    <th class="px-4 py-3 font-medium">Gym</th>
-                                    <th class="px-4 py-3 font-medium">Plan</th>
-                                    <th class="px-4 py-3 font-medium">Type</th>
-                                    <th class="px-4 py-3 font-medium">Amount</th>
-                                    <th class="px-4 py-3 font-medium">Method</th>
-                                    <th class="px-4 py-3 font-medium">Reference</th>
-                                    <th class="px-4 py-3 font-medium">Date</th>
-                                    <th class="px-4 py-3 font-medium">By</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.gym', 'Gym') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.plan', 'Plan') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.type', 'Type') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.amount', 'Amount') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.method', 'Method') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.reference', 'Reference') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.date', 'Date') }}</th>
+                                    <th class="px-3 py-2.5 font-medium">{{ t('admin.invoices.by', 'By') }}</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-white/10 bg-white/5">
+                            <tbody class="divide-y divide-white/10">
                                 <template v-if="payments?.data?.length">
                                     <template v-for="payment in payments.data" :key="payment.id">
-                                        <tr>
-                                            <td class="px-4 py-4 font-semibold">{{ payment.tenant?.gym_name }}</td>
-                                            <td class="px-4 py-4 text-slate-400">{{ payment.subscription?.plan?.name || '—' }}</td>
-                                            <td class="px-4 py-4">
+                                        <tr class="hover:bg-white/5">
+                                            <td class="px-3 py-2.5 font-semibold">{{ payment.tenant?.gym_name }}</td>
+                                            <td class="px-4 py-4 text-slate-400">{{ payment.subscription?.plan?.name || 'â€”' }}</td>
+                                            <td class="px-3 py-2.5">
                                                 <span class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase" :class="getPaymentTypeClass(payment.payment_type)">
                                                     {{ payment.payment_type?.replace('_', ' ') }}
                                                 </span>
                                             </td>
-                                            <td class="px-4 py-4 font-semibold">{{ formatCurrency(payment.amount_paise) }}</td>
-                                            <td class="px-4 py-4 text-slate-400">{{ payment.payment_method }}</td>
-                                            <td class="px-4 py-4 font-mono text-xs text-slate-400">{{ payment.transaction_ref || '—' }}</td>
-                                            <td class="px-4 py-4 text-slate-400">{{ formatDate(payment.paid_at) }}</td>
-                                            <td class="px-4 py-4 text-xs text-slate-400">{{ payment.admin?.name || 'System' }}</td>
+                                            <td class="px-3 py-2.5 font-semibold">{{ formatCurrency(payment.amount_paise) }}</td>
+                                            <td class="px-3 py-2.5 text-slate-400">{{ payment.payment_method }}</td>
+                                            <td class="px-4 py-4 font-mono text-xs text-slate-400">{{ payment.transaction_ref || 'â€”' }}</td>
+                                            <td class="px-3 py-2.5 text-slate-400">{{ formatDate(payment.paid_at) }}</td>
+                                            <td class="px-3 py-2.5 text-xs text-slate-400">{{ payment.admin?.name || t('admin.invoices.system', 'System') }}</td>
                                         </tr>
                                         <tr v-if="payment.notes">
-                                            <td colspan="8" class="px-4 py-2 text-xs text-slate-400">↳ {{ payment.notes }}</td>
+                                            <td colspan="8" class="px-4 py-2 text-xs text-slate-400">â†³ {{ payment.notes }}</td>
                                         </tr>
                                     </template>
                                 </template>
                                 <tr v-else>
-                                    <td colspan="8" class="px-4 py-8 text-center text-slate-400">No payments recorded yet.</td>
+                                    <td colspan="8" class="px-4 py-5 text-center text-slate-400">{{ t('admin.invoices.no_payments', 'No payments recorded yet.') }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div v-if="payments?.links?.length" class="flex items-center gap-2">
-                    <Link
-                        v-for="link in payments.links"
-                        :key="link.label"
-                        :href="link.url || '#'"
-                        :class="['rounded-lg px-3 py-2 text-sm', link.active ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10']"
-                        v-html="link.label"
-                    />
+                <div v-if="payments?.data?.length" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <p class="text-xs text-slate-400">
+                        Showing {{ payments.from || 0 }} to {{ payments.to || 0 }} of {{ payments.total || payments.data.length }} payments
+                    </p>
+                    <div v-if="payments?.links?.length" class="flex flex-wrap items-center gap-1.5">
+                        <Link
+                            v-for="link in payments.links"
+                            :key="link.label"
+                            :href="link.url || '#'"
+                            :class="['rounded-lg px-2.5 py-1.5 text-sm', link.active ? 'bg-orange-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10']"
+                            v-html="link.label"
+                        />
+                    </div>
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
+

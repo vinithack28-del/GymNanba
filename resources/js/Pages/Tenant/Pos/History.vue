@@ -11,13 +11,13 @@ const props = defineProps({
 const saleRows = computed(() => props.sales?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(2);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '').replaceAll('/', '-');
 };
 </script>
 
@@ -27,7 +27,6 @@ const formatDate = (date) => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Sales History</h1>
                 <p class="mt-1 text-slate-300">View all POS sales transactions.</p>
             </div>
@@ -87,3 +86,4 @@ const formatDate = (date) => {
         </div>
     </AppLayout>
 </template>
+

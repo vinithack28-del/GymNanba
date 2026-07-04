@@ -10,6 +10,7 @@ use App\Models\MemberRegistration;
 use App\Models\Payment;
 use App\Models\PaymentSplit;
 use App\Models\WalkIn;
+use App\Models\WalkInFollowup;
 use App\Services\Tenant\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -177,6 +178,7 @@ class MemberController extends Controller
             'due_amount'       => 'nullable|numeric|min:0',
             'due_date'         => 'nullable|date',
             'notes'            => 'nullable|string|max:500',
+            'walkin_id'        => 'nullable|integer',
         ]);
 
         if (Member::forTenant($tenant->id)->where('phone', $validated['phone'])->exists()) {
@@ -262,6 +264,29 @@ class MemberController extends Controller
             $this->paymentService->syncMemberBalance($member);
         }
 
+        if (!empty($validated['walkin_id'])) {
+            $walkIn = WalkIn::where('tenant_id', $tenant->id)
+                ->where('purpose', 'inquiry')
+                ->find($validated['walkin_id']);
+
+            if ($walkIn) {
+                $walkIn->update([
+                    'enquiry_status' => 'converted',
+                    'member_id'      => $member->id,
+                ]);
+
+                WalkInFollowup::create([
+                    'walk_in_id'         => $walkIn->id,
+                    'tenant_id'          => $tenant->id,
+                    'outcome'            => 'converted',
+                    'notes'              => "Converted to member {$member->member_code}.",
+                    'next_followup_date' => null,
+                    'logged_by'          => $request->user()->id,
+                    'created_at'         => now(),
+                ]);
+            }
+        }
+
         return redirect()
             ->route('tenant.members.index')
             ->with('status', "Member {$member->member_code} ({$member->name}) added successfully.");
@@ -325,7 +350,7 @@ class MemberController extends Controller
                 $newExpiry = \Carbon\Carbon::parse($newExpiry)->addDays($freezeDays)->toDateString();
             }
         } elseif ($member->status === 'frozen' && $newStatus !== 'frozen') {
-            // Unfreezing via edit — reverse any remaining freeze extension
+            // Unfreezing via edit â€” reverse any remaining freeze extension
             if ($member->frozen_until && $member->frozen_until->isFuture() && $newExpiry) {
                 $remainingDays = (int) now()->diffInDays($member->frozen_until, false);
                 if ($remainingDays > 0) {
@@ -403,7 +428,7 @@ class MemberController extends Controller
 
         $member->update($updates);
 
-        $msg = "Membership frozen for {$days} days. Auto-unfreezes on " . now()->addDays($days)->format('d M Y') . '.';
+        $msg = "Membership frozen for {$days} days. Auto-unfreezes on " . now()->addDays($days)->format('d-m-Y') . '.';
 
         return back()->with('status', $msg);
     }
@@ -436,7 +461,7 @@ class MemberController extends Controller
         $this->authorizeMember($request, $member);
 
         if ($member->balance_paise < 0) {
-            return back()->withErrors(['delete' => 'Cannot delete — member has outstanding balance. Collect payment first.']);
+            return back()->withErrors(['delete' => 'Cannot delete â€” member has outstanding balance. Collect payment first.']);
         }
 
         $member->delete();
@@ -456,3 +481,4 @@ class MemberController extends Controller
         abort_unless($member->tenant_id === $request->user()->tenant?->id, 403);
     }
 }
+

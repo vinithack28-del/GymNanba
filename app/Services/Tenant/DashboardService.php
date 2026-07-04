@@ -69,7 +69,7 @@ class DashboardService
                 'visible' => $user->canAccess('attendance.check_in|attendance.view_log'),
             ],
             'expired_not_renewed' => [
-                'label' => 'Expired – Not Renewed',
+                'label' => 'Expired â€“ Not Renewed',
                 'value' => number_format((clone $memberBase)->whereNotNull('expiry_date')->whereDate('expiry_date', '<', $today->toDateString())->count()),
                 'sub' => 'Already expired memberships',
                 'route' => route('tenant.renewals.index', ['tab' => 'expired']),
@@ -243,6 +243,7 @@ class DashboardService
 
     private function money(int $paise): string
     {
-        return '₹' . number_format($paise / 100, 2);
+        return 'â‚¹' . number_format($paise / 100, 2);
     }
 }
+

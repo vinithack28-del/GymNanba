@@ -61,3 +61,4 @@ class Equipment extends Model
         return $query->where('tenant_id', $tenantId);
     }
 }
+

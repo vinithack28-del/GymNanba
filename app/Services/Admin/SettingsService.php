@@ -39,3 +39,4 @@ class SettingsService
         return true;
     }
 }
+

@@ -33,3 +33,4 @@ class StaffLoginActivity extends Model
         return $this->belongsTo(Tenant::class);
     }
 }
+

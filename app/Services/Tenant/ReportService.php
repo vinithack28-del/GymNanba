@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class ReportService
 {
-    // ── Access control ──────────────────────────────────────────────────────────
+    // â”€â”€ Access control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function canRevenue(): bool
     {
@@ -36,7 +36,7 @@ class ReportService
         return in_array(request()->user()->role, ['tenant_owner', 'branch_manager', 'branch_admin'], true);
     }
 
-    // ── Date range resolver ──────────────────────────────────────────────────────
+    // â”€â”€ Date range resolver â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function resolveRange(Request $request): array
     {
@@ -122,7 +122,7 @@ class ReportService
         return compact('preset', 'from', 'to', 'prevFrom', 'prevTo');
     }
 
-    // ── Revenue report ──────────────────────────────────────────────────────────
+    // â”€â”€ Revenue report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function revenue(Request $request, int $tenantId): array
     {
@@ -219,8 +219,8 @@ class ReportService
             ->pluck('plan_name', 'id');
 
         $topMembers = $topRows->map(fn ($r) => [
-            'name'  => $memberNames->get($r->member_id, '—'),
-            'plan'  => $memberPlans->get($r->member_id, '—'),
+            'name'  => $memberNames->get($r->member_id, 'â€”'),
+            'plan'  => $memberPlans->get($r->member_id, 'â€”'),
             'cnt'   => (int) $r->cnt,
             'total' => (int) $r->total,
         ]);
@@ -248,7 +248,7 @@ class ReportService
         ];
     }
 
-    // ── Members report ──────────────────────────────────────────────────────────
+    // â”€â”€ Members report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function members(Request $request, int $tenantId): array
     {
@@ -304,10 +304,10 @@ class ReportService
                 CASE
                     WHEN dob IS NULL THEN 'Unknown'
                     WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) < 18 THEN '<18'
-                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 18 AND 25 THEN '18–25'
-                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 26 AND 35 THEN '26–35'
-                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 36 AND 45 THEN '36–45'
-                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 46 AND 60 THEN '46–60'
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 18 AND 25 THEN '18â€“25'
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 26 AND 35 THEN '26â€“35'
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 36 AND 45 THEN '36â€“45'
+                    WHEN EXTRACT(YEAR FROM AGE(CURRENT_DATE, dob)) BETWEEN 46 AND 60 THEN '46â€“60'
                     ELSE '60+'
                 END as age_group,
                 COUNT(*) as cnt
@@ -377,7 +377,7 @@ class ReportService
         ];
     }
 
-    // ── Attendance report ───────────────────────────────────────────────────────
+    // â”€â”€ Attendance report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function attendance(Request $request, int $tenantId): array
     {
@@ -406,7 +406,7 @@ class ReportService
             ->orderBy(DB::raw('DATE(checked_in_at)'))
             ->get();
 
-        // Peak hours heatmap (PG DOW: 0=Sun … 6=Sat → remap to 0=Mon)
+        // Peak hours heatmap (PG DOW: 0=Sun â€¦ 6=Sat â†’ remap to 0=Mon)
         $branchClause = $branchId ? "AND branch_id = {$branchId}" : '';
         $heatmapRaw = DB::select(
             "SELECT
@@ -424,7 +424,7 @@ class ReportService
         $heatmap = array_fill(0, 7, array_fill(0, 24, 0));
         $maxCell = 1;
         foreach ($heatmapRaw as $row) {
-            $dow = ($row->dow + 6) % 7; // PG 0=Sun → 0=Mon
+            $dow = ($row->dow + 6) % 7; // PG 0=Sun â†’ 0=Mon
             $heatmap[$dow][$row->hour] = (int) $row->cnt;
             $maxCell = max($maxCell, (int) $row->cnt);
         }
@@ -487,7 +487,7 @@ class ReportService
         ];
     }
 
-    // ── Staff report ────────────────────────────────────────────────────────────
+    // â”€â”€ Staff report â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function staff(Request $request, int $tenantId): array
     {
@@ -576,7 +576,7 @@ class ReportService
         ];
     }
 
-    // ── CSV exports ─────────────────────────────────────────────────────────────
+    // â”€â”€ CSV exports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function exportRevenueCsv(Request $request, int $tenantId): string
     {
@@ -678,7 +678,7 @@ class ReportService
         return $csv;
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────────
+    // â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function resolveBranchId(Request $request): ?int
     {
@@ -690,3 +690,4 @@ class ReportService
         return $id ? (int) $id : null;
     }
 }
+

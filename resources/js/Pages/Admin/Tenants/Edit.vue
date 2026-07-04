@@ -1,5 +1,6 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
+import TenantStepNav from '../../../Components/Admin/TenantStepNav.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 
@@ -51,7 +52,6 @@ const form = useForm({
     notes: props.tenant.notes,
 });
 
-const hasErrors = computed(() => Object.keys(form.errors || {}).length > 0);
 const primaryOwner = computed(() => form.owners[0] || createOwner());
 const latestSub = computed(() => props.tenant.subscriptions?.sort((a, b) => b.id - a.id)[0]);
 const selectedPlan = computed(() => latestSub.value?.plan || null);
@@ -61,6 +61,12 @@ const stepErrors = ref({
     3: [],
     4: [],
 });
+const clientErrors = ref({});
+
+const fieldError = (field) => form.errors?.[field] || clientErrors.value[field] || '';
+const ownerError = (index, field) => form.errors?.[`owners.${index}.${field}`] || clientErrors.value[`owners.${index}.${field}`] || '';
+const fieldClass = (field, base) => [base, fieldError(field) ? 'field-invalid' : ''];
+const ownerFieldClass = (index, field, base) => [base, ownerError(index, field) ? 'field-invalid' : ''];
 
 const nextStep = () => {
     if (!validateStep(currentStep.value)) {
@@ -100,8 +106,8 @@ const formatPlanPrice = (pricePaise) => {
 };
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const isEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
@@ -114,36 +120,52 @@ const clearStepErrors = (step) => {
 
 const validateStep = (step) => {
     const errors = [];
+    const nextClientErrors = {};
+    const stepFieldPrefixes = {
+        1: ['gym_name', 'business_type', 'city', 'state', 'address', 'phone'],
+        2: ['owners'],
+        3: ['subdomain', 'domain_mode', 'custom_domain', 'database_mode'],
+    };
 
     if (step === 1) {
-        if (!hasMinLength(form.gym_name, 2)) errors.push('Gym Name is required.');
-        if (!form.business_type) errors.push('Business Type is required.');
-        if (!form.city.trim()) errors.push('City is required.');
-        if (!form.state.trim()) errors.push('State is required.');
-        if (!hasMinLength(form.address, 10)) errors.push('Address must be at least 10 characters.');
-        if (!hasDigitsLength(form.phone, 10)) errors.push('Business Phone must be at least 10 digits.');
+        if (!hasMinLength(form.gym_name, 2)) nextClientErrors.gym_name = 'Gym Name is required.';
+        if (!form.business_type) nextClientErrors.business_type = 'Business Type is required.';
+        if (!form.city.trim()) nextClientErrors.city = 'City is required.';
+        if (!form.state.trim()) nextClientErrors.state = 'State is required.';
+        if (!hasMinLength(form.address, 10)) nextClientErrors.address = 'Address must be at least 10 characters.';
+        if (!hasDigitsLength(form.phone, 10)) nextClientErrors.phone = 'Business Phone must be at least 10 digits.';
     }
 
     if (step === 2) {
         if (!form.owners.length) {
-            errors.push('At least one owner is required.');
+            nextClientErrors.owners = 'At least one owner is required.';
         }
 
         form.owners.forEach((owner, index) => {
             const label = index === 0 ? 'Primary Owner' : `Additional Owner ${index}`;
-            if (!hasMinLength(owner.name, 2)) errors.push(`${label} name must be at least 2 characters.`);
-            if (!isEmail(owner.email)) errors.push(`${label} email must be valid.`);
-            if (!hasDigitsLength(owner.phone, 10)) errors.push(`${label} phone must be at least 10 digits.`);
+            if (!hasMinLength(owner.name, 2)) nextClientErrors[`owners.${index}.name`] = `${label} name must be at least 2 characters.`;
+            if (!isEmail(owner.email)) nextClientErrors[`owners.${index}.email`] = `${label} email must be valid.`;
+            if (!hasDigitsLength(owner.phone, 10)) nextClientErrors[`owners.${index}.phone`] = `${label} phone must be at least 10 digits.`;
         });
     }
 
     if (step === 3) {
-        if (!hasMinLength(form.subdomain, 3)) errors.push('Subdomain must be at least 3 characters.');
-        if (!form.domain_mode) errors.push('Domain Mode is required.');
-        if (form.domain_mode === 'separate' && !form.custom_domain.trim()) errors.push('Custom Domain is required for separate domain mode.');
-        if (!form.database_mode) errors.push('Database Mode is required.');
+        if (!hasMinLength(form.subdomain, 3)) nextClientErrors.subdomain = 'Subdomain must be at least 3 characters.';
+        if (!form.domain_mode) nextClientErrors.domain_mode = 'Domain Mode is required.';
+        if (form.domain_mode === 'separate' && !form.custom_domain.trim()) nextClientErrors.custom_domain = 'Custom Domain is required for separate domain mode.';
+        if (!form.database_mode) nextClientErrors.database_mode = 'Database Mode is required.';
     }
 
+    errors.push(...Object.values(nextClientErrors));
+    const remainingErrors = { ...clientErrors.value };
+    (stepFieldPrefixes[step] || []).forEach((prefix) => {
+        Object.keys(remainingErrors).forEach((key) => {
+            if (key === prefix || key.startsWith(`${prefix}.`)) {
+                delete remainingErrors[key];
+            }
+        });
+    });
+    clientErrors.value = { ...remainingErrors, ...nextClientErrors };
     stepErrors.value[step] = errors;
 
     return errors.length === 0;
@@ -181,85 +203,67 @@ const submit = () => {
     <AppLayout>
         <Head title="Edit Tenant" />
         
-        <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <aside class="rounded-[2rem] border border-white/10 bg-white/5 p-5">
-                <div class="space-y-4">
-                    <button
-                        v-for="step in steps"
-                        :key="step.id"
-                        type="button"
-                        @click="goToStep(step.id)"
-                        :class="['flex w-full items-start gap-4 rounded-[1.5rem] border px-4 py-4 text-left transition', currentStep === step.id ? 'border-orange-400 bg-orange-500/10' : 'border-white/10 bg-slate-950/50 hover:bg-white/5']"
-                    >
-                        <span :class="['inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold', currentStep === step.id ? 'bg-orange-500 text-slate-950' : 'bg-orange-500/20 text-orange-300']">
-                            {{ String(step.id).padStart(2, '0') }}
-                        </span>
-                        <span>
-                            <span class="block text-sm font-semibold">{{ step.title }}</span>
-                            <span class="mt-1 block text-xs text-slate-400">{{ step.desc }}</span>
-                        </span>
-                    </button>
-                </div>
-            </aside>
+        <div class="flex flex-col gap-3">
+            <TenantStepNav
+                :steps="steps"
+                :current-step="currentStep"
+                :step-errors="stepErrors"
+                @select="goToStep"
+            />
 
-            <form @submit.prevent="submit" novalidate class="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                <div v-if="hasErrors" class="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    {{ Object.values(form.errors)[0] }}
-                </div>
-
-                <section v-if="currentStep === 1" class="space-y-6">
-                    <div v-if="stepErrors[1]?.length" class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                        <div v-for="error in stepErrors[1]" :key="error">{{ error }}</div>
-                    </div>
+            <form @submit.prevent="submit" novalidate class="rounded-xl border border-white/10 bg-white/5 p-3">
+                <section v-if="currentStep === 1" class="space-y-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-300">Step 1 of 4</p>
-                        <h3 class="mt-3 text-2xl font-semibold">Business Info</h3>
+                        <h3 class="mt-1.5 text-xl font-semibold">Business Info</h3>
                     </div>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-3 md:grid-cols-2">
                         <div>
-                            <label class="mb-2 block text-sm font-medium">Gym Name</label>
-                            <input v-model="form.gym_name" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Gym Name</label>
+                            <input v-model="form.gym_name" :class="fieldClass('gym_name', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
+                            <p v-if="fieldError('gym_name')" class="field-error">{{ fieldError('gym_name') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">Business Type</label>
-                            <select v-model="form.business_type" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Business Type</label>
+                            <select v-model="form.business_type" :class="fieldClass('business_type', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
                                 <option v-for="type in businessTypes" :key="type" :value="type">{{ type }}</option>
                             </select>
+                            <p v-if="fieldError('business_type')" class="field-error">{{ fieldError('business_type') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">City</label>
-                            <input v-model="form.city" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">City</label>
+                            <input v-model="form.city" :class="fieldClass('city', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
+                            <p v-if="fieldError('city')" class="field-error">{{ fieldError('city') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">State</label>
-                            <input v-model="form.state" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">State</label>
+                            <input v-model="form.state" :class="fieldClass('state', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
+                            <p v-if="fieldError('state')" class="field-error">{{ fieldError('state') }}</p>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="mb-2 block text-sm font-medium">Address</label>
-                            <textarea v-model="form.address" rows="3" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required></textarea>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Address</label>
+                            <textarea v-model="form.address" rows="3" :class="fieldClass('address', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required></textarea>
+                            <p v-if="fieldError('address')" class="field-error">{{ fieldError('address') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">GST Number <span class="text-slate-400 font-normal">(optional)</span></label>
-                            <input v-model="form.gst_number" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400">
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">GST Number <span class="text-slate-400 font-normal">(optional)</span></label>
+                            <input v-model="form.gst_number" :class="fieldClass('gst_number', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')">
+                            <p v-if="fieldError('gst_number')" class="field-error">{{ fieldError('gst_number') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">Phone</label>
-                            <input v-model="form.phone" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required minlength="10">
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Phone</label>
+                            <input v-model="form.phone" :class="fieldClass('phone', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required minlength="10">
+                            <p v-if="fieldError('phone')" class="field-error">{{ fieldError('phone') }}</p>
                         </div>
                     </div>
                 </section>
 
-                <section v-if="currentStep === 2" class="space-y-6">
-                    <div v-if="stepErrors[2]?.length" class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                        <div v-for="error in stepErrors[2]" :key="error">{{ error }}</div>
-                    </div>
+                <section v-if="currentStep === 2" class="space-y-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-300">Step 2 of 4</p>
-                        <h3 class="mt-3 text-2xl font-semibold">Owner account</h3>
+                        <h3 class="mt-1.5 text-xl font-semibold">Owner account</h3>
                     </div>
 
-                    <div class="space-y-4">
-                        <div v-for="(owner, index) in form.owners" :key="index" class="space-y-4">
+                    <div class="space-y-3">
+                        <div v-for="(owner, index) in form.owners" :key="index" class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
                                     {{ index === 0 ? 'Primary Owner' : `Additional Owner ${index}` }}
@@ -268,41 +272,44 @@ const submit = () => {
                                     v-if="index > 0"
                                     type="button"
                                     @click="removeOwner(index)"
-                                    class="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-red-400 transition hover:bg-white/10"
+                                    class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-red-400 transition hover:bg-white/10"
                                 >
                                     Remove
                                 </button>
                             </div>
 
-                            <div class="grid gap-4 md:grid-cols-3">
+                            <div class="grid gap-3 md:grid-cols-3">
                                 <div>
-                                    <label class="mb-2 block text-sm font-medium">Name</label>
+                                    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Name</label>
                                     <input
                                         v-model="owner.name"
-                                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400"
+                                        :class="ownerFieldClass(index, 'name', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')"
                                         :placeholder="index === 0 ? 'Owner name' : 'Owner name'"
                                         required
                                     >
+                                    <p v-if="ownerError(index, 'name')" class="field-error">{{ ownerError(index, 'name') }}</p>
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-sm font-medium">Email</label>
+                                    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Email</label>
                                     <input
                                         v-model="owner.email"
                                         type="email"
-                                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400"
+                                        :class="ownerFieldClass(index, 'email', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')"
                                         placeholder="owner@example.com"
                                         required
                                     >
+                                    <p v-if="ownerError(index, 'email')" class="field-error">{{ ownerError(index, 'email') }}</p>
                                 </div>
                                 <div>
-                                    <label class="mb-2 block text-sm font-medium">Phone</label>
+                                    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Phone</label>
                                     <input
                                         v-model="owner.phone"
-                                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400"
+                                        :class="ownerFieldClass(index, 'phone', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')"
                                         placeholder="10-digit mobile"
                                         required
                                         minlength="10"
                                     >
+                                    <p v-if="ownerError(index, 'phone')" class="field-error">{{ ownerError(index, 'phone') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -311,129 +318,129 @@ const submit = () => {
                     <button
                         type="button"
                         @click="addOwner"
-                        class="w-full rounded-[1.25rem] border border-dashed border-white/10 px-4 py-4 text-sm font-semibold text-slate-400 transition hover:bg-white/5"
+                        class="w-full rounded-xl border border-dashed border-white/10 px-3 py-2.5 text-sm font-semibold text-slate-400 transition hover:bg-white/5"
                     >
                         + Add Another Owner
                     </button>
                 </section>
 
-                <section v-if="currentStep === 3" class="space-y-6">
-                    <div v-if="stepErrors[3]?.length" class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                        <div v-for="error in stepErrors[3]" :key="error">{{ error }}</div>
-                    </div>
+                <section v-if="currentStep === 3" class="space-y-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-300">Step 3 of 4</p>
-                        <h3 class="mt-3 text-2xl font-semibold">Plan & Routing</h3>
+                        <h3 class="mt-1.5 text-xl font-semibold">Plan & Routing</h3>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-3 md:grid-cols-2">
                         <div>
-                            <label class="mb-2 block text-sm font-medium">Subdomain</label>
-                            <input v-model="form.subdomain" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Subdomain</label>
+                            <input v-model="form.subdomain" :class="fieldClass('subdomain', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
+                            <p v-if="fieldError('subdomain')" class="field-error">{{ fieldError('subdomain') }}</p>
                         </div>
                         <div>
-                            <label class="mb-2 block text-sm font-medium">Domain Mode</label>
-                            <select v-model="form.domain_mode" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Domain Mode</label>
+                            <select v-model="form.domain_mode" :class="fieldClass('domain_mode', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
                                 <option value="shared">Shared domain</option>
                                 <option value="separate">Separate domain</option>
                             </select>
+                            <p v-if="fieldError('domain_mode')" class="field-error">{{ fieldError('domain_mode') }}</p>
                         </div>
                         <div v-if="form.domain_mode === 'separate'" class="md:col-span-2">
-                            <label class="mb-2 block text-sm font-medium">Custom Domain</label>
-                            <input v-model="form.custom_domain" placeholder="gym.example.com" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400">
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Custom Domain</label>
+                            <input v-model="form.custom_domain" placeholder="gym.example.com" :class="fieldClass('custom_domain', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')">
+                            <p v-if="fieldError('custom_domain')" class="field-error">{{ fieldError('custom_domain') }}</p>
                         </div>
                         <div :class="form.domain_mode === 'separate' ? '' : 'md:col-span-2'">
-                            <label class="mb-2 block text-sm font-medium">Database Mode</label>
-                            <select v-model="form.database_mode" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400" required>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Database Mode</label>
+                            <select v-model="form.database_mode" :class="fieldClass('database_mode', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
                                 <option value="shared">Shared database</option>
                                 <option value="separate">Separate database</option>
                             </select>
+                            <p v-if="fieldError('database_mode')" class="field-error">{{ fieldError('database_mode') }}</p>
                         </div>
                         <div class="md:col-span-2">
-                            <label class="mb-2 block text-sm font-medium">Current Plan</label>
-                            <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Current Plan</label>
+                            <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                                 <div v-if="selectedPlan" class="grid gap-2 text-sm">
-                                    <div class="flex justify-between gap-4"><span class="text-slate-400">Plan:</span><span class="font-semibold">{{ selectedPlan.name }}</span></div>
-                                    <div class="flex justify-between gap-4"><span class="text-slate-400">Price:</span><span class="font-semibold">{{ formatPlanPrice(selectedPlan.price_paise) }} / {{ selectedPlan.billing_cycle }}</span></div>
-                                    <div v-if="latestSub" class="flex justify-between gap-4"><span class="text-slate-400">Status:</span><span class="font-semibold capitalize">{{ latestSub.status }}</span></div>
-                                    <div v-if="latestSub?.start_date" class="flex justify-between gap-4"><span class="text-slate-400">Start Date:</span><span class="font-semibold">{{ formatDate(latestSub.start_date) }}</span></div>
-                                    <div v-if="latestSub?.end_date" class="flex justify-between gap-4"><span class="text-slate-400">End Date:</span><span class="font-semibold">{{ formatDate(latestSub.end_date) }}</span></div>
+                                    <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold">{{ selectedPlan.name }}</span></div>
+                                    <div class="flex justify-between gap-3"><span class="text-slate-400">Price:</span><span class="font-semibold">{{ formatPlanPrice(selectedPlan.price_paise) }} / {{ selectedPlan.billing_cycle }}</span></div>
+                                    <div v-if="latestSub" class="flex justify-between gap-3"><span class="text-slate-400">Status:</span><span class="font-semibold capitalize">{{ latestSub.status }}</span></div>
+                                    <div v-if="latestSub?.start_date" class="flex justify-between gap-3"><span class="text-slate-400">Start Date:</span><span class="font-semibold">{{ formatDate(latestSub.start_date) }}</span></div>
+                                    <div v-if="latestSub?.end_date" class="flex justify-between gap-3"><span class="text-slate-400">End Date:</span><span class="font-semibold">{{ formatDate(latestSub.end_date) }}</span></div>
                                 </div>
                                 <div v-else class="text-sm text-slate-400">No active plan found.</div>
                             </div>
                         </div>
 
                         <div class="md:col-span-2">
-                            <label class="mb-2 block text-sm font-medium">Internal notes</label>
-                            <textarea v-model="form.notes" rows="3" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none focus:border-orange-400"></textarea>
+                            <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Internal notes</label>
+                            <textarea v-model="form.notes" rows="3" :class="fieldClass('notes', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')"></textarea>
+                            <p v-if="fieldError('notes')" class="field-error">{{ fieldError('notes') }}</p>
                         </div>
                     </div>
                 </section>
 
-                <section v-if="currentStep === 4" class="space-y-6">
+                <section v-if="currentStep === 4" class="space-y-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-300">Step 4 of 4</p>
-                        <h3 class="mt-3 text-2xl font-semibold">Review</h3>
+                        <h3 class="mt-1.5 text-xl font-semibold">Review</h3>
                         <p class="mt-1 text-sm text-slate-400">Review tenant details before saving.</p>
                     </div>
 
-                    <div class="grid gap-4 md:grid-cols-2">
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                    <div class="grid gap-3 md:grid-cols-2">
+                        <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Business</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || '—' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || 'â€”' }}</span></div>
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+                        <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Routing & Plan</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : '—' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : 'â€”' }}</span></div>
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4 md:col-span-2">
+                        <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3 md:col-span-2">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Owners</p>
                             <div class="mt-3 grid gap-3">
-                                <div v-for="(owner, index) in reviewOwners" :key="`review-owner-${index}`" class="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+                                <div v-for="(owner, index) in reviewOwners" :key="`review-owner-${index}`" class="rounded-lg border border-white/10 bg-white/5 p-2.5 text-sm">
                                     <div class="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">{{ index === 0 ? 'Primary Owner' : `Additional Owner ${index}` }}</div>
                                     <div class="grid gap-2 md:grid-cols-3">
-                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || '—' }}</span></div>
-                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || '—' }}</span></div>
-                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || '—' }}</span></div>
+                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || 'â€”' }}</span></div>
+                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || 'â€”' }}</span></div>
+                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || 'â€”' }}</span></div>
                                     </div>
                                 </div>
-                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">—</div>
+                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">â€”</div>
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4 md:col-span-2">
+                        <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3 md:col-span-2">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Status & Notes</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Status:</span><span class="font-semibold text-right capitalize">{{ form.status || '—' }}</span></div>
-                                <div class="flex justify-between gap-4"><span class="text-slate-400">Notes:</span><span class="font-semibold text-right">{{ form.notes || '—' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Status:</span><span class="font-semibold text-right capitalize">{{ form.status || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Notes:</span><span class="font-semibold text-right">{{ form.notes || 'â€”' }}</span></div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <div class="mt-8 flex items-center justify-between">
+                <div class="mt-5 flex items-center justify-between">
                     <button
                         v-if="currentStep > 1"
                         type="button"
                         @click="prevStep"
-                        class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-3 text-sm font-semibold hover:bg-white/10"
+                        class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold hover:bg-white/10"
                     >
                         Back
                     </button>
@@ -443,14 +450,14 @@ const submit = () => {
                         v-if="currentStep < steps.length"
                         type="button"
                         @click="nextStep"
-                        class="rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400"
                     >
                         Next
                     </button>
                     <button
                         v-else
                         type="submit"
-                        class="rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-orange-400"
+                        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400"
                         :disabled="form.processing"
                     >
                         Save Changes
@@ -460,3 +467,6 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+
+
+

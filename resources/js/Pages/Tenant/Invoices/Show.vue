@@ -9,13 +9,13 @@ const props = defineProps({
 });
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(2);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const printInvoice = () => {
@@ -36,7 +36,7 @@ const voidInvoice = () => {
         
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between no-print">
-                <Link href="/tenant/invoices" class="text-sm text-slate-400">← Invoices</Link>
+                <Link href="/tenant/invoices" class="text-sm text-slate-400">â† Invoices</Link>
                 <div class="flex gap-2">
                     <button v-if="canVoid && invoice.status !== 'void'" @click="voidInvoice" class="rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/20">
                         Void Invoice
@@ -64,7 +64,7 @@ const voidInvoice = () => {
                 </div>
 
                 <div v-if="invoice.status === 'void'" class="mb-4 rounded-lg bg-red-500/10 py-2 text-center text-sm font-semibold text-red-400">
-                    Void — {{ formatDate(invoice.voided_at) }}
+                    Void â€” {{ formatDate(invoice.voided_at) }}
                 </div>
 
                 <hr class="mb-5 border-white/10">

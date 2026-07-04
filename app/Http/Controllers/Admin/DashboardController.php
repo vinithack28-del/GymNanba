@@ -17,3 +17,4 @@ class DashboardController extends Controller
         return Inertia::render('Admin/Dashboard', $this->dashboardService->getOverview());
     }
 }
+

@@ -32,7 +32,7 @@ const props = defineProps({
                         </div>
                     </div>
                     <Link v-if="canRevenue" href="/tenant/reports/revenue" class="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-orange-400">
-                        Open →
+                        Open â†’
                     </Link>
                     <span v-else class="mt-auto text-xs text-slate-400">No access</span>
                 </div>
@@ -48,7 +48,7 @@ const props = defineProps({
                         </div>
                     </div>
                     <Link v-if="canMembers" href="/tenant/reports/members" class="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-orange-400">
-                        Open →
+                        Open â†’
                     </Link>
                     <span v-else class="mt-auto text-xs text-slate-400">No access</span>
                 </div>
@@ -64,7 +64,7 @@ const props = defineProps({
                         </div>
                     </div>
                     <Link v-if="canAttendance" href="/tenant/reports/attendance" class="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-orange-400">
-                        Open →
+                        Open â†’
                     </Link>
                     <span v-else class="mt-auto text-xs text-slate-400">No access</span>
                 </div>
@@ -80,7 +80,7 @@ const props = defineProps({
                         </div>
                     </div>
                     <Link v-if="canStaff" href="/tenant/reports/staff" class="mt-auto inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-orange-400">
-                        Open →
+                        Open â†’
                     </Link>
                     <span v-else class="mt-auto text-xs text-slate-400">No access</span>
                 </div>

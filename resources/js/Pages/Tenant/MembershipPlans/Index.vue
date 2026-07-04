@@ -90,11 +90,28 @@ const totalPricePaise = (plan) => {
 };
 
 const durationLabel = (plan) => {
+    if (plan.session_limit) {
+        const sessions = Number(plan.session_limit || 0);
+        return `${sessions} ${sessions === 1 ? 'session' : 'sessions'}`;
+    }
+
     if (plan.duration_label) return plan.duration_label;
 
     const value = Number(plan.duration_value || plan.duration_days || 0);
     const type = plan.duration_type === 'months' ? 'month' : 'day';
     return `${value} ${value === 1 ? type : `${type}s`}`;
+};
+
+const inclusionList = (plan) => {
+    if (Array.isArray(plan.inclusions)) {
+        return plan.inclusions.filter(Boolean);
+    }
+
+    if (typeof plan.inclusions === 'string') {
+        return plan.inclusions.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+
+    return [];
 };
 
 const effectiveArchivePlanId = computed(() => archivePlanId.value || page.props.errors?.archive_plan_id || null);
@@ -211,11 +228,21 @@ const statusStyle = (status) => {
                     <div class="plan-card__price">
                         <span class="plan-card__amount">{{ formatPricePrecise(plan.price_paise) }}</span>
                         <span v-if="plan.gst_applicable && plan.gst_rate > 0" class="plan-card__gst">
-                            +{{ Number(plan.gst_rate).toFixed(0) }}% GST → {{ formatPricePrecise(totalPricePaise(plan)) }} total
+                            +{{ Number(plan.gst_rate).toFixed(0) }}% GST â†’ {{ formatPricePrecise(totalPricePaise(plan)) }} total
                         </span>
                     </div>
 
                     <p v-if="plan.description" class="plan-card__description">{{ plan.description }}</p>
+
+                    <div v-if="inclusionList(plan).length" class="plan-card__inclusions">
+                        <span
+                            v-for="inclusion in inclusionList(plan)"
+                            :key="`${plan.id}-${inclusion}`"
+                            class="plan-card__inclusion"
+                        >
+                            {{ inclusion }}
+                        </span>
+                    </div>
 
                     <div class="plan-card__stats">
                         <div class="plan-stat">
@@ -239,7 +266,7 @@ const statusStyle = (status) => {
                             <path d="M18 6 6 18" />
                             <path d="m6 6 12 12" />
                         </svg>
-                        <span v-if="plan.allow_freeze">Freeze allowed · {{ plan.max_freeze_days }}d/yr</span>
+                        <span v-if="plan.allow_freeze">Freeze allowed Â· {{ plan.max_freeze_days }}d/yr</span>
                         <span v-else>Freeze not allowed</span>
                     </div>
 
@@ -382,8 +409,8 @@ const statusStyle = (status) => {
 
 .plan-archive-warning {
     align-items: center;
-    background: rgba(249, 115, 22, 0.08);
-    border: 1px solid rgba(249, 115, 22, 0.25);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
     border-radius: 1rem;
     display: flex;
     gap: 0.75rem;
@@ -392,8 +419,9 @@ const statusStyle = (status) => {
 }
 
 .plan-archive-warning__text {
-    color: var(--app-text);
+    color: #ef4444;
     font-size: 0.88rem;
+    font-weight: 600;
 }
 
 .plan-archive-warning__btn {
@@ -529,6 +557,28 @@ const statusStyle = (status) => {
     line-height: 1.45;
     margin: 0;
     padding: 0.42rem 1rem 0;
+}
+
+.plan-card__inclusions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    padding: 0.48rem 1rem 0;
+}
+
+.plan-card__inclusion {
+    background: color-mix(in srgb, var(--app-panel-strong) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--app-border) 78%, transparent);
+    border-radius: 999px;
+    color: var(--app-text-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.18rem 0.48rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .plan-card__stats {
@@ -679,3 +729,4 @@ const statusStyle = (status) => {
     }
 }
 </style>
+

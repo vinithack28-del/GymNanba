@@ -14,7 +14,6 @@ const props = defineProps({
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">{{ pageTitle }}</h1>
                 <p class="mt-1 text-slate-300">This module has not been built yet. The menu is ready, and this screen will be replaced when we develop this area.</p>
             </div>
@@ -39,3 +38,4 @@ const props = defineProps({
         </div>
     </AppLayout>
 </template>
+

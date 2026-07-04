@@ -32,9 +32,8 @@ const getInitials = (name) => {
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                     <h1 class="mt-2 text-3xl font-semibold">{{ staff.name }}</h1>
-                    <p class="mt-1 text-slate-300">{{ staff.role_label }} · {{ staff.branch?.name || '—' }}</p>
+                    <p class="mt-1 text-slate-300">{{ staff.role_label }} Â· {{ staff.branch?.name || 'â€”' }}</p>
                 </div>
                 <div class="flex gap-3">
                     <Link v-if="canManage" :href="`/tenant/staff/${staff.id}/edit`" class="rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">Edit</Link>
@@ -59,8 +58,8 @@ const getInitials = (name) => {
                             {{ staff.status.charAt(0).toUpperCase() + staff.status.slice(1) }}
                         </span>
                     </div>
-                    <p class="mt-1 text-sm text-slate-400">{{ staff.email }} · {{ staff.phone }}</p>
-                    <p class="text-sm text-slate-400">{{ staff.branch?.name || '—' }} · Joined {{ staff.join_date }}</p>
+                    <p class="mt-1 text-sm text-slate-400">{{ staff.email }} Â· {{ staff.phone }}</p>
+                    <p class="text-sm text-slate-400">{{ staff.branch?.name || 'â€”' }} Â· Joined {{ staff.join_date }}</p>
                 </div>
             </div>
 
@@ -93,7 +92,7 @@ const getInitials = (name) => {
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Branch</p>
-                            <p class="text-sm font-medium">{{ staff.branch?.name || '—' }}</p>
+                            <p class="text-sm font-medium">{{ staff.branch?.name || 'â€”' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Join Date</p>
@@ -101,15 +100,15 @@ const getInitials = (name) => {
                         </div>
                         <div class="md:col-span-2">
                             <p class="text-xs text-slate-400">Address</p>
-                            <p class="text-sm font-medium">{{ staff.address || '—' }}</p>
+                            <p class="text-sm font-medium">{{ staff.address || 'â€”' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Emergency Contact</p>
-                            <p class="text-sm font-medium">{{ staff.emergency_contact || '—' }}</p>
+                            <p class="text-sm font-medium">{{ staff.emergency_contact || 'â€”' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Emergency Phone</p>
-                            <p class="text-sm font-medium">{{ staff.emergency_phone || '—' }}</p>
+                            <p class="text-sm font-medium">{{ staff.emergency_phone || 'â€”' }}</p>
                         </div>
                     </div>
                 </div>
@@ -129,3 +128,4 @@ const getInitials = (name) => {
         </div>
     </AppLayout>
 </template>
+

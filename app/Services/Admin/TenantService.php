@@ -416,7 +416,7 @@ class TenantService
 
     /**
      * Auto-generate a password: first 4 chars of email local-part + "@" + last 4 digits of phone.
-     * Example: arjun@gmail.com + 9876543210 → arju@3210
+     * Example: arjun@gmail.com + 9876543210 â†’ arju@3210
      */
     public function generateOwnerPassword(string $email, string $phone): string
     {
@@ -428,3 +428,4 @@ class TenantService
         return $emailPart . '@' . $phonePart;
     }
 }
+

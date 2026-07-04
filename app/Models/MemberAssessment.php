@@ -76,3 +76,4 @@ class MemberAssessment extends Model
         return $query->where('tenant_id', $tenantId);
     }
 }
+

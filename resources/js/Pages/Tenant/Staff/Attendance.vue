@@ -29,7 +29,6 @@ const submitAttendance = () => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Staff Attendance</h1>
                 <p class="mt-1 text-slate-300">Track staff attendance and working hours.</p>
             </div>
@@ -77,7 +76,7 @@ const submitAttendance = () => {
                         <label class="mb-2 block text-sm font-medium">Staff Member</label>
                         <select v-model="attendanceForm.staff_id" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                             <option value="">Select Staff</option>
-                            <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">{{ staff.name }} · {{ staff.role_label }}</option>
+                            <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">{{ staff.name }} Â· {{ staff.role_label }}</option>
                         </select>
                     </div>
                     <div>
@@ -121,9 +120,9 @@ const submitAttendance = () => {
                                 <td class="px-4 py-3 font-semibold">{{ record.staff_name }}</td>
                                 <td class="px-4 py-3">{{ record.date }}</td>
                                 <td class="px-4 py-3">{{ record.check_in }}</td>
-                                <td class="px-4 py-3">{{ record.check_out || '—' }}</td>
-                                <td class="px-4 py-3">{{ record.hours_worked || '—' }}</td>
-                                <td class="px-4 py-3">{{ record.branch_name || '—' }}</td>
+                                <td class="px-4 py-3">{{ record.check_out || 'â€”' }}</td>
+                                <td class="px-4 py-3">{{ record.hours_worked || 'â€”' }}</td>
+                                <td class="px-4 py-3">{{ record.branch_name || 'â€”' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -132,3 +131,4 @@ const submitAttendance = () => {
         </div>
     </AppLayout>
 </template>
+

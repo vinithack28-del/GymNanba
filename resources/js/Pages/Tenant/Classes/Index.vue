@@ -7,8 +7,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getStatusColor = (status) => {
@@ -29,16 +29,15 @@ const getStatusColor = (status) => {
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                     <h1 class="mt-2 text-3xl font-semibold">Classes</h1>
                     <p class="mt-1 text-slate-300">Manage gym classes and schedules.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <Link href="/tenant/classes/timetable" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                        📅 Timetable
+                        ðŸ“… Timetable
                     </Link>
                     <Link href="/tenant/classes/trainers" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                        👨‍🏫 Trainers
+                        ðŸ‘¨â€ðŸ« Trainers
                     </Link>
                     <Link href="/tenant/classes/create" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         <span>+</span> Add Class
@@ -47,7 +46,7 @@ const getStatusColor = (status) => {
             </div>
 
             <div v-if="!classes || classes.length === 0" class="flex flex-col items-center gap-4 rounded-[2rem] border border-white/10 bg-white/5 py-20 text-center">
-                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">🏋️</div>
+                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">ðŸ‹ï¸</div>
                 <p class="text-lg font-bold">No classes found</p>
                 <p class="text-sm text-slate-400">Create your first class to get started.</p>
                 <Link href="/tenant/classes/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Class</Link>
@@ -72,9 +71,9 @@ const getStatusColor = (status) => {
                                     <p class="font-medium">{{ cls.name }}</p>
                                     <p class="text-xs text-slate-400">{{ cls.type }}</p>
                                 </td>
-                                <td class="px-4 py-3 text-slate-400">{{ cls.trainer?.name || '—' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ cls.trainer?.name || 'â€”' }}</td>
                                 <td class="px-4 py-3 text-slate-400">
-                                    {{ cls.day }} · {{ cls.time }}
+                                    {{ cls.day }} Â· {{ cls.time }}
                                 </td>
                                 <td class="px-4 py-3 text-slate-400">
                                     {{ cls.booked_count || 0 }} / {{ cls.capacity }}
@@ -95,3 +94,4 @@ const getStatusColor = (status) => {
         </div>
     </AppLayout>
 </template>
+

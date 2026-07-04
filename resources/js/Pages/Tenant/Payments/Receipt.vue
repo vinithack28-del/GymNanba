@@ -8,12 +8,12 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const formatCurrency = (paise) => {
-    return '₹' + (paise / 100).toFixed(2);
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 
 const printReceipt = () => {
@@ -27,8 +27,8 @@ const printReceipt = () => {
         
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
-                <Link href="/tenant/payments?tab=history" class="text-sm text-slate-400 hover:text-orange-400">
-                    ← History
+                <Link href="/payments/history?tab=history" class="text-sm text-slate-400 hover:text-orange-400">
+                    â† History
                 </Link>
                 <button @click="printReceipt" class="rounded-lg border border-white/10 bg-slate-950/50 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
                     Print
@@ -44,7 +44,7 @@ const printReceipt = () => {
                 </div>
 
                 <div v-if="payment.status === 'voided'" class="mb-4 rounded-lg bg-red-500/10 py-2 text-center text-sm font-semibold text-red-400">
-                    Voided — {{ formatDate(payment.voided_at) }}
+                    Voided â€” {{ formatDate(payment.voided_at) }}
                 </div>
 
                 <hr class="mb-6 border-white/10">
@@ -94,3 +94,4 @@ const printReceipt = () => {
         </div>
     </AppLayout>
 </template>
+

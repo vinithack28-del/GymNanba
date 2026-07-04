@@ -32,7 +32,7 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        // Super-admins always go to admin dashboard — never follow a stale tenant intended URL.
+        // Super-admins always go to admin dashboard â€” never follow a stale tenant intended URL.
         if ($user->isSuperAdmin()) {
             return redirect()->route('admin.dashboard');
         }
@@ -50,3 +50,4 @@ class AuthenticatedSessionController extends Controller
         return redirect()->route('login');
     }
 }
+

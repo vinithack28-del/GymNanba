@@ -45,3 +45,4 @@ class ClassBooking extends Model
         return $query->whereIn('status', ['booked', 'waitlisted']);
     }
 }
+

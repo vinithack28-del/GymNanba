@@ -14,15 +14,19 @@ const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
 const isGymOwner = computed(() => user.value?.role === 'tenant_owner');
 const isStaffMember = computed(() => user.value?.role === 'staff');
 const isPosRole = computed(() => user.value?.role === 'pos');
+const translations = computed(() => page.props.translations?.common || {});
+
+const t = (key, fallback = '') => {
+    return key.split('.').reduce((value, part) => value?.[part], translations.value) || fallback;
+};
 
 const portalTitle = computed(() => isSuperAdmin.value ? 'GymNanba Platform' : (tenant.value?.gym_name || 'GymNanba'));
-const portalEyebrow = computed(() => isSuperAdmin.value ? 'Platform operations' : (tenant.value?.gym_name || 'GymNanba'));
 const portalLanguages = computed(() => page.props.portalLanguages || []);
 const branchContext = computed(() => page.props.branchContext || null);
 const tenantBranches = computed(() => branchContext.value?.branches || []);
 const ownerCanSwitchBranch = computed(() => !!branchContext.value?.ownerCanSwitch);
 const selectedBranchId = computed(() => branchContext.value?.selectedBranchId ?? null);
-const selectedBranchName = computed(() => branchContext.value?.selectedBranchName || 'All branches');
+const selectedBranchName = computed(() => branchContext.value?.selectedBranchName || t('layout.all_branches', 'All branches'));
 
 const theme = ref(localStorage.getItem('gymos-theme') || 'dark');
 const quickAddOpen = ref(false);
@@ -38,6 +42,10 @@ const branchForm = useForm({
 const userMenuRef = ref(null);
 const quickAddRef = ref(null);
 const branchSwitcherRef = ref(null);
+const flashStatusVisible = ref(false);
+const flashErrorVisible = ref(false);
+let flashStatusTimer = null;
+let flashErrorTimer = null;
 
 const navSections = ref([]);
 const expandedSections = ref({});
@@ -79,7 +87,41 @@ onMounted(() => {
 
 onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside);
+    window.clearTimeout(flashStatusTimer);
+    window.clearTimeout(flashErrorTimer);
 });
+
+const showTimedFlash = (kind, message) => {
+    const visibleRef = kind === 'status' ? flashStatusVisible : flashErrorVisible;
+    const currentTimer = kind === 'status' ? flashStatusTimer : flashErrorTimer;
+
+    window.clearTimeout(currentTimer);
+    visibleRef.value = Boolean(message);
+
+    const nextTimer = message
+        ? window.setTimeout(() => {
+            visibleRef.value = false;
+        }, 5000)
+        : null;
+
+    if (kind === 'status') {
+        flashStatusTimer = nextTimer;
+    } else {
+        flashErrorTimer = nextTimer;
+    }
+};
+
+watch(
+    () => page.props.flash?.status,
+    (message) => showTimedFlash('status', message),
+    { immediate: true },
+);
+
+watch(
+    () => page.props.flash?.error,
+    (message) => showTimedFlash('error', message),
+    { immediate: true },
+);
 
 const handleClickOutside = (event) => {
     if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
@@ -152,13 +194,13 @@ const initNavigation = () => {
             {
                 heading: null,
                 items: [
-                    { label: 'Dashboard', route: '/admin/dashboard', icon: 'grid', active: isPathActive('/admin/dashboard') },
-                    { label: 'Tenants', route: '/admin/tenants', icon: 'building', active: isPathActive('/admin/tenants') },
-                    { label: 'Plans', route: '/admin/plans', icon: 'tag', active: isPathActive('/admin/plans') },
-                    { label: 'Subscriptions', route: '/admin/subscriptions', icon: 'stack', active: isPathActive('/admin/subscriptions') },
-                    { label: 'Invoices', route: '/admin/invoices', icon: 'wallet', active: isPathActive('/admin/invoices') },
-                    { label: 'Audit Log', route: '/admin/audit-log', icon: 'activity', active: isPathActive('/admin/audit-log') },
-                    { label: 'Settings', route: '/admin/settings', icon: 'settings', active: isPathActive('/admin/settings') },
+                    { label: t('nav.dashboard', 'Dashboard'), route: '/admin/dashboard', icon: 'grid', active: isPathActive('/admin/dashboard') },
+                    { label: t('nav.tenants', 'Tenants'), route: '/admin/tenants', icon: 'building', active: isPathActive('/admin/tenants') },
+                    { label: t('nav.plans', 'Plans'), route: '/admin/plans', icon: 'tag', active: isPathActive('/admin/plans') },
+                    { label: t('nav.subscriptions', 'Subscriptions'), route: '/admin/subscriptions', icon: 'stack', active: isPathActive('/admin/subscriptions') },
+                    { label: t('nav.invoices', 'Invoices'), route: '/admin/invoices', icon: 'wallet', active: isPathActive('/admin/invoices') },
+                    { label: t('nav.audit_log', 'Audit Log'), route: '/admin/audit-log', icon: 'activity', active: isPathActive('/admin/audit-log') },
+                    { label: t('nav.settings', 'Settings'), route: '/admin/settings', icon: 'settings', active: isPathActive('/admin/settings') },
                 ]
             }
         ];
@@ -361,7 +403,7 @@ const initNavigation = () => {
     });
 };
 
-watch(currentPath, () => {
+watch([currentPath, translations], () => {
     initNavigation();
 }, { immediate: true });
 
@@ -403,10 +445,10 @@ const getIcon = (name) => {
 const quickActions = computed(() => {
     if (isSuperAdmin.value) return [];
     return [
-        { label: 'Add Member', route: '/members/create', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
-        { label: 'Add Enquiry', route: '/walkins?purpose=inquiry', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
-        { label: 'Member Attendance', route: '/attendance/checkins', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
-        { label: 'Staff Attendance', route: '/staff/attendance', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
+        { label: t('quick_actions.add_member', 'Add Member'), route: '/members/create', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
+        { label: t('quick_actions.add_enquiry', 'Add Enquiry'), route: '/walkins?purpose=inquiry', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
+        { label: t('quick_actions.member_attendance', 'Member Attendance'), route: '/attendance/checkins', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
+        { label: t('quick_actions.staff_attendance', 'Staff Attendance'), route: '/staff/attendance', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
     ];
 });
 </script>
@@ -415,26 +457,25 @@ const quickActions = computed(() => {
     <div class="min-h-screen app-theme-shell">
         <Head :title="`${title} | GymNanba`" />
         
-        <header class="sticky top-0 z-30 border-b app-topbar px-4 py-4 backdrop-blur lg:px-6">
-            <div class="flex w-full items-center justify-between gap-4">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl overflow-hidden bg-orange-500">
-                        <span class="text-xl font-bold text-white">G</span>
+        <header class="sticky top-0 z-30 border-b app-topbar px-3 py-1.5 backdrop-blur lg:px-4">
+            <div class="flex min-h-9 w-full items-center justify-between gap-2.5">
+                <div class="flex min-w-0 items-center gap-2">
+                    <div class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-orange-500">
+                        <span class="text-xs font-bold text-white">G</span>
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.42em] text-orange-400">{{ portalEyebrow }}</p>
-                        <h1 class="mt-1 text-lg font-semibold">{{ portalTitle }}</h1>
+                    <div class="min-w-0">
+                        <h1 class="truncate text-sm font-semibold">{{ portalTitle }}</h1>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
                     <div v-if="quickActions.length > 0" class="relative" ref="quickAddRef">
-                        <button @click="toggleQuickAdd" class="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-sm font-bold text-slate-950 transition hover:opacity-90">
+                        <button @click="toggleQuickAdd" class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-orange-500 px-2.5 text-sm font-bold text-slate-950 transition hover:opacity-90">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-                            <span class="hidden md:inline">Quick Add</span>
+                            <span class="hidden md:inline">{{ t('quick_add', 'Quick Add') }}</span>
                         </button>
-                        <div v-if="quickAddOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border app-panel-strong p-1 shadow-xl">
-                            <a v-for="action in quickActions" :key="action.route" :href="action.route" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5">
+                        <div v-if="quickAddOpen" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border app-panel-strong p-1 shadow-xl">
+                            <a v-for="action in quickActions" :key="action.route" :href="action.route" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-white/5">
                                 <span class="text-orange-400">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" v-html="action.icon"></svg>
                                 </span>
@@ -444,12 +485,12 @@ const quickActions = computed(() => {
                     </div>
 
                     <form v-if="portalLanguages.length > 0" @submit.prevent="updateLanguage" class="hidden md:block">
-                        <label class="sr-only" for="portal-locale">Language</label>
+                        <label class="sr-only" for="portal-locale">{{ t('language_selector', 'Language') }}</label>
                         <select
                             id="portal-locale"
                             v-model="localeForm.locale_code"
                             @change="updateLanguage"
-                            class="rounded-2xl border app-panel px-3 py-2 text-sm outline-none"
+                            class="h-8 rounded-lg border app-panel px-2.5 text-sm outline-none"
                         >
                             <option v-for="language in portalLanguages" :key="language.locale_code" :value="language.locale_code">
                                 {{ language.display_name }}
@@ -457,62 +498,62 @@ const quickActions = computed(() => {
                         </select>
                     </form>
 
-                    <button @click="toggleTheme" class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-400 transition hover:opacity-90">
+                    <button @click="toggleTheme" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border app-panel text-sm text-slate-400 transition hover:opacity-90" :title="t('layout.toggle_theme', 'Toggle theme')" :aria-label="t('layout.toggle_theme', 'Toggle theme')">
                         <svg v-if="theme === 'dark'" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
                         <svg v-else class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07 6.7 17.3M17.3 6.7l1.77-1.77"/></svg>
                     </button>
 
                     <div v-if="!isSuperAdmin && tenantBranches.length > 0">
                         <div v-if="ownerCanSwitchBranch" class="relative" ref="branchSwitcherRef">
-                            <button @click="toggleBranchSwitcher" class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-300 transition hover:opacity-90">
+                            <button @click="toggleBranchSwitcher" class="inline-flex h-8 items-center gap-1.5 rounded-lg border app-panel px-2.5 text-sm text-slate-300 transition hover:opacity-90">
                                 <svg class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
                                 <span class="hidden md:inline">{{ selectedBranchName }}</span>
                                 <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
                             </button>
-                            <div v-if="branchSwitcherOpen" class="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border app-panel-strong p-1 shadow-xl">
-                                <p class="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-slate-500">Switch Branch</p>
-                                <button @click="switchBranch('all')" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-white/5" :class="selectedBranchId === null ? 'text-orange-400' : 'text-slate-300'">
+                            <div v-if="branchSwitcherOpen" class="absolute right-0 top-full z-50 mt-2 w-60 rounded-xl border app-panel-strong p-1 shadow-xl">
+                                <p class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">{{ t('layout.switch_branch', 'Switch Branch') }}</p>
+                                <button @click="switchBranch('all')" class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition hover:bg-white/5" :class="selectedBranchId === null ? 'text-orange-400' : 'text-slate-300'">
                                     <span class="text-orange-400">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                                     </span>
-                                    <span class="flex-1 text-left">All branches</span>
+                                    <span class="flex-1 text-left">{{ t('layout.all_branches', 'All branches') }}</span>
                                     <svg v-if="selectedBranchId === null" class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                                 </button>
-                                <button v-for="branch in tenantBranches" :key="branch.id" @click="switchBranch(branch.id)" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-white/5" :class="selectedBranchId === branch.id ? 'text-orange-400' : 'text-slate-300'">
+                                <button v-for="branch in tenantBranches" :key="branch.id" @click="switchBranch(branch.id)" class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition hover:bg-white/5" :class="selectedBranchId === branch.id ? 'text-orange-400' : 'text-slate-300'">
                                     <span class="text-orange-400">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01"/><path d="M9 13h.01"/><path d="M15 9h.01"/><path d="M15 13h.01"/></svg>
                                     </span>
                                     <span class="flex-1 text-left">
                                         {{ branch.name }}
-                                        <span v-if="branch.is_primary" class="ml-2 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-400">Primary</span>
+                                        <span v-if="branch.is_primary" class="ml-2 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-400">{{ t('layout.primary', 'Primary') }}</span>
                                     </span>
                                     <svg v-if="selectedBranchId === branch.id" class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                                 </button>
                             </div>
                         </div>
-                        <div v-else class="inline-flex items-center gap-2 rounded-full border app-panel px-3 py-2 text-sm text-slate-300">
+                        <div v-else class="inline-flex h-8 items-center gap-1.5 rounded-lg border app-panel px-2.5 text-sm text-slate-300">
                             <svg class="h-4 w-4 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
                             <span class="hidden md:inline">{{ selectedBranchName }}</span>
                         </div>
                     </div>
 
                     <div class="relative" ref="userMenuRef">
-                        <button @click="toggleUserMenu" class="flex items-center gap-2.5 rounded-2xl border app-panel px-3 py-2 text-sm transition hover:opacity-90">
-                            <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/20 text-xs font-bold text-orange-400">
+                        <button @click="toggleUserMenu" class="flex h-8 items-center gap-1.5 rounded-lg border app-panel px-2 text-sm transition hover:opacity-90 lg:gap-2 lg:px-2.5">
+                            <span class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-orange-500/20 text-xs font-bold text-orange-400">
                                 {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
                             </span>
                             <span class="hidden font-medium md:inline">{{ user?.name }}</span>
                             <svg class="h-3.5 w-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
                         </button>
-                        <div v-if="userMenuOpen" class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border app-panel-strong p-1 shadow-xl">
-                            <div class="px-3 py-2.5 border-b border-white/10 mb-1">
+                        <div v-if="userMenuOpen" class="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border app-panel-strong p-1 shadow-xl">
+                            <div class="mb-1 border-b border-white/10 px-3 py-2">
                                 <p class="text-sm font-semibold truncate">{{ user?.name }}</p>
                                 <p class="text-xs text-slate-400 mt-0.5 truncate">{{ user?.email }}</p>
                             </div>
                             <form method="POST" action="/logout">
                                 <button type="submit" class="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-300 transition hover:bg-red-500/10 hover:text-red-400">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                    Logout
+                                    {{ t('logout', 'Logout') }}
                                 </button>
                             </form>
                         </div>
@@ -521,37 +562,37 @@ const quickActions = computed(() => {
             </div>
         </header>
 
-        <div class="flex min-h-[calc(100vh-76px)] w-full flex-col lg:flex-row">
-            <aside class="border-b app-sidebar px-4 py-4 backdrop-blur lg:min-h-[calc(100vh-76px)] lg:w-[280px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
-                <nav class="mt-2 text-sm">
-                    <div v-for="(section, sIdx) in navSections" :key="sIdx" class="mb-4">
-                        <p v-if="section.heading" class="mb-2 px-3 text-xs font-bold uppercase tracking-widest text-slate-500">{{ section.heading }}</p>
-                        <div class="grid gap-1">
+        <div class="flex min-h-[calc(100vh-45px)] w-full flex-col lg:min-h-[calc(100vh-45px)] lg:flex-row">
+            <aside class="border-b app-sidebar px-2 py-2 backdrop-blur lg:min-h-[calc(100vh-45px)] lg:w-[196px] xl:w-[208px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+                <nav class="text-[12.5px]">
+                    <div v-for="(section, sIdx) in navSections" :key="sIdx" class="mb-2">
+                        <p v-if="section.heading" class="tenant-sidebar-heading mb-1 px-2 text-[9px] font-bold uppercase tracking-[0.14em]">{{ section.heading }}</p>
+                        <div class="grid gap-0.5">
                             <div v-for="(item, iIdx) in section.items" :key="iIdx">
                                 <div v-if="item.children">
-                                    <div :class="item.active ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:bg-white/5'" class="flex items-center gap-2 rounded-xl px-2 py-1 transition">
-                                        <Link :href="item.route" class="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-1 py-1">
-                                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
-                                                <span class="h-4 w-4" v-html="getIcon(item.icon)"></span>
+                                    <div :class="item.active ? 'bg-orange-500 text-slate-950 shadow-sm shadow-orange-950/20' : 'tenant-sidebar-link hover:bg-white/5'" class="flex items-center gap-1 rounded-md px-1 py-0.5 transition">
+                                        <Link :href="item.route" class="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1 py-0.5">
+                                            <span class="inline-flex h-5.5 w-5.5 items-center justify-center rounded-md" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
+                                                <span class="h-3 w-3" v-html="getIcon(item.icon)"></span>
                                             </span>
                                             <span class="truncate font-medium">{{ item.label }}</span>
                                         </Link>
-                                        <button type="button" @click="toggleNavSection(`${sIdx}-${iIdx}`)" class="inline-flex h-8 w-8 items-center justify-center rounded-lg transition hover:bg-white/10">
-                                            <svg class="h-3.5 w-3.5 transition-transform" :class="expandedSections[`${sIdx}-${iIdx}`] ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+                                        <button type="button" @click="toggleNavSection(`${sIdx}-${iIdx}`)" class="inline-flex h-5.5 w-5.5 items-center justify-center rounded-md transition hover:bg-white/10">
+                                            <svg class="h-3 w-3 transition-transform" :class="expandedSections[`${sIdx}-${iIdx}`] ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
                                         </button>
                                     </div>
-                                    <div v-show="expandedSections[`${sIdx}-${iIdx}`]" class="ml-4 mt-1 space-y-1">
-                                        <Link v-for="(child, cIdx) in item.children" :key="cIdx" :href="child.route" :class="child.active ? 'text-orange-400' : 'text-slate-500 hover:text-slate-300'" class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition">
+                                    <div v-show="expandedSections[`${sIdx}-${iIdx}`]" class="ml-7 mt-0.5 space-y-0.5">
+                                        <Link v-for="(child, cIdx) in item.children" :key="cIdx" :href="child.route" :class="child.active ? 'bg-orange-500/10 text-orange-400' : 'tenant-sidebar-child-link hover:bg-white/5'" class="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11.5px] transition">
                                             <span class="h-1 w-1 rounded-full" :class="child.active ? 'bg-orange-400' : 'bg-slate-600'"></span>
                                             {{ child.label }}
                                         </Link>
                                     </div>
                                 </div>
-                                <Link v-else :href="item.route" :class="item.active ? 'bg-orange-500 text-slate-950' : 'text-slate-400 hover:bg-white/5'" class="flex items-center gap-2.5 rounded-xl px-3 py-2 transition">
-                                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
-                                        <span class="h-4 w-4" v-html="getIcon(item.icon)"></span>
+                                <Link v-else :href="item.route" :class="item.active ? 'bg-orange-500 text-slate-950 shadow-sm shadow-orange-950/20' : 'tenant-sidebar-link hover:bg-white/5'" class="flex items-center gap-1.5 rounded-md px-2 py-1.5 transition">
+                                    <span class="inline-flex h-5.5 w-5.5 items-center justify-center rounded-md" :class="item.active ? 'bg-slate-950/15' : 'bg-orange-500/10 text-orange-400'">
+                                        <span class="h-3 w-3" v-html="getIcon(item.icon)"></span>
                                     </span>
-                                    <span class="font-medium">{{ item.label }}</span>
+                                    <span class="truncate font-medium">{{ item.label }}</span>
                                 </Link>
                             </div>
                         </div>
@@ -559,16 +600,16 @@ const quickActions = computed(() => {
                 </nav>
             </aside>
 
-            <main class="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-                <div v-if="headerAction" class="mb-5 flex justify-end">
+            <main class="min-w-0 flex-1 overflow-auto px-4 py-4 lg:px-6 lg:py-5 xl:px-8 xl:py-6">
+                <div v-if="headerAction" class="mb-4 flex justify-end">
                     <component :is="headerAction" />
                 </div>
 
-                <div v-if="page.props.flash?.status" class="mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+                <div v-if="flashStatusVisible && page.props.flash?.status" class="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ page.props.flash.status }}
                 </div>
 
-                <div v-if="page.props.flash?.error" class="mb-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                <div v-if="flashErrorVisible && page.props.flash?.error" class="mb-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
                     {{ page.props.flash.error }}
                 </div>
 
@@ -577,3 +618,4 @@ const quickActions = computed(() => {
         </div>
     </div>
 </template>
+

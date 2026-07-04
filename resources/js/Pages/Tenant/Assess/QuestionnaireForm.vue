@@ -32,7 +32,7 @@ const submit = () => {
             <div class="flex items-start justify-between">
                 <div>
                     <Link href="/tenant/assess/questionnaire" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-orange-400">
-                        <span>←</span> Back to Records
+                        <span>â†</span> Back to Records
                     </Link>
                     <h1 class="mt-2 text-3xl font-semibold">{{ isEdit ? 'Edit PAR-Q+' : 'Add PAR-Q+' }}</h1>
                     <p class="mt-1 text-slate-300">
@@ -52,7 +52,7 @@ const submit = () => {
                 <input type="hidden" v-model="form.member_id">
 
                 <div class="mb-6">
-                    <h3 class="text-lg font-bold mb-4">Section 1 — General Health</h3>
+                    <h3 class="text-lg font-bold mb-4">Section 1 â€” General Health</h3>
                     <div class="flex flex-col gap-4">
                         <div v-for="(label, id) in questions" :key="id" class="rounded-lg border border-white/10 bg-slate-950/50 p-4">
                             <p class="font-medium">{{ id }}. {{ label }}</p>
@@ -71,7 +71,7 @@ const submit = () => {
                 </div>
 
                 <div class="mb-6">
-                    <h3 class="text-lg font-bold mb-4">Section 2 — Follow-up</h3>
+                    <h3 class="text-lg font-bold mb-4">Section 2 â€” Follow-up</h3>
                     <div class="grid gap-4 md:grid-cols-2">
                         <div v-for="row in followups" :key="row.key" class="rounded-lg border border-white/10 bg-slate-950/50 p-4">
                             <p class="font-medium">{{ row.label }}</p>

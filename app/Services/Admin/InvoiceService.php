@@ -15,7 +15,7 @@ class InvoiceService
     {
     }
 
-    // ── Index data ────────────────────────────────────────────────────────────
+    // â”€â”€ Index data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function getIndexData(): array
     {
@@ -31,7 +31,7 @@ class InvoiceService
         ];
     }
 
-    // ── Renewals Due ──────────────────────────────────────────────────────────
+    // â”€â”€ Renewals Due â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function getRenewalsDue(): \Illuminate\Database\Eloquent\Collection
     {
@@ -74,7 +74,7 @@ class InvoiceService
             });
     }
 
-    // ── Process Renewal ───────────────────────────────────────────────────────
+    // â”€â”€ Process Renewal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function processRenewal(array $validated): TenantPayment
     {
@@ -133,7 +133,7 @@ class InvoiceService
         });
     }
 
-    // ── Part Payment against existing subscription ────────────────────────────
+    // â”€â”€ Part Payment against existing subscription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function recordPartPayment(array $validated): TenantPayment
     {
@@ -170,7 +170,7 @@ class InvoiceService
         });
     }
 
-    // ── Manual payment (legacy) ───────────────────────────────────────────────
+    // â”€â”€ Manual payment (legacy) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function recordPayment(array $validated): TenantPayment
     {
@@ -201,7 +201,7 @@ class InvoiceService
         return $payment;
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function billingCycleDays(?string $billingCycle): int
     {
@@ -246,3 +246,4 @@ class InvoiceService
         ];
     }
 }
+

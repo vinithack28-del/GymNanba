@@ -20,7 +20,7 @@ class ExpenseController extends Controller
         return request()->user()->tenant->id;
     }
 
-    // ── List ──────────────────────────────────────────────────────────────────
+    // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function index(Request $request){
         abort_unless($this->svc->canAdd(), 403);
@@ -31,7 +31,7 @@ class ExpenseController extends Controller
         return Inertia::render('Tenant/Expenses/Index', $data);
     }
 
-    // ── Create ────────────────────────────────────────────────────────────────
+    // â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function create(){
         abort_unless($this->svc->canAdd(), 403);
@@ -72,7 +72,7 @@ class ExpenseController extends Controller
         return redirect()->route('tenant.expenses.index')->with('status', $msg);
     }
 
-    // ── Edit ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function edit(Expense $expense){
         abort_if($expense->tenant_id !== $this->tenantId(), 404);
@@ -112,7 +112,7 @@ class ExpenseController extends Controller
             ->with('status', __('expenses.flash.updated'));
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+    // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function destroy(Expense $expense): RedirectResponse
     {
@@ -125,7 +125,7 @@ class ExpenseController extends Controller
             ->with('status', __('expenses.flash.deleted'));
     }
 
-    // ── Approve / Reject ──────────────────────────────────────────────────────
+    // â”€â”€ Approve / Reject â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function approve(Expense $expense): RedirectResponse
     {
@@ -148,7 +148,7 @@ class ExpenseController extends Controller
         return redirect()->back()->with('status', __('expenses.flash.rejected'));
     }
 
-    // ── Sub-categories (AJAX) ─────────────────────────────────────────────────
+    // â”€â”€ Sub-categories (AJAX) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function subCategories(string $category): JsonResponse
     {
@@ -156,7 +156,7 @@ class ExpenseController extends Controller
         return response()->json($subs);
     }
 
-    // ── CSV export ────────────────────────────────────────────────────────────
+    // â”€â”€ CSV export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function export(Request $request): Response
     {
@@ -169,3 +169,4 @@ class ExpenseController extends Controller
         ]);
     }
 }
+

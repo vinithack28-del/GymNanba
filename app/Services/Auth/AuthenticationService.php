@@ -91,3 +91,4 @@ class AuthenticationService
         $request->session()->regenerateToken();
     }
 }
+

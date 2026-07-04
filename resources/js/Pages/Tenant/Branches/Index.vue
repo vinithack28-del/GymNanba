@@ -22,17 +22,16 @@ const page = usePage();
 
 const atLimit = computed(() => props.planLimit > 0 && props.activeCount >= props.planLimit);
 const inactiveCount = computed(() => props.branches.filter((branch) => branch.status === 'inactive').length);
-const hasErrors = computed(() => Object.keys(page.props.errors || {}).length > 0);
-const flashError = computed(() => page.props.flash?.error || (hasErrors.value ? Object.values(page.props.errors)[0] : null));
+const flashError = computed(() => page.props.flash?.error || null);
 
 const amenityIcons = {
-    pool: '🏊',
-    steam: '💨',
-    parking: '🅿',
-    locker: '🔒',
-    cafeteria: '☕',
-    ac: '❄',
-    wifi: '📶',
+    pool: 'ðŸŠ',
+    steam: 'ðŸ’¨',
+    parking: 'ðŸ…¿',
+    locker: 'ðŸ”’',
+    cafeteria: 'â˜•',
+    ac: 'â„',
+    wifi: 'ðŸ“¶',
 };
 
 const deactivateModalOpen = ref(false);
@@ -252,11 +251,11 @@ const submitDeactivate = () => {
                             <span class="branch-stat__label">Active</span>
                         </div>
                         <div class="branch-stat">
-                            <span class="branch-stat__value branch-stat__value--muted">—</span>
+                            <span class="branch-stat__value branch-stat__value--muted">â€”</span>
                             <span class="branch-stat__label">Check-ins Today</span>
                         </div>
                         <div class="branch-stat">
-                            <span class="branch-stat__value branch-stat__value--muted">—</span>
+                            <span class="branch-stat__value branch-stat__value--muted">â€”</span>
                             <span class="branch-stat__label">Revenue / Mo</span>
                         </div>
                     </div>
@@ -267,7 +266,7 @@ const submitDeactivate = () => {
                             :key="amenity"
                             class="branch-amenity"
                         >
-                            {{ amenityIcons[amenity] || '•' }} {{ amenityOpts[amenity] || amenity }}
+                            {{ amenityIcons[amenity] || 'â€¢' }} {{ amenityOpts[amenity] || amenity }}
                         </span>
                         <span v-if="!branchAmenities(branch).length" class="branch-amenity branch-amenity--empty">
                             No amenities
@@ -1021,3 +1020,4 @@ const submitDeactivate = () => {
     }
 }
 </style>
+

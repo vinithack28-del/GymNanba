@@ -79,7 +79,7 @@ class User extends Authenticatable
             return $this->cachedPermissions = [];
         }
 
-        // Scope via model_has_roles.tenant_id (team context) only — not roles.tenant_id,
+        // Scope via model_has_roles.tenant_id (team context) only â€” not roles.tenant_id,
         // because Spatie may assign a global role (tenant_id=NULL) in a tenant's context.
         $this->cachedPermissions = \DB::table('permissions as p')
             ->join('role_has_permissions as rhp', 'rhp.permission_id', '=', 'p.id')
@@ -132,3 +132,4 @@ class User extends Authenticatable
         return $this->branch_id;
     }
 }
+

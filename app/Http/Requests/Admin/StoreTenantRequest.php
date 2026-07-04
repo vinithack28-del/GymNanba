@@ -46,7 +46,7 @@ class StoreTenantRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Trial plans are free — discard any accidentally-submitted payment splits
+        // Trial plans are free â€” discard any accidentally-submitted payment splits
         $planId = $this->input('plan_id');
         if ($planId) {
             $plan = Plan::find($planId);
@@ -76,3 +76,4 @@ class StoreTenantRequest extends FormRequest
         ]);
     }
 }
+

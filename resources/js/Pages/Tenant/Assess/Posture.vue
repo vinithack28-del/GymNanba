@@ -15,8 +15,8 @@ const props = defineProps({
 const recordRows = computed(() => props.records?.data || []);
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const form = useForm({
@@ -142,7 +142,7 @@ const submit = () => {
                                 <td class="px-4 py-3">{{ formatDate(record.assessment_date) }}</td>
                                 <td class="px-4 py-3">{{ record.status?.replace('_', ' ')?.replace(/\b\w/g, l => l.toUpperCase()) }}</td>
                                 <td class="px-4 py-3 text-xs text-slate-400">
-                                    {{ Object.entries(record.payload || {}).filter(([k,v]) => v).slice(0, 2).map(([k,v]) => `${k.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`).join(', ') || '—' }}
+                                    {{ Object.entries(record.payload || {}).filter(([k,v]) => v).slice(0, 2).map(([k,v]) => `${k.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${v}`).join(', ') || 'â€”' }}
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
@@ -159,3 +159,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

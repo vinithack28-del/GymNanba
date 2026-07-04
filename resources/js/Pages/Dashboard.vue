@@ -55,3 +55,4 @@ const logout = () => {
         </main>
     </AppLayout>
 </template>
+

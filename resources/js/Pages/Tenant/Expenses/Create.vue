@@ -74,7 +74,7 @@ onMounted(() => {
                     <p class="mt-0.5 text-sm text-slate-400">Record a new expense for your gym</p>
                 </div>
                 <Link href="/tenant/expenses" class="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:bg-white/5">
-                    ← Expenses
+                    â† Expenses
                 </Link>
             </div>
 
@@ -87,21 +87,21 @@ onMounted(() => {
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-400">Branch <span class="text-red-400">*</span></label>
                         <select v-model="form.branch_id" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
-                            <option value="">— Select Branch —</option>
+                            <option value="">â€” Select Branch â€”</option>
                             <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
                         </select>
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-400">Category <span class="text-red-400">*</span></label>
                         <select v-model="form.category" @change="categoryChanged(form.category)" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
-                            <option value="">— Select Category —</option>
+                            <option value="">â€” Select Category â€”</option>
                             <option v-for="(label, cat) in categories" :key="cat" :value="cat">{{ label }}</option>
                         </select>
                     </div>
                     <div v-if="subCategories.length">
                         <label class="mb-1 block text-xs font-medium text-slate-400">Sub-category</label>
                         <select v-model="form.sub_category" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
-                            <option value="">— Select Sub —</option>
+                            <option value="">â€” Select Sub â€”</option>
                             <option v-for="sub in subCategories" :key="sub" :value="sub">{{ sub.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }}</option>
                         </select>
                     </div>
@@ -110,11 +110,11 @@ onMounted(() => {
                         <input v-model="form.description" type="text" minlength="5" maxlength="200" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-400">Amount (₹) <span class="text-red-400">*</span></label>
+                        <label class="mb-1 block text-xs font-medium text-slate-400">Amount (â‚¹) <span class="text-red-400">*</span></label>
                         <input v-model="form.amount" type="number" step="0.01" min="0.01" max="999999" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-400">GST (₹)</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-400">GST (â‚¹)</label>
                         <input v-model="form.gst" type="number" step="0.01" min="0" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                     </div>
                     <div>
@@ -151,7 +151,7 @@ onMounted(() => {
                     <div>
                         <label class="mb-1 block text-xs font-medium text-slate-400">Staff Member</label>
                         <select v-model="form.staff_id" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
-                            <option value="">— Select Staff —</option>
+                            <option value="">â€” Select Staff â€”</option>
                             <option v-for="staff in staffList" :key="staff.id" :value="staff.id">{{ staff.name }} ({{ staff.role }})</option>
                         </select>
                     </div>

@@ -28,3 +28,4 @@ class LocalizationController extends Controller
         return back()->with('status', __('common.language_updated'));
     }
 }
+

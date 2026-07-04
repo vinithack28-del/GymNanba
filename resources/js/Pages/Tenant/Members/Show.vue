@@ -14,11 +14,11 @@ const props = defineProps({
 const paymentRows = computed(() => props.payments || []);
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
-const formatAmount = (paise) => `₹${Number((paise || 0) / 100).toFixed(0)}`;
+const formatAmount = (paise) => `â‚¹${Number((paise || 0) / 100).toFixed(0)}`;
 
 const statusClass = computed(() => {
     const styles = {
@@ -33,10 +33,10 @@ const statusClass = computed(() => {
 
 const membershipPeriod = computed(() => {
     if (!props.member?.start_date) {
-        return '—';
+        return 'â€”';
     }
 
-    return `${formatDate(props.member.start_date)} → ${props.member.expiry_date ? formatDate(props.member.expiry_date) : '—'}`;
+    return `${formatDate(props.member.start_date)} â†’ ${props.member.expiry_date ? formatDate(props.member.expiry_date) : 'â€”'}`;
 });
 
 const expiryMeta = computed(() => {
@@ -124,7 +124,7 @@ function paymentBadgeText(payment) {
 }
 
 function paymentMethodLabel(payment) {
-    const method = payment.method === 'split' ? 'Split' : (payment.method || '—');
+    const method = payment.method === 'split' ? 'Split' : (payment.method || 'â€”');
     const refs = (payment.splits || [])
         .map((split) => split.reference)
         .filter(Boolean)
@@ -167,7 +167,7 @@ function paymentMethodLabel(payment) {
 
                     <div class="flex flex-col gap-4 px-6 py-5">
                         <div class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">📞</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ“ž</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Phone</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ member.phone }}</p>
@@ -175,7 +175,7 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div v-if="member.email" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">✉️</span>
+                            <span class="mt-0.5 text-slate-500">âœ‰ï¸</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Email</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ member.email }}</p>
@@ -183,19 +183,19 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div v-if="member.gender || member.dob" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">👤</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ‘¤</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Personal</p>
                                 <p class="mt-1 text-sm text-slate-900">
                                     <span v-if="member.gender">{{ member.gender.charAt(0).toUpperCase() + member.gender.slice(1) }}</span>
-                                    <span v-if="member.gender && member.dob"> · </span>
+                                    <span v-if="member.gender && member.dob"> Â· </span>
                                     <span v-if="member.dob">{{ formatDate(member.dob) }}</span>
                                 </p>
                             </div>
                         </div>
 
                         <div v-if="member.branch" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">🏢</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ¢</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Branch</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ member.branch.name }}</p>
@@ -203,20 +203,20 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">📋</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ“‹</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Current Plan</p>
                                 <p class="mt-1">
                                     <span v-if="member.plan_name" class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-slate-800">
                                         {{ member.plan_name }}
                                     </span>
-                                    <span v-else class="text-sm text-slate-500">—</span>
+                                    <span v-else class="text-sm text-slate-500">â€”</span>
                                 </p>
                             </div>
                         </div>
 
                         <div v-if="member.start_date || member.expiry_date" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">📅</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ“…</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Membership Period</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ membershipPeriod }}</p>
@@ -225,7 +225,7 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div v-if="member.address" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">📍</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ“</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Address</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ member.address }}</p>
@@ -233,7 +233,7 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div v-if="member.notes" class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">📝</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ“</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Notes</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ member.notes }}</p>
@@ -241,7 +241,7 @@ function paymentMethodLabel(payment) {
                         </div>
 
                         <div class="flex items-start gap-3">
-                            <span class="mt-0.5 text-slate-500">🕒</span>
+                            <span class="mt-0.5 text-slate-500">ðŸ•’</span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Member Since</p>
                                 <p class="mt-1 text-sm text-slate-900">{{ formatDate(member.created_at) }}</p>
@@ -293,12 +293,12 @@ function paymentMethodLabel(payment) {
                                         <div class="mt-0.5 text-xs text-slate-500">{{ formatDate(payment.payment_date) }}</div>
                                     </td>
                                     <td class="px-4 py-3 text-xs text-slate-600">
-                                        {{ payment.plan?.name || '—' }}
+                                        {{ payment.plan?.name || 'â€”' }}
                                     </td>
                                     <td class="px-4 py-3">
                                         <template v-if="payment.timeline.end">
                                             <div class="text-xs text-slate-700">
-                                                {{ formatDate(payment.timeline.start) }} → {{ formatDate(payment.timeline.end) }}
+                                                {{ formatDate(payment.timeline.start) }} â†’ {{ formatDate(payment.timeline.end) }}
                                             </div>
                                             <div class="mt-0.5 text-xs text-slate-500">
                                                 {{ payment.plan?.duration_label || 'Membership plan' }}
@@ -340,3 +340,4 @@ function paymentMethodLabel(payment) {
         </div>
     </AppLayout>
 </template>
+

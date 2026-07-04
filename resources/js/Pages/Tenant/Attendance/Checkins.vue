@@ -8,8 +8,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '').replaceAll('/', '-');
 };
 
 const getMethodBadge = (method) => {
@@ -28,7 +28,6 @@ const getMethodBadge = (method) => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Daily Check-ins</h1>
                 <p class="mt-1 text-slate-300">Track member attendance for today.</p>
             </div>
@@ -63,7 +62,7 @@ const getMethodBadge = (method) => {
 
             <div class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5">
                 <div v-if="!checkins || checkins.length === 0" class="flex flex-col items-center gap-4 py-20 text-center">
-                    <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">📋</div>
+                    <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">ðŸ“‹</div>
                     <p class="text-base font-semibold">No check-ins today</p>
                     <p class="text-sm text-slate-400">Start checking in members to track attendance.</p>
                 </div>
@@ -85,7 +84,7 @@ const getMethodBadge = (method) => {
                                         <span class="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/20 text-xs font-bold text-orange-300">{{ checkin.member?.initials || '?' }}</span>
                                         <div>
                                             <p class="font-medium">{{ checkin.member?.name || 'Unknown' }}</p>
-                                            <p class="text-xs text-slate-400">{{ checkin.member?.member_code || '—' }}</p>
+                                            <p class="text-xs text-slate-400">{{ checkin.member?.member_code || 'â€”' }}</p>
                                         </div>
                                     </div>
                                 </td>
@@ -113,3 +112,4 @@ const getMethodBadge = (method) => {
         </div>
     </AppLayout>
 </template>
+

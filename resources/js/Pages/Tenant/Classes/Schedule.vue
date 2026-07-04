@@ -14,8 +14,8 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getStatusColor = (status) => {
@@ -38,20 +38,19 @@ const hours = ['6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Classes</h1>
                 <p class="mt-1 text-slate-300">Manage gym classes and schedules.</p>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
                 <Link :href="`/tenant/classes/timetable?week=${prevWeek}&branch_id=${branchId}&view=${view}`" class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5">
-                    ← Previous Week
+                    â† Previous Week
                 </Link>
                 <span class="text-sm font-bold">
-                    Week of {{ formatDate(weekStart) }} – {{ formatDate(weekEnd) }}
+                    Week of {{ formatDate(weekStart) }} â€“ {{ formatDate(weekEnd) }}
                 </span>
                 <Link :href="`/tenant/classes/timetable?week=${nextWeek}&branch_id=${branchId}&view=${view}`" class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5">
-                    Next Week →
+                    Next Week â†’
                 </Link>
                 <Link :href="`/tenant/classes/timetable?branch_id=${branchId}&view=${view}`" class="rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-semibold text-slate-300 hover:bg-white/5">
                     Today
@@ -104,3 +103,4 @@ const hours = ['6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'
         </div>
     </AppLayout>
 </template>
+

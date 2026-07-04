@@ -15,3 +15,4 @@ class PermissionModule extends Model
         'sort_order',
     ];
 }
+

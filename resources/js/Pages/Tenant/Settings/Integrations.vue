@@ -11,28 +11,28 @@ const integrations = ref({
     whatsapp: {
         name: 'WhatsApp Business API',
         desc: 'Send automated messages and notifications via WhatsApp',
-        icon: '💬',
+        icon: 'ðŸ’¬',
         connected: props.integrations?.whatsapp?.isConnected || false,
         config: props.integrations?.whatsapp?.config || {},
     },
     razorpay: {
         name: 'Razorpay',
         desc: 'Accept online payments securely',
-        icon: '₹',
+        icon: 'â‚¹',
         connected: props.integrations?.razorpay?.isConnected || false,
         config: props.integrations?.razorpay?.config || {},
     },
     biometric: {
         name: 'Biometric Device',
         desc: 'Integrate with biometric attendance systems',
-        icon: '🔍',
+        icon: 'ðŸ”',
         connected: props.integrations?.biometric?.isConnected || false,
         config: props.integrations?.biometric?.config || {},
     },
     tally: {
         name: 'Tally',
         desc: 'Sync financial data with Tally accounting software',
-        icon: '📊',
+        icon: 'ðŸ“Š',
         connected: props.integrations?.tally?.isConnected || false,
         config: props.integrations?.tally?.config || {},
     },
@@ -103,7 +103,7 @@ const submitIntegration = (key) => {
                                 </div>
                                 <div v-if="key === 'whatsapp'">
                                     <label class="mb-1 block text-xs font-medium text-slate-400">API Token</label>
-                                    <input v-model="forms[key].api_token" type="password" :placeholder="int.connected ? '••••••••' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
+                                    <input v-model="forms[key].api_token" type="password" :placeholder="int.connected ? 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                 </div>
                                 <div v-if="key === 'razorpay'">
                                     <label class="mb-1 block text-xs font-medium text-slate-400">Key ID</label>
@@ -111,7 +111,7 @@ const submitIntegration = (key) => {
                                 </div>
                                 <div v-if="key === 'razorpay'">
                                     <label class="mb-1 block text-xs font-medium text-slate-400">Key Secret</label>
-                                    <input v-model="forms[key].key_secret" type="password" :placeholder="int.connected ? '••••••••' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
+                                    <input v-model="forms[key].key_secret" type="password" :placeholder="int.connected ? 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                 </div>
                                 <div v-if="key === 'biometric'">
                                     <label class="mb-1 block text-xs font-medium text-slate-400">Device IP</label>
@@ -127,7 +127,7 @@ const submitIntegration = (key) => {
                                 </div>
                                 <div v-if="key === 'tally'">
                                     <label class="mb-1 block text-xs font-medium text-slate-400">License Key</label>
-                                    <input v-model="forms[key].license_key" type="password" :placeholder="int.connected ? '••••••••' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
+                                    <input v-model="forms[key].license_key" type="password" :placeholder="int.connected ? 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢' : ''" class="w-full rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                 </div>
                             </div>
                             <div class="mt-4 flex justify-end gap-2">
@@ -140,3 +140,4 @@ const submitIntegration = (key) => {
         </div>
     </AppLayout>
 </template>
+

@@ -32,14 +32,14 @@ class SendPaymentDueReminders extends Command
                     $due = number_format($payment->due_paise / 100, 2);
                     $message
                         ->to($tenant->owner_email, $tenant->gym_name)
-                        ->subject("Payment Due Today — {$payment->member->name}")
+                        ->subject("Payment Due Today â€” {$payment->member->name}")
                         ->html(
                             "<p>Hi,</p>"
                             . "<p><strong>{$payment->member->name}</strong> ({$payment->member->phone}) has a pending payment of "
-                            . "<strong>₹{$due}</strong> due today.</p>"
+                            . "<strong>â‚¹{$due}</strong> due today.</p>"
                             . "<p>Receipt: <strong>{$payment->receipt_number}</strong></p>"
                             . "<p>Please follow up and collect the balance amount.</p>"
-                            . "<p>— {$tenant->gym_name}</p>"
+                            . "<p>â€” {$tenant->gym_name}</p>"
                         );
                 });
 
@@ -53,3 +53,4 @@ class SendPaymentDueReminders extends Command
         $this->info("Done. Processed {$payments->count()} payment(s).");
     }
 }
+

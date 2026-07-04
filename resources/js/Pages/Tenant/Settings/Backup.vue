@@ -55,10 +55,11 @@ const props = defineProps({
 
                 <div class="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
                     <h2 class="mb-4 text-sm font-semibold text-red-400">Danger Zone</h2>
-                    <p class="mb-4 text-sm text-slate-400">Permanently delete all data. This action cannot be undone.</p>
+                    <p class="mb-4 text-sm font-semibold text-red-500">Permanently delete all data. This action cannot be undone.</p>
                     <button class="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20">Delete All Data</button>
                 </div>
             </div>
         </div>
     </AppLayout>
 </template>
+

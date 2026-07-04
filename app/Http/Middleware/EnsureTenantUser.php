@@ -50,3 +50,4 @@ class EnsureTenantUser
         return $next($request);
     }
 }
+

@@ -25,9 +25,9 @@ const form = useForm({
 
 const submit = () => {
     if (editing) {
-        form.put(`/tenant/equipment/${props.equipment.id}`);
+        form.put(`/equipment/${props.equipment.id}`);
     } else {
-        form.post('/tenant/equipment');
+        form.post('/equipment');
     }
 };
 </script>
@@ -38,12 +38,11 @@ const submit = () => {
         
         <div class="flex flex-col gap-5">
             <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Operations</p>
+                <div>                    
                     <h1 class="mt-2 text-3xl font-semibold">{{ pageTitle }}</h1>
                     <p class="mt-1 text-slate-300">{{ editing ? 'Update equipment details.' : 'Capture equipment details, status, and purchase information.' }}</p>
                 </div>
-                <Link href="/tenant/equipment" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
+                <Link href="/equipment" class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                     Back to Equipment
                 </Link>
@@ -58,7 +57,7 @@ const submit = () => {
                     <div>
                         <label class="mb-2 block text-sm font-medium">Type <span class="text-red-400">*</span></label>
                         <select v-model="form.type" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
-                            <option value="">Select type…</option>
+                            <option value="">Select typeâ€¦</option>
                             <option v-for="(label, value) in types" :key="value" :value="value">{{ label }}</option>
                         </select>
                     </div>
@@ -85,7 +84,7 @@ const submit = () => {
                         <input v-model="form.warranty_expiry" type="date" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-medium">Purchase Price (₹)</label>
+                        <label class="mb-2 block text-sm font-medium">Purchase Price (â‚¹)</label>
                         <input v-model="form.purchase_price" type="number" min="0" step="1" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" placeholder="0">
                     </div>
                     <div class="md:col-span-2">
@@ -95,10 +94,11 @@ const submit = () => {
                 </div>
 
                 <div class="mt-6 flex justify-end gap-3">
-                    <Link href="/tenant/equipment" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Cancel</Link>
+                    <Link href="/equipment" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Cancel</Link>
                     <button type="submit" class="rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400" :disabled="form.processing">{{ editing ? 'Update Equipment' : 'Add Equipment' }}</button>
                 </div>
             </form>
         </div>
     </AppLayout>
 </template>
+

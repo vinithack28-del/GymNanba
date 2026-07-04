@@ -117,3 +117,4 @@ class PosProduct extends Model
         return $this->stock_quantity <= $this->low_stock_threshold;
     }
 }
+

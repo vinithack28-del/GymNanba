@@ -1,7 +1,10 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 
+@source '../js';
+@source '../views';
+@source '../../app';
+@source '../../routes';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
 
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
@@ -44,6 +47,119 @@ body {
 .app-theme-shell {
     background: var(--app-bg-accent);
     color: var(--app-text);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    letter-spacing: 0;
+}
+
+.app-theme-shell :where(p, label, span, a, button, input, select, textarea, table, th, td, li) {
+    font-size: 0.8125rem;
+    letter-spacing: 0;
+}
+
+.app-theme-shell :where(.text-xs) {
+    font-size: 0.75rem;
+}
+
+.app-theme-shell :where(.text-\[9px\]) {
+    font-size: 0.5625rem;
+}
+
+.app-theme-shell :where(.text-\[10px\]) {
+    font-size: 0.625rem;
+}
+
+.app-theme-shell :where(.text-\[11px\]) {
+    font-size: 0.6875rem;
+}
+
+.app-theme-shell :where(.text-\[11\.5px\]) {
+    font-size: 0.71875rem;
+}
+
+.app-theme-shell :where(.text-\[12\.5px\]) {
+    font-size: 0.78125rem;
+}
+
+.app-theme-shell :where(.text-\[13px\]) {
+    font-size: 0.8125rem;
+}
+
+.app-theme-shell :where(.text-\[15px\]) {
+    font-size: 0.9375rem;
+}
+
+.app-theme-shell :where(.text-\[18px\]) {
+    font-size: 1.125rem;
+}
+
+.app-theme-shell :where(.text-\[28px\]) {
+    font-size: 1.25rem;
+}
+
+.app-theme-shell :where(.text-sm, .text-base) {
+    font-size: 0.8125rem;
+}
+
+.app-theme-shell :where(.text-lg) {
+    font-size: 0.9375rem;
+}
+
+.app-theme-shell :where(.text-xl) {
+    font-size: 1rem;
+}
+
+.app-theme-shell :where(.text-2xl) {
+    font-size: 1.125rem;
+}
+
+.app-theme-shell :where(.text-3xl, .text-4xl, .text-5xl, .text-6xl) {
+    font-size: 1.25rem;
+}
+
+.app-theme-shell :where(h1) {
+    font-size: 1.25rem;
+    line-height: 1.25;
+}
+
+.app-theme-shell :where(h2) {
+    font-size: 1.125rem;
+    line-height: 1.3;
+}
+
+.app-theme-shell :where(h3, h4) {
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.app-theme-shell :where(.text-red-200, .text-emerald-200, .text-sky-200, .text-amber-200, .text-orange-200) {
+    font-size: 0.8125rem;
+}
+
+.app-theme-shell :where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    min-height: 2.125rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.65rem;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+}
+
+.app-theme-shell :where(textarea) {
+    min-height: 4.75rem;
+}
+
+.app-theme-shell :where(button, a[class*='bg-orange-500'], a[class*='border'], a[class*='bg-white/5']) {
+    font-size: 0.8125rem;
+    line-height: 1.25;
+}
+
+.app-theme-shell :where(button[class*='px-'], a[class*='px-']) {
+    min-height: 2rem;
+}
+
+.app-theme-shell :where(.rounded-2xl) {
+    border-radius: 0.875rem;
 }
 
 .app-topbar {
@@ -67,6 +183,145 @@ body {
 
 .app-muted {
     color: var(--app-text-muted);
+}
+
+.tenant-sidebar-heading {
+    color: color-mix(in srgb, var(--app-text) 56%, var(--app-text-muted));
+}
+
+.tenant-sidebar-link {
+    color: color-mix(in srgb, var(--app-text) 76%, var(--app-text-muted));
+}
+
+.tenant-sidebar-child-link {
+    color: color-mix(in srgb, var(--app-text) 66%, var(--app-text-muted));
+}
+
+.tenant-sidebar-link:hover,
+.tenant-sidebar-child-link:hover {
+    color: var(--app-text);
+}
+
+.locker-drawer-backdrop {
+    background: rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(1px);
+}
+
+[data-theme='dark'] .locker-drawer-backdrop {
+    background: rgba(2, 6, 23, 0.72);
+}
+
+.locker-icon-btn {
+    align-items: center;
+    border: 1px solid var(--app-border);
+    border-radius: 0.55rem;
+    display: inline-flex;
+    height: 1.9rem;
+    justify-content: center;
+    transition: background 160ms ease, color 160ms ease, opacity 160ms ease;
+    width: 1.9rem;
+}
+
+.locker-icon-btn svg {
+    height: 0.9rem;
+    width: 0.9rem;
+}
+
+.locker-icon-btn-view {
+    background: color-mix(in srgb, var(--app-info) 12%, var(--app-panel-strong));
+    color: var(--app-info);
+}
+
+.locker-icon-btn-edit {
+    background: color-mix(in srgb, var(--app-brand) 13%, var(--app-panel-strong));
+    color: var(--app-brand);
+}
+
+.locker-icon-btn:hover {
+    opacity: 0.82;
+}
+
+.locker-status-toggle {
+    align-items: center;
+    background: color-mix(in srgb, var(--app-text-muted) 12%, var(--app-panel-strong));
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    color: var(--app-text-muted);
+    display: inline-flex;
+    font-size: 0.72rem;
+    font-weight: 700;
+    gap: 0.35rem;
+    min-height: 1.7rem;
+    padding: 0.2rem 0.55rem 0.2rem 0.25rem;
+    transition: background 160ms ease, color 160ms ease;
+}
+
+.locker-status-toggle-dot {
+    background: currentColor;
+    border-radius: 999px;
+    height: 0.55rem;
+    width: 0.55rem;
+}
+
+.locker-status-toggle-on {
+    background: color-mix(in srgb, var(--app-success) 13%, var(--app-panel-strong));
+    color: var(--app-success);
+}
+
+.app-theme-shell main {
+    min-width: 0;
+}
+
+.app-theme-shell .overflow-x-auto {
+    scrollbar-width: thin;
+}
+
+.app-theme-shell table {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+}
+
+.app-theme-shell table th,
+.app-theme-shell table td {
+    padding: 0.5rem 0.625rem;
+    vertical-align: middle;
+}
+
+.app-theme-shell table thead th {
+    font-size: 0.75rem;
+    line-height: 1.25;
+}
+
+@media (max-width: 1440px) {
+    .app-theme-shell table th,
+    .app-theme-shell table td {
+        padding: 0.45rem 0.55rem;
+    }
+
+    .app-theme-shell table {
+        font-size: 0.8125rem;
+    }
+
+    .app-theme-shell .rounded-\[2rem\] {
+        border-radius: 1.25rem;
+    }
+
+    .app-theme-shell .rounded-\[1\.75rem\],
+    .app-theme-shell .rounded-\[1\.6rem\],
+    .app-theme-shell .rounded-\[1\.5rem\] {
+        border-radius: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-theme-shell table th,
+    .app-theme-shell table td {
+        padding: 0.4rem 0.5rem;
+    }
+
+    .app-theme-shell table {
+        font-size: 0.8125rem;
+    }
 }
 
 .app-brand-text {
@@ -96,6 +351,37 @@ body {
 .app-theme-shell input::placeholder,
 .app-theme-shell textarea::placeholder {
     color: var(--app-text-muted);
+}
+
+.field-invalid {
+    border-color: rgb(248 113 113 / 0.95) !important;
+    box-shadow: 0 0 0 1px rgb(248 113 113 / 0.25);
+}
+
+.app-theme-shell .field-error,
+.field-error {
+    color: #ef4444;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.35;
+    margin-top: 0.35rem;
+}
+
+[data-theme='light'] .app-theme-shell .field-error,
+.field-error-light {
+    color: #dc2626 !important;
+}
+
+[data-theme='light'] .app-theme-shell :where(input.field-invalid:not([type='checkbox']):not([type='radio']), select.field-invalid, textarea.field-invalid),
+[data-theme='light'] .field-invalid {
+    background: #fff7f7 !important;
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 1px rgb(220 38 38 / 0.22), 0 0 0 4px rgb(220 38 38 / 0.08);
+}
+
+.app-theme-shell :where(input.field-invalid:not([type='checkbox']):not([type='radio']), select.field-invalid, textarea.field-invalid):focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 1px rgb(239 68 68 / 0.35), 0 0 0 4px rgb(239 68 68 / 0.12);
 }
 
 [data-theme='light'] .app-theme-shell .text-slate-100,

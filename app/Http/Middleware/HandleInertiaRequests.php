@@ -43,6 +43,14 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'locale' => app()->getLocale(),
+            'translations' => [
+                'common' => fn () => trans('common'),
+            ],
+            'flash' => [
+                'status' => fn () => $request->session()->get('status'),
+                'error' => fn () => $request->session()->get('error'),
+                'email_sent' => fn () => $request->session()->get('email_sent'),
+            ],
             'portalLanguages' => fn () => $this->getActivePortalLanguages(),
             'branchContext' => fn () => $this->getBranchContext($request),
         ];
@@ -104,3 +112,4 @@ class HandleInertiaRequests extends Middleware
         }
     }
 }
+

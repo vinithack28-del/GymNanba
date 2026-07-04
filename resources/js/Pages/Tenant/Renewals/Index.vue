@@ -51,7 +51,12 @@ const selectedPlan = computed(() => {
 });
 
 const expiryPreview = computed(() => {
-    if (!selectedPlan.value || !renewalForm.start_date) return '—';
+    if (!selectedPlan.value || !renewalForm.start_date) return 'â€”';
+
+    if (Number(selectedPlan.value.session_limit || 0) > 0) {
+        const sessions = Number(selectedPlan.value.session_limit);
+        return `${sessions} ${sessions === 1 ? 'session' : 'sessions'}`;
+    }
 
     const start = new Date(`${renewalForm.start_date}T00:00:00`);
 
@@ -61,12 +66,12 @@ const expiryPreview = computed(() => {
         start.setDate(start.getDate() + Number(selectedPlan.value.duration_value || selectedPlan.value.duration_days || 0));
     }
 
-    return start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return start.toLocaleDateString('en-GB').replaceAll('/', '-');
 });
 
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getDaysRemaining = (expiryDate) => {
@@ -77,7 +82,7 @@ const getDaysRemaining = (expiryDate) => {
 };
 
 const getDaysText = (days) => {
-    if (days === null) return '—';
+    if (days === null) return 'â€”';
     if (days < 0) return `${Math.abs(days)}d overdue`;
     if (days === 0) return 'Today';
     return `${days}d left`;
@@ -92,6 +97,10 @@ const getDaysColor = (days) => {
 };
 
 const getRenewStartDate = (member) => {
+    if (Number(member.session_limit || 0) > 0) {
+        return props.today;
+    }
+
     const days = getDaysRemaining(member.expiry_date);
     if (days === null || days < 0) {
         return props.today;
@@ -103,7 +112,7 @@ const getRenewStartDate = (member) => {
 };
 
 const formatCurrency = (amount) => {
-    return `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `â‚¹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const getPlanTotal = (plan) => {
@@ -116,6 +125,9 @@ const getPlanTotal = (plan) => {
 
     return pricePaise / 100;
 };
+
+const isSessionMember = (member) => Number(member.session_limit || 0) > 0;
+const sessionStatus = (member) => `${Number(member.used_sessions || 0)} / ${Number(member.session_limit || 0)} sessions`;
 
 const applyPlanFilter = () => {
     const query = new URLSearchParams();
@@ -233,10 +245,10 @@ const submitRenewal = () => {
                                 <th class="px-4 py-3">Member ID</th>
                                 <th class="px-4 py-3">Phone</th>
                                 <th class="px-4 py-3">Plan</th>
-                                <th class="px-4 py-3">Expiry</th>
-                                <th class="px-4 py-3">Days Status</th>
+                                <th class="px-4 py-3">Renewal Basis</th>
+                                <th class="px-4 py-3">Status</th>
                                 <th class="px-4 py-3">Balance</th>
-                                <th class="px-4 py-3"></th>
+                                <th class="px-4 py-3 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/10 bg-white/5">
@@ -254,26 +266,31 @@ const submitRenewal = () => {
                                 </td>
                                 <td class="px-4 py-3"><span class="font-mono text-xs text-slate-400">{{ member.member_code }}</span></td>
                                 <td class="px-4 py-3 text-slate-400">{{ member.phone }}</td>
-                                <td class="px-4 py-3">{{ member.plan_name || '—' }}</td>
+                                <td class="px-4 py-3">{{ member.plan_name || 'â€”' }}</td>
                                 <td class="px-4 py-3">
-                                    <span v-if="getDaysRemaining(member.expiry_date) === 0" class="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-0.5 text-xs font-semibold text-orange-400">Today</span>
+                                    <span v-if="isSessionMember(member)" class="rounded-full border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-300">
+                                        {{ sessionStatus(member) }}
+                                    </span>
+                                    <span v-else-if="getDaysRemaining(member.expiry_date) === 0" class="rounded-full border border-orange-400/30 bg-orange-500/10 px-2 py-0.5 text-xs font-semibold text-orange-400">Today</span>
                                     <span v-else>{{ formatDate(member.expiry_date) }}</span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    <span :class="getDaysColor(getDaysRemaining(member.expiry_date))">
+                                    <span v-if="isSessionMember(member)" :class="Number(member.used_sessions || 0) >= Number(member.session_limit || 0) ? 'text-red-400' : 'text-emerald-400'">
+                                        {{ Number(member.used_sessions || 0) >= Number(member.session_limit || 0) ? 'Sessions complete' : 'Sessions left' }}
+                                    </span>
+                                    <span v-else :class="getDaysColor(getDaysRemaining(member.expiry_date))">
                                         {{ getDaysText(getDaysRemaining(member.expiry_date)) }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span v-if="Number(member.balance_paise) < 0" class="font-semibold text-red-400">{{ member.balance_rupees }}</span>
-                                    <span v-else class="text-slate-400">₹0.00</span>
+                                    <span v-else class="text-slate-400">â‚¹0.00</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        <button type="button" @click="openRenewDrawer(member)" class="rounded-lg border border-orange-400/30 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-400 transition hover:bg-orange-500/20">
+                                        <Link :href="`/payments/collect?member_id=${member.id}`" class="rounded-lg border border-orange-400/30 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-400 transition hover:bg-orange-500/20">
                                             Process Renewal
-                                        </button>
-                                        <Link :href="`/members/${member.id}`" class="text-sm text-slate-300 hover:text-orange-400">View</Link>
+                                        </Link>
                                     </div>
                                 </td>
                             </tr>
@@ -332,7 +349,7 @@ const submitRenewal = () => {
                             <p v-if="renewalForm.errors.start_date" class="mt-1 text-xs text-red-400">{{ renewalForm.errors.start_date }}</p>
                         </div>
                         <div>
-                            <label class="mb-1 block text-sm text-slate-400">Expiry Preview</label>
+                            <label class="mb-1 block text-sm text-slate-400">{{ Number(selectedPlan?.session_limit || 0) > 0 ? 'Session Preview' : 'Expiry Preview' }}</label>
                             <div class="rounded-xl border border-dashed border-orange-400/30 bg-orange-500/5 px-3 py-2.5 text-sm text-slate-300">
                                 {{ expiryPreview }}
                             </div>
@@ -378,3 +395,4 @@ const submitRenewal = () => {
         </aside>
     </AppLayout>
 </template>
+

@@ -37,3 +37,4 @@ class ProcessMemberStatuses extends Command
         $this->info('Member status processing complete.');
     }
 }
+

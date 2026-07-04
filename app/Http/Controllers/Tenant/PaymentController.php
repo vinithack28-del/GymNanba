@@ -8,6 +8,7 @@ use App\Services\Tenant\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class PaymentController extends Controller
@@ -19,7 +20,7 @@ class PaymentController extends Controller
         return request()->user()->tenant->id;
     }
 
-    // ── Collect ───────────────────────────────────────────────────────────────
+    // â”€â”€ Collect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function collect(Request $request){
         abort_unless($this->svc->canCollect(), 403);
@@ -31,6 +32,9 @@ class PaymentController extends Controller
             $member = \App\Models\Member::where('tenant_id', $this->tenantId())
                 ->select('id', 'name', 'phone', 'member_code', 'plan_id', 'plan_name', 'balance_paise', 'branch_id')
                 ->find($request->integer('member_id'));
+            if ($member) {
+                $member->setAttribute('pending_due_paise', max(0, (int) -$member->balance_paise));
+            }
             $data['preselectedMember'] = $member;
         }
 
@@ -54,7 +58,7 @@ class PaymentController extends Controller
             'notes'                  => ['nullable', 'string', 'max:500'],
             'is_partial'             => ['nullable', 'boolean'],
             'due_amount'             => ['nullable', 'numeric', 'min:0.01'],
-            'due_date'               => ['nullable', 'date', 'after:today'],
+            'due_date'               => [Rule::requiredIf(fn () => $request->boolean('is_partial')), 'nullable', 'date', 'after_or_equal:today'],
         ]);
 
         $payment = $this->svc->storePayment($request, $this->tenantId());
@@ -63,7 +67,7 @@ class PaymentController extends Controller
             ->with('status', __('payments.flash.collected', ['receipt' => $payment->receipt_number]));
     }
 
-    // ── History ───────────────────────────────────────────────────────────────
+    // â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function history(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
@@ -74,7 +78,7 @@ class PaymentController extends Controller
         return Inertia::render('Tenant/Payments/History', $data);
     }
 
-    // ── Dues ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Dues â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function dues(Request $request): RedirectResponse
     {
@@ -87,7 +91,7 @@ class PaymentController extends Controller
         return redirect()->route('tenant.payments.history', $query);
     }
 
-    // ── Void ──────────────────────────────────────────────────────────────────
+    // â”€â”€ Void â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function void(Request $request, Payment $payment): RedirectResponse
     {
@@ -104,7 +108,7 @@ class PaymentController extends Controller
             ->with('status', __('payments.flash.voided', ['receipt' => $payment->receipt_number]));
     }
 
-    // ── Receipt ───────────────────────────────────────────────────────────────
+    // â”€â”€ Receipt â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function receipt(Payment $payment){
         $data = $this->svc->receiptData($payment, $this->tenantId());
@@ -112,7 +116,7 @@ class PaymentController extends Controller
         return Inertia::render('Tenant/Payments/Receipt', $data);
     }
 
-    // ── Member search (AJAX) ──────────────────────────────────────────────────
+    // â”€â”€ Member search (AJAX) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function memberSearch(Request $request): JsonResponse
     {
@@ -125,3 +129,4 @@ class PaymentController extends Controller
         return response()->json($this->svc->memberSearch($term, $this->tenantId()));
     }
 }
+

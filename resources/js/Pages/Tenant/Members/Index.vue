@@ -1,7 +1,7 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
     members: Object,
@@ -16,14 +16,18 @@ const openMenuId = ref(null);
 const activeMenuMember = ref(null);
 const menuPosition = ref({ top: 0, right: 0 });
 const freezeTarget = ref(null);
-const query = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+const page = usePage();
 
-const currentSearch = query.get('search') || '';
-const currentStatus = query.get('status') || '';
-const currentGender = query.get('gender') || '';
-const currentSortBy = query.get('sort_by') || 'created_at';
-const currentSortDir = query.get('sort_dir') || 'desc';
-const currentPerPage = Number(query.get('per_page') || props.members?.per_page || 25);
+const queryParams = computed(() => new URL(page.url || '/members', 'http://localhost').searchParams);
+const currentSearch = computed(() => queryParams.value.get('search') || '');
+const currentStatus = computed(() => queryParams.value.get('status') || '');
+const currentGender = computed(() => queryParams.value.get('gender') || '');
+const currentSortBy = computed(() => queryParams.value.get('sort_by') || 'created_at');
+const currentSortDir = computed(() => queryParams.value.get('sort_dir') || 'desc');
+const currentPerPage = computed(() => Number(queryParams.value.get('per_page') || props.members?.per_page || 25));
+const filterSearch = ref('');
+const filterStatus = ref('');
+const filterGender = ref('');
 
 const statCards = computed(() => ([
     { label: 'Total Members', value: props.stats?.total ?? 0, filter: '', color: 'text-slate-900' },
@@ -45,7 +49,7 @@ const columns = [
 ];
 
 const buildUrl = (updates = {}) => {
-    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const params = new URLSearchParams(queryParams.value);
 
     Object.entries(updates).forEach(([key, value]) => {
         if (value === '' || value === null || value === undefined) {
@@ -63,9 +67,46 @@ const buildUrl = (updates = {}) => {
     return qs ? `/members?${qs}` : '/members';
 };
 
+const visitMembers = (updates = {}) => {
+    closeMenu();
+    router.get(buildUrl(updates), {}, {
+        preserveScroll: true,
+        preserveState: true,
+        replace: true,
+    });
+};
+
+const applyFilters = () => {
+    visitMembers({
+        search: filterSearch.value.trim() || null,
+        status: filterStatus.value || null,
+        gender: filterGender.value || null,
+        page: 1,
+    });
+};
+
+const clearFilters = () => {
+    filterSearch.value = '';
+    filterStatus.value = '';
+    filterGender.value = '';
+    visitMembers({
+        search: null,
+        status: null,
+        gender: null,
+        page: 1,
+    });
+};
+
+const changePerPage = (perPage) => {
+    visitMembers({
+        per_page: perPage,
+        page: 1,
+    });
+};
+
 const formatDate = (date) => {
-    if (!date) return '—';
-    return new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!date) return 'â€”';
+    return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const getStatusConfig = (status) => {
@@ -187,6 +228,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('click', handleWindowClick);
 });
+
+watch(
+    () => page.url,
+    () => {
+        filterSearch.value = currentSearch.value;
+        filterStatus.value = currentStatus.value;
+        filterGender.value = currentGender.value;
+    },
+    { immediate: true },
+);
 </script>
 
 <template>
@@ -196,8 +247,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-col gap-4 text-slate-900">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.42em] text-slate-700">Gym Workspace</p>
-                    <h1 class="mt-3 text-[28px] font-semibold leading-none text-slate-900">Members</h1>
+                    <h1 class="text-[28px] font-semibold leading-none text-slate-900">Members</h1>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
@@ -264,48 +314,44 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="rounded-[22px] border border-slate-200 bg-white p-3 shadow-sm">
-                <form method="GET" action="/members" class="flex flex-wrap items-center gap-2">
-                    <input v-if="currentSortBy" type="hidden" name="sort_by" :value="currentSortBy">
-                    <input v-if="currentSortDir" type="hidden" name="sort_dir" :value="currentSortDir">
-                    <input v-if="currentPerPage" type="hidden" name="per_page" :value="currentPerPage">
-
+                <form class="flex flex-wrap items-center gap-2" @submit.prevent="applyFilters">
                     <div class="flex min-w-[260px] flex-1 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
                         <svg class="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                             <circle cx="11" cy="11" r="7" />
                             <path d="m21 21-4.35-4.35" />
                         </svg>
                         <input
+                            v-model="filterSearch"
                             type="text"
-                            name="search"
-                            :value="currentSearch"
                             placeholder="Search name, phone, email, ID..."
                             class="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
                         >
                     </div>
 
-                    <select name="status" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none">
+                    <select v-model="filterStatus" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none">
                         <option value="">All statuses</option>
-                        <option value="active" :selected="currentStatus === 'active'">Active</option>
-                        <option value="inactive" :selected="currentStatus === 'inactive'">Inactive</option>
-                        <option value="expired" :selected="currentStatus === 'expired'">Expired</option>
-                        <option value="frozen" :selected="currentStatus === 'frozen'">Frozen</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="expired">Expired</option>
+                        <option value="frozen">Frozen</option>
                     </select>
 
-                    <select name="gender" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none">
+                    <select v-model="filterGender" class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 outline-none">
                         <option value="">All genders</option>
-                        <option value="male" :selected="currentGender === 'male'">Male</option>
-                        <option value="female" :selected="currentGender === 'female'">Female</option>
-                        <option value="other" :selected="currentGender === 'other'">Other</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
                     </select>
 
                     <div class="ml-auto flex items-center gap-2">
-                        <Link
+                        <button
                             v-if="currentSearch || currentStatus || currentGender"
-                            href="/members"
+                            type="button"
+                            @click="clearFilters"
                             class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-slate-300"
                         >
                             Clear filters
-                        </Link>
+                        </button>
                         <button type="submit" class="rounded-2xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500">
                             Apply
                         </button>
@@ -333,11 +379,20 @@ onBeforeUnmount(() => {
                     <p class="text-sm text-slate-500">
                         {{ currentSearch || currentStatus || currentGender ? 'Try adjusting the filters.' : 'Add your first member to get started.' }}
                     </p>
-                    <Link
-                        :href="currentSearch || currentStatus || currentGender ? '/members' : '/members/create'"
+                    <button
+                        v-if="currentSearch || currentStatus || currentGender"
+                        type="button"
+                        @click="clearFilters"
                         class="rounded-2xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500"
                     >
-                        {{ currentSearch || currentStatus || currentGender ? 'Clear all' : 'Add member' }}
+                        Clear all
+                    </button>
+                    <Link
+                        v-else
+                        href="/members/create"
+                        class="rounded-2xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500"
+                    >
+                        Add member
                     </Link>
                 </div>
 
@@ -360,7 +415,7 @@ onBeforeUnmount(() => {
                                         class="inline-flex items-center gap-1.5"
                                     >
                                         <span>{{ column.label }}</span>
-                                        <span class="text-[10px]" :class="currentSortBy === column.key ? 'opacity-100' : 'opacity-25'">▾</span>
+                                        <span class="text-[10px]" :class="currentSortBy === column.key ? 'opacity-100' : 'opacity-25'">â–¾</span>
                                     </Link>
                                     <span v-else>{{ column.label }}</span>
                                 </th>
@@ -382,10 +437,10 @@ onBeforeUnmount(() => {
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ member.phone }}</td>
-                                <td class="px-5 py-4 text-sm text-slate-800">{{ member.plan_name || '—' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-800">{{ member.plan_name || 'â€”' }}</td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ formatDate(member.created_at) }}</td>
                                 <td class="px-5 py-4 text-sm" :class="member.effective_status === 'expired' ? 'text-red-500' : 'text-slate-600'">
-                                    {{ member.expiry_date ? formatDate(member.expiry_date) : '—' }}
+                                    {{ member.expiry_date ? formatDate(member.expiry_date) : 'â€”' }}
                                 </td>
                                 <td class="px-5 py-4">
                                     <button
@@ -419,7 +474,7 @@ onBeforeUnmount(() => {
                                 </td>
                                 <td class="px-5 py-4 text-sm">
                                     <span v-if="member.balance_paise < 0" class="font-semibold text-red-500">{{ member.balance_rupees }}</span>
-                                    <span v-else class="text-slate-500">₹0.00</span>
+                                    <span v-else class="text-slate-500">â‚¹0.00</span>
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="relative inline-flex">
@@ -448,13 +503,14 @@ onBeforeUnmount(() => {
 
                     <div class="flex items-center gap-3">
                         <select
+                            :value="currentPerPage"
                             class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 outline-none"
-                            @change="window.location.href = buildUrl({ per_page: $event.target.value, page: 1 })"
+                            @change="changePerPage($event.target.value)"
                         >
-                            <option :selected="currentPerPage === 10" value="10">10 / page</option>
-                            <option :selected="currentPerPage === 25" value="25">25 / page</option>
-                            <option :selected="currentPerPage === 50" value="50">50 / page</option>
-                            <option :selected="currentPerPage === 100" value="100">100 / page</option>
+                            <option value="10">10 / page</option>
+                            <option value="25">25 / page</option>
+                            <option value="50">50 / page</option>
+                            <option value="100">100 / page</option>
                         </select>
                     </div>
                 </div>
@@ -521,7 +577,7 @@ onBeforeUnmount(() => {
                             <h3 class="text-base font-semibold text-slate-900">Freeze Membership</h3>
                             <p class="mt-1 text-sm text-slate-500">Pause {{ freezeTarget.name }} for a fixed number of days.</p>
                         </div>
-                        <button type="button" @click="closeFreezeModal" class="text-slate-400 transition hover:text-slate-700">✕</button>
+                        <button type="button" @click="closeFreezeModal" class="text-slate-400 transition hover:text-slate-700">âœ•</button>
                     </div>
 
                     <div class="space-y-4 px-6 py-5">
@@ -555,3 +611,4 @@ onBeforeUnmount(() => {
         </div>
     </AppLayout>
 </template>
+

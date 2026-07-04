@@ -37,10 +37,11 @@ Route::get('/', function () {
     return Inertia::render('Welcome');
 });
 
-// ── Public member self-registration ─────────────────────────────────────────
+// â”€â”€ Public member self-registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Route::get('/join/{token}',         [OnlineRegistrationController::class, 'show'])->name('register.show');
 Route::post('/join/{token}',        [OnlineRegistrationController::class, 'submit'])->name('register.submit');
 Route::get('/join/{token}/success', [OnlineRegistrationController::class, 'success'])->name('register.success');
+Route::post('/language', [LocalizationController::class, 'update'])->name('language.update');
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -55,8 +56,6 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
         return redirect()->route('tenant.dashboard');
     })->name('dashboard');
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
-    Route::post('/language', [LocalizationController::class, 'update'])->name('language.update');
-
     Route::prefix('admin')->middleware('super_admin')->name('admin.')->group(function (): void {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/tenants', [TenantController::class, 'index'])->name('tenants.index');
@@ -313,7 +312,6 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
 
         Route::prefix('lockers')->name('lockers.')->group(function (): void {
             Route::get('/', [LockerController::class, 'index'])->name('index');
-            Route::get('/create', [LockerController::class, 'create'])->name('create');
             Route::post('/', [LockerController::class, 'store'])->name('store');
             Route::get('/member-search', [LockerController::class, 'memberSearch'])->name('member-search');
             Route::get('/{locker}', [LockerController::class, 'show'])->name('show');

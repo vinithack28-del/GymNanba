@@ -92,8 +92,31 @@ class Member extends Model
         if ($this->expiry_date && $this->expiry_date->isPast()) {
             return 'expired';
         }
+        if ($this->hasCompletedSessionLimit()) {
+            return 'expired';
+        }
 
         return 'active';
+    }
+
+    public function hasCompletedSessionLimit(): bool
+    {
+        $sessionLimit = (int) ($this->plan?->session_limit ?? 0);
+
+        if ($sessionLimit <= 0) {
+            return false;
+        }
+
+        return $this->usedSessions() >= $sessionLimit;
+    }
+
+    public function usedSessions(): int
+    {
+        return AttendanceLog::query()
+            ->where('tenant_id', $this->tenant_id)
+            ->where('member_id', $this->id)
+            ->when($this->start_date, fn ($q) => $q->whereDate('checked_in_at', '>=', $this->start_date->toDateString()))
+            ->count();
     }
 
     public function isFrozen(): bool
@@ -114,7 +137,7 @@ class Member extends Model
 
     public function getBalanceRupeesAttribute(): string
     {
-        return '₹' . number_format(abs($this->balance_paise) / 100, 2);
+        return 'â‚¹' . number_format(abs($this->balance_paise) / 100, 2);
     }
 
     public function getInitialsAttribute(): string
@@ -152,14 +175,15 @@ class Member extends Model
                 $q->where('status', 'expired')
                     ->orWhere(function ($q2) use ($today): void {
                         $q2->where('status', 'active')->where('expiry_date', '<', $today);
-                    });
+                    })
+                    ->orWhere(fn ($q2) => static::scopeSessionLimitReached($q2));
             });
         }
 
         if ($status === 'active') {
             return $query->where('status', 'active')->where(function ($q) use ($today): void {
                 $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', $today);
-            });
+            })->where(fn ($q) => static::scopeSessionLimitNotReached($q));
         }
 
         return $query->where('status', $status);
@@ -173,4 +197,40 @@ class Member extends Model
 
         return 'MEM-' . str_pad($max + 1, 5, '0', STR_PAD_LEFT);
     }
+
+    private static function scopeSessionLimitReached($query)
+    {
+        return $query->whereHas('plan', fn ($planQuery) => $planQuery
+            ->whereNotNull('session_limit')
+            ->where('session_limit', '>', 0)
+            ->whereRaw('(
+                select count(*)
+                from attendance_logs
+                where attendance_logs.member_id = members.id
+                  and attendance_logs.tenant_id = members.tenant_id
+                  and (members.start_date is null or DATE(attendance_logs.checked_in_at) >= members.start_date)
+            ) >= gym_membership_plans.session_limit')
+        );
+    }
+
+    private static function scopeSessionLimitNotReached($query)
+    {
+        return $query->where(function ($q): void {
+            $q->whereDoesntHave('plan', fn ($planQuery) => $planQuery
+                ->whereNotNull('session_limit')
+                ->where('session_limit', '>', 0)
+            )->orWhereHas('plan', fn ($planQuery) => $planQuery
+                ->whereNotNull('session_limit')
+                ->where('session_limit', '>', 0)
+                ->whereRaw('(
+                    select count(*)
+                    from attendance_logs
+                    where attendance_logs.member_id = members.id
+                      and attendance_logs.tenant_id = members.tenant_id
+                      and (members.start_date is null or DATE(attendance_logs.checked_in_at) >= members.start_date)
+                ) < gym_membership_plans.session_limit')
+            );
+        });
+    }
 }
+

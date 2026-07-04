@@ -105,7 +105,7 @@ class BranchController extends Controller
 
         $msg = "Branch \"{$branch->name}\" created successfully.";
         if ($credentials) {
-            $msg .= " Branch admin login — Email: {$credentials['email']} | Password: {$credentials['password']}";
+            $msg .= " Branch admin login â€” Email: {$credentials['email']} | Password: {$credentials['password']}";
         } else {
             $msg .= " No branch email provided, so no admin login was created.";
         }
@@ -185,7 +185,7 @@ class BranchController extends Controller
         $activeCount = Branch::forTenant($tenant->id)->active()->count();
 
         if ($planLimit > 0 && $activeCount >= $planLimit) {
-            return back()->withErrors(['limit' => "Cannot reactivate — branch limit of {$planLimit} reached on your current plan."]);
+            return back()->withErrors(['limit' => "Cannot reactivate â€” branch limit of {$planLimit} reached on your current plan."]);
         }
 
         $branch->update(['status' => 'active']);
@@ -283,3 +283,4 @@ class BranchController extends Controller
         return ['email' => $branch->email, 'password' => $password];
     }
 }
+

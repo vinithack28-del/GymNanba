@@ -31,9 +31,9 @@
             </div>
             <div class="body">
                 <p>Hi there,</p>
-                <p>You have been invited to join <strong>{{ $gymName }}</strong>. Click the button below to complete your registration — it only takes a minute.</p>
+                <p>You have been invited to join <strong>{{ $gymName }}</strong>. Click the button below to complete your registration â€” it only takes a minute.</p>
                 <div class="btn-wrap">
-                    <a href="{{ $registrationUrl }}" class="btn">Complete Registration →</a>
+                    <a href="{{ $registrationUrl }}" class="btn">Complete Registration â†’</a>
                 </div>
                 <p>If the button doesn't work, copy and paste this link into your browser:</p>
                 <div class="url-box">{{ $registrationUrl }}</div>

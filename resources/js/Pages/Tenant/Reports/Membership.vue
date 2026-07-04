@@ -20,7 +20,7 @@ const props = defineProps({
                     <h1 class="text-xl font-semibold">Membership Report</h1>
                     <p class="mt-0.5 text-sm text-slate-400">Membership growth and demographics.</p>
                 </div>
-                <Link href="/tenant/reports" class="text-sm text-slate-400">← Reports</Link>
+                <Link href="/tenant/reports" class="text-sm text-slate-400">â† Reports</Link>
             </div>
 
             <div class="grid gap-4 grid-cols-2 lg:grid-cols-4">

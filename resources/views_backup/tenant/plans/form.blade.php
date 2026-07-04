@@ -12,7 +12,6 @@
 
 <x-layouts.admin
     title="{{ $pageTitle }}"
-    eyebrow="Memberships / Plans"
     heading="{{ $pageTitle }}"
     subheading="{{ $pageSub }}"
 >

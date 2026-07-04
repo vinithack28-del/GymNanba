@@ -15,7 +15,7 @@ class ClassController extends Controller
 {
     public function __construct(private readonly ClassService $service) {}
 
-    // ── Timetable ─────────────────────────────────────────────────────────────
+    // â”€â”€ Timetable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function timetable(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
@@ -24,7 +24,7 @@ class ClassController extends Controller
         return Inertia::render('Tenant/Classes/Timetable', $this->service->timetable($request->user(), $request));
     }
 
-    // ── Create / Edit ─────────────────────────────────────────────────────────
+    // â”€â”€ Create / Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function create(Request $request){
         $data = $this->service->formData($request->user());
@@ -94,7 +94,7 @@ class ClassController extends Controller
                          ->with('status', __('classes.flash.updated'));
     }
 
-    // ── Cancel ────────────────────────────────────────────────────────────────
+    // â”€â”€ Cancel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function cancel(Request $request, GymClass $class): RedirectResponse
     {
@@ -108,13 +108,13 @@ class ClassController extends Controller
         return back()->with('status', __('classes.flash.cancelled'));
     }
 
-    // ── Show class ────────────────────────────────────────────────────────────
+    // â”€â”€ Show class â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function show(Request $request, GymClass $class){
         return Inertia::render('Tenant/Classes/Show', $this->service->showClass($request->user(), $class));
     }
 
-    // ── Booking ───────────────────────────────────────────────────────────────
+    // â”€â”€ Booking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function book(Request $request){
         return Inertia::render('Tenant/Classes/Book', $this->service->bookingPage($request->user(), $request));
@@ -142,7 +142,7 @@ class ClassController extends Controller
         return back()->with('status', __('classes.flash.booking_cancelled'));
     }
 
-    // ── Attendance ────────────────────────────────────────────────────────────
+    // â”€â”€ Attendance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function attendance(Request $request, GymClass $class){
         $data = $this->service->showClass($request->user(), $class);
@@ -164,13 +164,13 @@ class ClassController extends Controller
                          ->with('status', __('classes.flash.attendance_saved'));
     }
 
-    // ── Trainers ──────────────────────────────────────────────────────────────
+    // â”€â”€ Trainers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function trainers(Request $request){
         return Inertia::render('Tenant/Classes/Trainers', $this->service->trainers($request->user(), $request));
     }
 
-    // ── AJAX member search ────────────────────────────────────────────────────
+    // â”€â”€ AJAX member search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function memberSearch(Request $request): JsonResponse
     {
@@ -179,3 +179,4 @@ class ClassController extends Controller
         return response()->json($this->service->memberSearch($request->user(), $q));
     }
 }
+

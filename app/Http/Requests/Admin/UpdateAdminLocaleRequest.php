@@ -18,3 +18,4 @@ class UpdateAdminLocaleRequest extends FormRequest
         ];
     }
 }
+

@@ -39,12 +39,11 @@ const submit = () => {
         <div class="flex flex-col gap-5">
             <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                     <h1 class="mt-2 text-3xl font-semibold">{{ pageTitle }}</h1>
                     <p class="mt-1 text-slate-300">{{ pageSub }}</p>
                 </div>
                 <Link href="/tenant/pos/products" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    <span>←</span> Back to Products
+                    <span>â†</span> Back to Products
                 </Link>
             </div>
 
@@ -61,12 +60,12 @@ const submit = () => {
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-300">Category <span class="text-red-400">*</span></label>
                         <select v-model="form.category" class="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
-                            <option value="">Select category…</option>
+                            <option value="">Select categoryâ€¦</option>
                             <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
                         </select>
                     </div>
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-300">Price (₹) <span class="text-red-400">*</span></label>
+                        <label class="mb-1 block text-sm font-medium text-slate-300">Price (â‚¹) <span class="text-red-400">*</span></label>
                         <input v-model="form.price_paise" type="number" step="0.01" min="0" placeholder="0.00" class="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>
@@ -96,7 +95,7 @@ const submit = () => {
                     </div>
                     <div class="md:col-span-2">
                         <label class="mb-1 block text-sm font-medium text-slate-300">Description</label>
-                        <textarea v-model="form.description" rows="3" placeholder="Product description…" class="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400"></textarea>
+                        <textarea v-model="form.description" rows="3" placeholder="Product descriptionâ€¦" class="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400"></textarea>
                     </div>
                 </div>
 
@@ -112,3 +111,4 @@ const submit = () => {
         </div>
     </AppLayout>
 </template>
+

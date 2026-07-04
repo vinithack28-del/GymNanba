@@ -36,3 +36,4 @@ class PasswordChangeController extends Controller
         return redirect()->route('dashboard')->with('status', 'Password updated successfully.');
     }
 }
+

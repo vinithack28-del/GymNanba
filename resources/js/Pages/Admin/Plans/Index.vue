@@ -56,6 +56,9 @@ const cancelEdit = () => {
     form.clearErrors();
 };
 
+const fieldError = (field) => form.errors?.[field] || '';
+const fieldClass = (field, base) => [base, fieldError(field) ? 'field-invalid' : ''];
+
 const submit = () => {
     if (editingPlan.value) {
         form.put(`/admin/plans/${editingPlan.value.id}`, {
@@ -110,28 +113,27 @@ const formatCurrency = (paise) => {
                         Cancel
                     </button>
                 </div>
-                <div v-if="form.errors && Object.keys(form.errors).length > 0" class="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    <div v-for="(error, field) in form.errors" :key="field">{{ error }}</div>
-                </div>
                 <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
                     <input type="checkbox" v-model="isTrial" @change="toggleTrialMode($event.target.checked)" class="h-4 w-4 rounded border-white/10 bg-slate-950/70 accent-orange-500">
                     <div>
                         <span class="text-sm font-semibold text-slate-200">Trial Plan</span>
-                        <p class="text-xs text-slate-400 mt-0.5">Trial access only — no billing. Max 14 days.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Trial access only â€” no billing. Max 14 days.</p>
                     </div>
                     <span v-if="isTrial" class="ml-auto rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Trial</span>
                 </label>
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-200">Plan Name</label>
-                    <input v-model="form.name" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                    <input v-model="form.name" :class="fieldClass('name', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                    <p v-if="fieldError('name')" class="field-error">{{ fieldError('name') }}</p>
                 </div>
 
                 <div v-if="isTrial" class="space-y-4">
                     <div>
                         <label class="mb-2 block text-sm font-medium text-slate-200">Trial Duration (days)</label>
-                        <input type="number" v-model="form.trial_days" placeholder="Max 14 days" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
-                        <p class="mt-1 text-xs text-slate-400">Tenant loses access after these many days. Cannot exceed 14.</p>
+                        <input type="number" v-model="form.trial_days" placeholder="Max 14 days" :class="fieldClass('trial_days', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                        <p v-if="fieldError('trial_days')" class="field-error">{{ fieldError('trial_days') }}</p>
+                        <p class="mt-1 text-xs font-semibold text-red-500">Tenant loses access after these many days. Cannot exceed 14.</p>
                     </div>
                 </div>
 
@@ -139,27 +141,32 @@ const formatCurrency = (paise) => {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-200">Billing Cycle</label>
-                            <select v-model="form.billing_cycle" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                            <select v-model="form.billing_cycle" :class="fieldClass('billing_cycle', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
                                 <option value="Monthly">Monthly</option>
                                 <option value="Quarterly">Quarterly</option>
                                 <option value="Annual">Annual</option>
                             </select>
+                            <p v-if="fieldError('billing_cycle')" class="field-error">{{ fieldError('billing_cycle') }}</p>
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-200">Price</label>
-                            <input type="number" step="0.01" v-model="form.price_inr" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                            <input type="number" step="0.01" v-model="form.price_inr" :class="fieldClass('price_inr', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                            <p v-if="fieldError('price_inr')" class="field-error">{{ fieldError('price_inr') }}</p>
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-200">Max Members</label>
-                            <input type="number" v-model="form.max_members" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                            <input type="number" v-model="form.max_members" :class="fieldClass('max_members', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                            <p v-if="fieldError('max_members')" class="field-error">{{ fieldError('max_members') }}</p>
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-200">Max Branches</label>
-                            <input type="number" v-model="form.max_branches" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                            <input type="number" v-model="form.max_branches" :class="fieldClass('max_branches', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                            <p v-if="fieldError('max_branches')" class="field-error">{{ fieldError('max_branches') }}</p>
                         </div>
                         <div>
                             <label class="mb-2 block text-sm font-medium text-slate-200">Max Staff</label>
-                            <input type="number" v-model="form.max_staff_accounts" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                            <input type="number" v-model="form.max_staff_accounts" :class="fieldClass('max_staff_accounts', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
+                            <p v-if="fieldError('max_staff_accounts')" class="field-error">{{ fieldError('max_staff_accounts') }}</p>
                         </div>
                     </div>
                     <div>
@@ -179,14 +186,16 @@ const formatCurrency = (paise) => {
 
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-200">Description</label>
-                    <textarea v-model="form.description" rows="2" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none"></textarea>
+                    <textarea v-model="form.description" rows="2" :class="fieldClass('description', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')"></textarea>
+                    <p v-if="fieldError('description')" class="field-error">{{ fieldError('description') }}</p>
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-200">Status</label>
-                    <select v-model="form.status" class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none">
+                    <select v-model="form.status" :class="fieldClass('status', 'w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none')">
                         <option value="active">Active</option>
                         <option value="archived">Archived</option>
                     </select>
+                    <p v-if="fieldError('status')" class="field-error">{{ fieldError('status') }}</p>
                 </div>
 
                 <div class="flex gap-3">
@@ -231,7 +240,7 @@ const formatCurrency = (paise) => {
                                 </td>
                                 <td class="px-4 py-4 text-xs text-slate-300">
                                     <template v-if="plan.is_trial">
-                                        <span class="text-slate-400">—</span>
+                                        <span class="text-slate-400">â€”</span>
                                     </template>
                                     <template v-else>
                                         Members: {{ plan.max_members || 'Unlimited' }}<br>
@@ -270,7 +279,7 @@ const formatCurrency = (paise) => {
                     </div>
                     <div class="flex-1">
                         <h3 class="text-xl font-bold" :class="theme === 'dark' ? 'text-white' : 'text-slate-900'">Delete Plan</h3>
-                        <p class="mt-2 text-sm" :class="theme === 'dark' ? 'text-slate-400' : 'text-slate-600'">
+                        <p class="mt-2 text-sm font-semibold text-red-500">
                             Are you sure you want to delete <span class="font-semibold" :class="theme === 'dark' ? 'text-white' : 'text-slate-900'">"{{ planToDelete?.name }}"</span>? This action cannot be undone.
                         </p>
                     </div>
@@ -295,3 +304,4 @@ const formatCurrency = (paise) => {
         </div>
     </AppLayout>
 </template>
+

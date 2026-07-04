@@ -53,3 +53,4 @@ class LockerAssignment extends Model
         return $query->whereNull('released_at');
     }
 }
+

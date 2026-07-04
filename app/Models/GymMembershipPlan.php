@@ -19,6 +19,7 @@ class GymMembershipPlan extends Model
         'duration_type',
         'duration_value',
         'duration_days',
+        'session_limit',
         'price_paise',
         'gst_applicable',
         'gst_rate',
@@ -39,10 +40,11 @@ class GymMembershipPlan extends Model
             'inclusions'     => 'array',
             'tags'           => 'array',
             'gst_rate'       => 'float',
+            'session_limit'  => 'integer',
         ];
     }
 
-    // ── Relationships ────────────────────────────────────────────────────────
+    // â”€â”€ Relationships â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function tenant(): BelongsTo
     {
@@ -59,7 +61,7 @@ class GymMembershipPlan extends Model
         return $this->hasMany(Member::class, 'plan_id');
     }
 
-    // ── Accessors ────────────────────────────────────────────────────────────
+    // â”€â”€ Accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function getPriceRupeesAttribute(): float
     {
@@ -102,6 +104,22 @@ class GymMembershipPlan extends Model
         return $val . ' ' . ($val === 1 ? $type : $type . 's');
     }
 
+    public function isSessionBased(): bool
+    {
+        return (int) ($this->session_limit ?? 0) > 0;
+    }
+
+    public function getPlanValidityLabelAttribute(): string
+    {
+        if ($this->isSessionBased()) {
+            $sessions = (int) $this->session_limit;
+
+            return $sessions . ' ' . ($sessions === 1 ? 'session' : 'sessions');
+        }
+
+        return $this->duration_label;
+    }
+
     public function getActiveMemberCountAttribute(): int
     {
         return $this->members()
@@ -113,7 +131,7 @@ class GymMembershipPlan extends Model
             ->count();
     }
 
-    // ── Scopes ───────────────────────────────────────────────────────────────
+    // â”€â”€ Scopes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function scopeForTenant($query, int $tenantId)
     {
@@ -130,10 +148,14 @@ class GymMembershipPlan extends Model
         return $query->whereIn('status', ['active', 'inactive']);
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    public function computeExpiryDate(string $startDate): string
+    public function computeExpiryDate(string $startDate): ?string
     {
+        if ($this->isSessionBased()) {
+            return null;
+        }
+
         $date = Carbon::parse($startDate);
         return $this->duration_type === 'months'
             ? $date->addMonths((int) $this->duration_value)->toDateString()
@@ -147,3 +169,4 @@ class GymMembershipPlan extends Model
             : $this->duration_value;
     }
 }
+

@@ -14,8 +14,8 @@ const props = defineProps({
 const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(2);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 </script>
 
@@ -25,7 +25,6 @@ const formatCurrency = (paise) => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Products</h1>
                 <p class="mt-1 text-slate-300">Manage merchandise, supplements, and consumables available at the counter.</p>
             </div>
@@ -70,7 +69,7 @@ const formatCurrency = (paise) => {
             </div>
 
             <div v-if="productRows.length === 0" class="flex min-h-24 flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-6 py-20 text-center">
-                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">🛒</div>
+                <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-500/10 text-2xl">ðŸ›’</div>
                 <p class="text-base font-bold">No products found</p>
                 <p class="text-sm text-slate-400">Get started by adding your first product.</p>
                 <Link v-if="canManageProducts" href="/tenant/pos/products/create" class="mt-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Product</Link>
@@ -99,3 +98,4 @@ const formatCurrency = (paise) => {
         </div>
     </AppLayout>
 </template>
+

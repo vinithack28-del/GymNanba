@@ -32,7 +32,7 @@ class GymClass extends Model
         ];
     }
 
-    // ── Relationships ─────────────────────────────────────────────────────────
+    // â”€â”€ Relationships â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function tenant(): BelongsTo
     {
@@ -64,7 +64,7 @@ class GymClass extends Model
         return $this->hasMany(ClassBooking::class, 'class_id');
     }
 
-    // ── Computed accessors ────────────────────────────────────────────────────
+    // â”€â”€ Computed accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function getBookingCountAttribute(): int
     {
@@ -99,7 +99,7 @@ class GymClass extends Model
         return $start->hour * 60 + $start->minute;
     }
 
-    // ── Scopes ────────────────────────────────────────────────────────────────
+    // â”€â”€ Scopes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function scopeForTenant($query, int $tenantId)
     {
@@ -129,10 +129,11 @@ class GymClass extends Model
         return $query->where('visible', true);
     }
 
-    // ── Series helpers ────────────────────────────────────────────────────────
+    // â”€â”€ Series helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function seriesRootId(): ?int
     {
         return $this->parent_id ?? ($this->seriesChildren()->exists() ? $this->id : null);
     }
 }
+

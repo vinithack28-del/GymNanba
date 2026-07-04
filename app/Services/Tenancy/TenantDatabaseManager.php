@@ -80,3 +80,4 @@ class TenantDatabaseManager
         return $databaseName;
     }
 }
+

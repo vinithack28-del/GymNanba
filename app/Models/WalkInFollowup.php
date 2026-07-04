@@ -46,3 +46,4 @@ class WalkInFollowup extends Model
         return $this->belongsTo(User::class, 'logged_by');
     }
 }
+

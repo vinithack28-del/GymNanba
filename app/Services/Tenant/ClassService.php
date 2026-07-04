@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 
 class ClassService
 {
-    // ── Timetable ─────────────────────────────────────────────────────────────
+    // â”€â”€ Timetable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function timetable(object $user, Request $request): array
     {
@@ -38,10 +38,10 @@ class ClassService
 
         $classes = $query->get();
 
-        // Group by ISO day of week (1=Mon … 7=Sun)
+        // Group by ISO day of week (1=Mon â€¦ 7=Sun)
         $byDay = collect(range(1, 7))->mapWithKeys(fn ($d) => [$d => collect()]);
         foreach ($classes as $class) {
-            $dow = $class->class_date->isoWeekday(); // 1–7
+            $dow = $class->class_date->isoWeekday(); // 1â€“7
             $byDay[$dow]->push($class);
         }
 
@@ -58,7 +58,7 @@ class ClassService
         ];
     }
 
-    // ── Create / Update ───────────────────────────────────────────────────────
+    // â”€â”€ Create / Update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function createClasses(object $user, array $validated): array
     {
@@ -133,7 +133,7 @@ class ClassService
         return $classes->count();
     }
 
-    // ── Show class ────────────────────────────────────────────────────────────
+    // â”€â”€ Show class â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function showClass(object $user, GymClass $class): array
     {
@@ -152,7 +152,7 @@ class ClassService
         ];
     }
 
-    // ── Booking ───────────────────────────────────────────────────────────────
+    // â”€â”€ Booking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function book(object $user, GymClass $class, int $memberId): ClassBooking
     {
@@ -206,7 +206,7 @@ class ClassService
         }
     }
 
-    // ── Attendance marking ────────────────────────────────────────────────────
+    // â”€â”€ Attendance marking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function markAttendance(object $user, GymClass $class, array $attendances): void
     {
@@ -225,7 +225,7 @@ class ClassService
         }
     }
 
-    // ── Booking page ──────────────────────────────────────────────────────────
+    // â”€â”€ Booking page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function bookingPage(object $user, Request $request): array
     {
@@ -268,7 +268,7 @@ class ClassService
             ->get(['id', 'name', 'phone', 'member_code', 'plan_name', 'status']);
     }
 
-    // ── Trainers ──────────────────────────────────────────────────────────────
+    // â”€â”€ Trainers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function trainers(object $user, Request $request): array
     {
@@ -306,7 +306,7 @@ class ClassService
         ];
     }
 
-    // ── Form data ─────────────────────────────────────────────────────────────
+    // â”€â”€ Form data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function formData(object $user, ?GymClass $class = null): array
     {
@@ -318,7 +318,7 @@ class ClassService
         ];
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function buildDates(array $validated): array
     {
@@ -367,7 +367,7 @@ class ClassService
                 );
         }
 
-        // 'this' — single occurrence
+        // 'this' â€” single occurrence
         return GymClass::query()->where('id', $class->id);
     }
 
@@ -398,3 +398,4 @@ class ClassService
         return filled($branchId) ? (int) $branchId : null;
     }
 }
+

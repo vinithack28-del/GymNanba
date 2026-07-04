@@ -82,3 +82,4 @@ class WalkIn extends Model
         return $query->where('purpose', 'inquiry');
     }
 }
+

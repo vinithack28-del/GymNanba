@@ -36,3 +36,4 @@ class PosSaleItem extends Model
         return $this->belongsTo(PosProduct::class, 'product_id');
     }
 }
+

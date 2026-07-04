@@ -20,7 +20,7 @@ class MemberRegistration extends Model
         ];
     }
 
-    // ── Relationships ────────────────────────────────────────────────────────
+    // â”€â”€ Relationships â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function tenant(): BelongsTo
     {
@@ -37,7 +37,7 @@ class MemberRegistration extends Model
         return $this->belongsTo(User::class, 'confirmed_by');
     }
 
-    // ── Scopes ───────────────────────────────────────────────────────────────
+    // â”€â”€ Scopes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function scopeForTenant($query, int $tenantId)
     {
@@ -49,3 +49,4 @@ class MemberRegistration extends Model
         return $query->where('status', 'pending');
     }
 }
+

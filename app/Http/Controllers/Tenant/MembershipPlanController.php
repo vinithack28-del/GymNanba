@@ -176,7 +176,7 @@ class MembershipPlanController extends Controller
 
         if ($activeCount > 0 && !$request->boolean('confirm')) {
             return back()->withErrors([
-                'archive' => "Cannot archive — {$activeCount} member(s) are currently on this plan. Archive anyway to stop new enrolments (existing members are unaffected).",
+                'archive' => "Cannot archive â€” {$activeCount} member(s) are currently on this plan. Archive anyway to stop new enrolments (existing members are unaffected).",
                 'archive_plan_id' => $plan->id,
             ]);
         }
@@ -187,10 +187,11 @@ class MembershipPlanController extends Controller
             ->with('status', "Plan \"{$plan->name}\" archived. Existing members are unaffected.");
     }
 
-    // ── Private helpers ──────────────────────────────────────────────────────
+    // â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function validatePlan(Request $request, int $tenantId, ?int $excludeId = null): array
     {
+        $validityMode = $request->input('validity_mode', $request->filled('session_limit') ? 'sessions' : 'duration');
         $durationType = $request->input('duration_type', 'days');
         $maxDuration  = $durationType === 'months' ? 24 : 730;
         $name         = $request->input('name', '');
@@ -206,8 +207,10 @@ class MembershipPlanController extends Controller
                     ->ignore($excludeId),
             ],
             'description'    => 'nullable|string|max:500',
-            'duration_type'  => 'required|in:days,months',
-            'duration_value' => "required|integer|min:1|max:{$maxDuration}",
+            'validity_mode'  => 'nullable|in:duration,sessions',
+            'duration_type'  => [Rule::requiredIf($validityMode !== 'sessions'), 'nullable', 'in:days,months'],
+            'duration_value' => [Rule::requiredIf($validityMode !== 'sessions'), 'nullable', 'integer', 'min:1', "max:{$maxDuration}"],
+            'session_limit'  => [Rule::requiredIf($validityMode === 'sessions'), 'nullable', 'integer', 'min:1', 'max:10000'],
             'price_paise'    => 'required|integer|min:0|max:99999900',
             'gst_applicable' => 'boolean',
             'gst_rate'       => [Rule::requiredIf($request->boolean('gst_applicable')), 'nullable', 'numeric', 'min:0', 'max:100'],
@@ -228,6 +231,10 @@ class MembershipPlanController extends Controller
         $validated['max_freeze_days'] = $validated['allow_freeze']
             ? (int) ($validated['max_freeze_days'] ?? 30)
             : 0;
+        $validated['duration_type'] = $validityMode === 'sessions' ? 'days' : ($validated['duration_type'] ?? 'days');
+        $validated['duration_value'] = $validityMode === 'sessions' ? 1 : (int) ($validated['duration_value'] ?? 1);
+        $validated['session_limit'] = $validityMode === 'sessions' ? (int) $validated['session_limit'] : null;
+        unset($validated['validity_mode']);
 
         return $validated;
     }
@@ -273,3 +280,4 @@ class MembershipPlanController extends Controller
         return collect();
     }
 }
+

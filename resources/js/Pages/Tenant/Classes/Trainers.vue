@@ -15,7 +15,6 @@ const props = defineProps({
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Trainers</h1>
                 <p class="mt-1 text-slate-300">Manage your gym's class trainers and instructors.</p>
             </div>
@@ -32,7 +31,7 @@ const props = defineProps({
             </div>
 
             <div v-if="!trainers || trainers.length === 0" class="flex flex-col items-center gap-4 rounded-[2rem] border border-white/10 bg-white/5 py-20 text-center">
-                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">👨‍🏫</div>
+                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">ðŸ‘¨â€ðŸ«</div>
                 <p class="text-lg font-bold">No trainers found</p>
                 <p class="text-sm text-slate-400 max-w-xs">Add trainers to start managing your gym classes.</p>
             </div>
@@ -59,12 +58,12 @@ const props = defineProps({
                                         </span>
                                         <div>
                                             <p class="font-semibold">{{ trainer.name }}</p>
-                                            <p class="text-xs text-slate-400">{{ trainer.branch?.name || '—' }}</p>
+                                            <p class="text-xs text-slate-400">{{ trainer.branch?.name || 'â€”' }}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.specialisation || '—' }}</td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.phone || '—' }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.specialisation || 'â€”' }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.phone || 'â€”' }}</td>
                                 <td class="whitespace-nowrap px-4 py-3">{{ trainer.classes_count || 0 }}</td>
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="trainer.is_active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-300'">
@@ -82,3 +81,4 @@ const props = defineProps({
         </div>
     </AppLayout>
 </template>
+

@@ -11,6 +11,8 @@ const form = useForm({
     password: '',
     password_confirmation: '',
 });
+
+const fieldError = (field) => props.errors?.[field] || form.errors?.[field] || '';
 </script>
 
 <template>
@@ -24,37 +26,36 @@ const form = useForm({
                     This account was created with a temporary password. Set a new password before continuing.
                 </p>
 
-                <div v-if="errors && Object.keys(errors).length > 0" class="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                    {{ Object.values(errors)[0] }}
-                </div>
-
                 <form @submit.prevent="form.post(route('password.change.update'))" class="mt-8 space-y-5">
                     <div>
                         <label class="mb-2 block text-sm font-medium">Current password</label>
                         <input
                             v-model="form.current_password"
                             type="password"
-                            class="w-full rounded-2xl border px-4 py-3 outline-none"
+                            :class="['w-full rounded-2xl border px-4 py-3 outline-none', fieldError('current_password') ? 'field-invalid' : '']"
                             required
                         >
+                        <p v-if="fieldError('current_password')" class="field-error">{{ fieldError('current_password') }}</p>
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-medium">New password</label>
                         <input
                             v-model="form.password"
                             type="password"
-                            class="w-full rounded-2xl border px-4 py-3 outline-none"
+                            :class="['w-full rounded-2xl border px-4 py-3 outline-none', fieldError('password') ? 'field-invalid' : '']"
                             required
                         >
+                        <p v-if="fieldError('password')" class="field-error">{{ fieldError('password') }}</p>
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-medium">Confirm new password</label>
                         <input
                             v-model="form.password_confirmation"
                             type="password"
-                            class="w-full rounded-2xl border px-4 py-3 outline-none"
+                            :class="['w-full rounded-2xl border px-4 py-3 outline-none', fieldError('password_confirmation') ? 'field-invalid' : '']"
                             required
                         >
+                        <p v-if="fieldError('password_confirmation')" class="field-error">{{ fieldError('password_confirmation') }}</p>
                     </div>
                     <button
                         type="submit"
@@ -68,3 +69,4 @@ const form = useForm({
         </div>
     </AppLayout>
 </template>
+

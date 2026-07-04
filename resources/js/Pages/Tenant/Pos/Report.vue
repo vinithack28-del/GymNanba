@@ -12,8 +12,8 @@ const props = defineProps({
 const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return '₹0';
-    return '₹' + (paise / 100).toFixed(2);
+    if (!paise) return 'â‚¹0';
+    return 'â‚¹' + (paise / 100).toFixed(2);
 };
 </script>
 
@@ -23,7 +23,6 @@ const formatCurrency = (paise) => {
         
         <div class="flex flex-col gap-5">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-[0.4em] text-emerald-300">Gym Workspace</p>
                 <h1 class="mt-2 text-3xl font-semibold">Stock Report</h1>
                 <p class="mt-1 text-slate-300">Track inventory levels, restock items, and log adjustments with a full audit trail.</p>
             </div>
@@ -65,7 +64,7 @@ const formatCurrency = (paise) => {
                         <tbody class="divide-y divide-white/10 bg-white/5">
                             <tr v-for="product in productRows" :key="product.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-semibold">{{ product.name }}</td>
-                                <td class="px-4 py-3 text-slate-400">{{ product.sku || '—' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ product.sku || 'â€”' }}</td>
                                 <td class="px-4 py-3">{{ product.category }}</td>
                                 <td class="px-4 py-3 text-right">{{ product.stock_quantity }}</td>
                                 <td class="px-4 py-3 text-right">{{ product.low_stock_threshold }}</td>
@@ -83,3 +82,4 @@ const formatCurrency = (paise) => {
         </div>
     </AppLayout>
 </template>
+

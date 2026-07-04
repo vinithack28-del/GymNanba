@@ -17,7 +17,7 @@ class AttendanceController extends Controller
 {
     public function __construct(private readonly AttendanceService $service) {}
 
-    // ── Check-ins ─────────────────────────────────────────────────────────────
+    // â”€â”€ Check-ins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function checkins(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
@@ -99,7 +99,7 @@ class AttendanceController extends Controller
         ]);
     }
 
-    // ── Walk-ins ─────────────────────────────────────────────────────────────
+    // â”€â”€ Walk-ins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function walkins(Request $request){
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
@@ -155,9 +155,9 @@ class AttendanceController extends Controller
             'id'                 => $f->id,
             'outcome'            => $f->outcome,
             'notes'              => $f->notes,
-            'next_followup_date' => $f->next_followup_date?->format('d M Y'),
+            'next_followup_date' => $f->next_followup_date?->format('d-m-Y'),
             'logged_by'          => $f->loggedByUser?->name ?? 'Staff',
-            'created_at'         => $f->created_at->format('d M Y, H:i'),
+            'created_at'         => $f->created_at->format('d-m-Y, H:i'),
         ]);
 
         return response()->json([
@@ -169,3 +169,4 @@ class AttendanceController extends Controller
         ]);
     }
 }
+

@@ -56,13 +56,14 @@ const form = useForm({
     branch_id: props.member?.branch_id || props.prefill?.branch_id || props.selectedBranchId || '',
     plan_id: props.member?.plan_id || '',
     start_date: normalizeDateInput(props.member?.start_date) || today,
-    notes: props.member?.notes || '',
+    notes: props.member?.notes || props.prefill?.notes || '',
     status: props.member?.status || 'active',
     freeze_days: props.member?.frozen_until ? Math.max(Math.ceil((new Date(props.member.frozen_until) - new Date()) / 86400000), 1) : '',
     splits: [createSplit()],
     is_partial: false,
     due_amount: '',
     due_date: '',
+    walkin_id: props.prefill?.id || '',
 });
 
 const paymentMethods = [
@@ -125,11 +126,21 @@ const freezePlanError = computed(() => {
     return `The plan "${selectedPlan.value.name}" does not allow freeze.`;
 });
 
+const fieldError = (field) => form.errors?.[field] || '';
+const splitError = (index, field) => form.errors?.[`splits.${index}.${field}`] || '';
+const fieldClass = (field, base) => [base, fieldError(field) ? 'field-invalid' : ''];
+const splitFieldClass = (index, field, base) => [base, splitError(index, field) ? 'field-invalid' : ''];
+
 const expiryPreview = computed(() => {
     if (!selectedPlan.value || !form.start_date) {
         return editing && props.member?.expiry_date
             ? `Current: ${formatDate(props.member.expiry_date)}`
             : 'Select a plan and start date';
+    }
+
+    if (Number(selectedPlan.value.session_limit || 0) > 0) {
+        const sessions = Number(selectedPlan.value.session_limit);
+        return `${sessions} ${sessions === 1 ? 'session' : 'sessions'} included`;
     }
 
     const baseDate = new Date(form.start_date);
@@ -163,11 +174,7 @@ function formatDate(value) {
         return '';
     }
 
-    return date.toLocaleDateString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
+    return date.toLocaleDateString('en-GB').replaceAll('/', '-');
 }
 
 function addSplit() {
@@ -201,12 +208,11 @@ function submit() {
         <div class="flex flex-col gap-4 text-slate-900">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.42em] text-slate-700">Members</p>
-                    <h1 class="mt-3 text-[28px] font-semibold leading-none tracking-tight text-slate-900">{{ pageTitle }}</h1>
+                    <h1 class="text-[28px] font-semibold leading-none tracking-tight text-slate-900">{{ pageTitle }}</h1>
                     <p class="mt-2 text-sm text-slate-600">{{ pageSub }}</p>
                 </div>
                 <Link href="/members" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-                    <span>←</span>
+                    <span>â†</span>
                     <span>Back to members</span>
                 </Link>
             </div>
@@ -219,10 +225,6 @@ function submit() {
                 </p>
             </div>
 
-            <div v-if="Object.keys(form.errors || {}).length > 0" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {{ Object.values(form.errors)[0] }}
-            </div>
-
             <form @submit.prevent="submit" class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <div class="flex flex-col gap-5">
                     <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
@@ -231,17 +233,20 @@ function submit() {
                         <div class="mt-5 space-y-4">
                             <div>
                                 <label class="mb-2 block text-[13px] font-semibold text-slate-700">Full name <span class="text-red-500">*</span></label>
-                                <input v-model="form.name" type="text" placeholder="e.g. Priya Sharma" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" required maxlength="100">
+                                <input v-model="form.name" type="text" placeholder="e.g. Priya Sharma" :class="fieldClass('name', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" required maxlength="100">
+                                <p v-if="fieldError('name')" class="field-error field-error-light">{{ fieldError('name') }}</p>
                             </div>
 
                             <div class="grid gap-4 lg:grid-cols-2">
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Phone <span class="text-red-500">*</span></label>
-                                    <input v-model="form.phone" type="tel" placeholder="+91 98000 00000" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" required maxlength="20">
+                                    <input v-model="form.phone" type="tel" placeholder="+91 98000 00000" :class="fieldClass('phone', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" required maxlength="20">
+                                    <p v-if="fieldError('phone')" class="field-error field-error-light">{{ fieldError('phone') }}</p>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Email</label>
-                                    <input v-model="form.email" type="email" placeholder="Optional" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" maxlength="255">
+                                    <input v-model="form.email" type="email" placeholder="Optional" :class="fieldClass('email', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" maxlength="255">
+                                    <p v-if="fieldError('email')" class="field-error field-error-light">{{ fieldError('email') }}</p>
                                 </div>
                             </div>
 
@@ -265,26 +270,30 @@ function submit() {
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Date of birth</label>
-                                    <input v-model="form.dob" type="date" :max="maxDob" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                    <input v-model="form.dob" type="date" :max="maxDob" :class="fieldClass('dob', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <p v-if="fieldError('dob')" class="field-error field-error-light">{{ fieldError('dob') }}</p>
                                 </div>
                             </div>
 
                             <div>
                                 <label class="mb-2 block text-[13px] font-semibold text-slate-700">Address</label>
-                                <textarea v-model="form.address" rows="3" maxlength="300" placeholder="Optional" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400"></textarea>
+                                <textarea v-model="form.address" rows="3" maxlength="300" placeholder="Optional" :class="fieldClass('address', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')"></textarea>
+                                <p v-if="fieldError('address')" class="field-error field-error-light">{{ fieldError('address') }}</p>
                             </div>
 
                             <div class="grid gap-4 lg:grid-cols-2">
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">ID proof type</label>
-                                    <select v-model="form.id_proof_type" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                    <select v-model="form.id_proof_type" :class="fieldClass('id_proof_type', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
                                         <option value="">Select...</option>
                                         <option v-for="type in idProofTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
                                     </select>
+                                    <p v-if="fieldError('id_proof_type')" class="field-error field-error-light">{{ fieldError('id_proof_type') }}</p>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">ID number</label>
-                                    <input v-model="form.id_proof_number" type="text" maxlength="50" placeholder="Optional" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                    <input v-model="form.id_proof_number" type="text" maxlength="50" placeholder="Optional" :class="fieldClass('id_proof_number', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <p v-if="fieldError('id_proof_number')" class="field-error field-error-light">{{ fieldError('id_proof_number') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -296,27 +305,30 @@ function submit() {
                         <div class="mt-5 space-y-4">
                             <div>
                                 <label class="mb-2 block text-[13px] font-semibold text-slate-700">Branch <span class="text-red-500">*</span></label>
-                                <select v-model="form.branch_id" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" required>
+                                <select v-model="form.branch_id" :class="fieldClass('branch_id', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" required>
                                     <option value="">Select branch...</option>
                                     <option v-for="branch in branches" :key="branch.id" :value="branch.id">
                                         {{ branch.name }}{{ branch.is_primary ? ' (Primary)' : '' }}
                                     </option>
                                 </select>
+                                <p v-if="fieldError('branch_id')" class="field-error field-error-light">{{ fieldError('branch_id') }}</p>
                             </div>
 
                             <div class="grid gap-4 lg:grid-cols-2">
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Plan <span class="text-red-500">*</span></label>
-                                    <select v-model="form.plan_id" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" required>
+                                    <select v-model="form.plan_id" :class="fieldClass('plan_id', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" required>
                                         <option value="">Select plan...</option>
                                         <option v-for="plan in plans" :key="plan.id" :value="plan.id">
                                             {{ plan.name }} - {{ currency(getPlanTotal(plan)) }}
                                         </option>
                                     </select>
+                                    <p v-if="fieldError('plan_id')" class="field-error field-error-light">{{ fieldError('plan_id') }}</p>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Start date <span class="text-red-500">*</span></label>
-                                    <input v-model="form.start_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400" required>
+                                    <input v-model="form.start_date" type="date" :class="fieldClass('start_date', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')" required>
+                                    <p v-if="fieldError('start_date')" class="field-error field-error-light">{{ fieldError('start_date') }}</p>
                                 </div>
                             </div>
 
@@ -350,7 +362,8 @@ function submit() {
                                     </div>
                                     <div>
                                         <label class="mb-2 block text-[13px] font-semibold text-slate-700">Freeze days</label>
-                                        <input v-model="form.freeze_days" type="number" min="1" max="3650" placeholder="30" class="w-full max-w-[180px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                        <input v-model="form.freeze_days" type="number" min="1" max="3650" placeholder="30" :class="fieldClass('freeze_days', 'w-full max-w-[180px] rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                        <p v-if="fieldError('freeze_days')" class="field-error field-error-light">{{ fieldError('freeze_days') }}</p>
                                         <p v-if="selectedPlan?.max_freeze_days" class="mt-2 text-xs text-slate-500">
                                             Max allowed by plan: {{ selectedPlan.max_freeze_days }} days
                                         </p>
@@ -369,17 +382,20 @@ function submit() {
                             <div v-for="(split, index) in form.splits" :key="index" class="rounded-2xl border border-slate-200 p-3">
                                 <div class="grid gap-3">
                                     <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px]">
-                                        <select v-model="split.method" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                        <select v-model="split.method" :class="splitFieldClass(index, 'method', 'rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
                                             <option v-for="method in paymentMethods" :key="method.value" :value="method.value">{{ method.label }}</option>
                                         </select>
-                                        <input v-model="split.amount" type="number" min="0" step="0.01" placeholder="0.00" class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                        <input v-model="split.amount" type="number" min="0" step="0.01" placeholder="0.00" :class="splitFieldClass(index, 'amount', 'rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
                                     </div>
+                                    <p v-if="splitError(index, 'method')" class="field-error field-error-light">{{ splitError(index, 'method') }}</p>
+                                    <p v-if="splitError(index, 'amount')" class="field-error field-error-light">{{ splitError(index, 'amount') }}</p>
                                     <div class="flex gap-3">
-                                        <input v-model="split.reference" type="text" maxlength="100" placeholder="Reference (optional)" class="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                        <input v-model="split.reference" type="text" maxlength="100" placeholder="Reference (optional)" :class="splitFieldClass(index, 'reference', 'min-w-0 flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
                                         <button v-if="form.splits.length > 1" type="button" @click="removeSplit(index)" class="rounded-2xl border border-slate-200 px-4 py-3 text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
                                             Remove
                                         </button>
                                     </div>
+                                    <p v-if="splitError(index, 'reference')" class="field-error field-error-light">{{ splitError(index, 'reference') }}</p>
                                 </div>
                             </div>
 
@@ -405,11 +421,13 @@ function submit() {
                             <div class="grid gap-4">
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Due amount</label>
-                                    <input v-model="form.due_amount" type="number" min="0" step="0.01" placeholder="0.00" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                    <input v-model="form.due_amount" type="number" min="0" step="0.01" placeholder="0.00" :class="fieldClass('due_amount', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <p v-if="fieldError('due_amount')" class="field-error field-error-light">{{ fieldError('due_amount') }}</p>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Due date</label>
-                                    <input v-model="form.due_date" type="date" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400">
+                                    <input v-model="form.due_date" type="date" :class="fieldClass('due_date', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <p v-if="fieldError('due_date')" class="field-error field-error-light">{{ fieldError('due_date') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -419,7 +437,8 @@ function submit() {
                         <h2 class="text-xl font-semibold text-slate-900">Notes</h2>
                         <div class="mt-4">
                             <label class="mb-2 block text-[13px] font-semibold text-slate-700">Internal notes</label>
-                            <textarea v-model="form.notes" rows="5" maxlength="500" placeholder="Any internal notes about this member..." class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400"></textarea>
+                            <textarea v-model="form.notes" rows="5" maxlength="500" placeholder="Any internal notes about this member..." :class="fieldClass('notes', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')"></textarea>
+                            <p v-if="fieldError('notes')" class="field-error field-error-light">{{ fieldError('notes') }}</p>
                         </div>
                     </section>
 
@@ -459,3 +478,4 @@ function submit() {
         </div>
     </AppLayout>
 </template>
+
