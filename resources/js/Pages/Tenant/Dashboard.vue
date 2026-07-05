@@ -19,17 +19,17 @@ const props = defineProps({
 const branchLabel = props.branch?.name || 'All Branches';
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const formatTime = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 };
 
 const formatCurrency = (paise) => {
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 </script>
 
@@ -66,7 +66,7 @@ const formatCurrency = (paise) => {
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div>
                             <div class="text-lg font-semibold">Monthly Revenue</div>
-                            <div class="mt-1 text-smæ–‡æœ¬-slate-400">Revenue trend for the last 6 months.</div>
+                            <div class="mt-1 text-sm text-slate-400">Revenue trend for the last 6 months.</div>
                         </div>
                         <Link href="/tenant/reports/revenue" class="text-sm font-bold text-orange-400 hover:underline">View Report</Link>
                     </div>
@@ -113,7 +113,7 @@ const formatCurrency = (paise) => {
                         <tbody>
                             <tr v-for="payment in recentPayments" :key="payment.id" class="border-b border-white/10/65">
                                 <td class="py-3">{{ payment.member?.name || 'Walk-in' }}</td>
-                                <td class="py-3 text-slate-400">{{ payment.plan?.name || 'â€”' }}</td>
+                                <td class="py-3 text-slate-400">{{ payment.plan?.name || '-' }}</td>
                                 <td class="py-3 text-right">{{ formatCurrency(payment.total_paise) }}</td>
                                 <td class="py-3 text-slate-400">{{ formatDate(payment.payment_date) }} {{ formatTime(payment.payment_date) }}</td>
                             </tr>
@@ -137,7 +137,7 @@ const formatCurrency = (paise) => {
                                 <div>
                                     <div class="text-sm font-bold">{{ member.name }}</div>
                                     <div class="mt-1 text-xs text-slate-400">
-                                        {{ new Date(member.next_birthday).toLocaleDateString('en-GB').replaceAll('/', '-') }} â€¢ {{ member.birthday_bucket === 'today' ? 'Today' : 'This Week' }}
+                                        {{ new Date(member.next_birthday).toLocaleDateString('en-GB').replaceAll('/', '-') }} * {{ member.birthday_bucket === 'today' ? 'Today' : 'This Week' }}
                                     </div>
                                 </div>
                                 <a v-if="member.phone" :href="`https://wa.me/${member.phone.replace(/\D/g, '')}`" target="_blank" rel="noopener" class="rounded-[0.7rem] border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 hover:border-orange-400 hover:text-orange-400">WhatsApp</a>
@@ -151,7 +151,7 @@ const formatCurrency = (paise) => {
                 <div class="rounded-[1.6rem] border border-white/10 bg-white/5 p-5">
                     <div class="flex items-start justify-between gap-3 mb-4">
                         <div>
-                            <div class="text-lg font-semibold">Expired â€“ Not Renewed</div>
+                            <div class="text-lg font-semibold">Expired - Not Renewed</div>
                             <div class="mt-1 text-sm text-slate-400">Expired plans with no renewal recorded yet.</div>
                         </div>
                         <Link href="/tenant/renewals?tab=expired" class="text-sm font-bold text-orange-400 hover:underline">View All</Link>
@@ -165,7 +165,7 @@ const formatCurrency = (paise) => {
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <div class="text-sm font-bold">{{ expiredMembers[0].name }}</div>
-                                    <div class="mt-1 text-xs text-slate-400">{{ expiredMembers[0].plan?.name || 'â€”' }} â€¢ Expired {{ formatDate(expiredMembers[0].expiry_date) }}</div>
+                                    <div class="mt-1 text-xs text-slate-400">{{ expiredMembers[0].plan?.name || '-' }} * Expired {{ formatDate(expiredMembers[0].expiry_date) }}</div>
                                 </div>
                                 <Link :href="`/payments/collect?member_id=${expiredMembers[0].id}`" class="rounded-[0.7rem] border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 hover:border-orange-400 hover:text-orange-400">Add Revenue</Link>
                             </div>
@@ -195,7 +195,7 @@ const formatCurrency = (paise) => {
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <div class="text-sm font-bold">Sample Member</div>
-                                    <div class="mt-1 text-xs text-slate-400">Sample Plan â€¢ Expires {{ formatDate(new Date()) }}</div>
+                                    <div class="mt-1 text-xs text-slate-400">Sample Plan * Expires {{ formatDate(new Date()) }}</div>
                                 </div>
                                 <Link href="/payments/collect" class="rounded-[0.7rem] border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 hover:border-orange-400 hover:text-orange-400">Add Revenue</Link>
                             </div>

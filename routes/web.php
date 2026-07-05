@@ -158,11 +158,13 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::post('/roles/{role}/reset', [StaffController::class, 'resetRolePermissions'])->name('roles.reset');
             Route::delete('/roles/{role}', [StaffController::class, 'destroyRole'])->name('roles.destroy');
             Route::get('/attendance', [StaffController::class, 'attendance'])->name('attendance');
+            Route::get('/attendance/create', [StaffController::class, 'createAttendance'])->name('attendance.create');
             Route::post('/attendance', [StaffController::class, 'storeAttendance'])->name('attendance.store');
             Route::get('/{staff}', [StaffController::class, 'show'])->name('show');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
             Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
             Route::post('/{staff}/deactivate', [StaffController::class, 'deactivate'])->name('deactivate');
+            Route::post('/{staff}/reset-password', [StaffController::class, 'resetPassword'])->name('reset-password');
             Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
         });
 

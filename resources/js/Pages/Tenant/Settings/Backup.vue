@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -38,7 +38,7 @@ const props = defineProps({
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-sm font-medium">{{ lastBackup.filename }}</p>
-                            <p class="text-xs text-slate-400">{{ lastBackup.date }} · {{ lastBackup.size }}</p>
+                            <p class="text-xs text-slate-400">{{ lastBackup.date }} - {{ lastBackup.size }}</p>
                         </div>
                         <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">Completed</span>
                     </div>

@@ -117,7 +117,7 @@ const formatCurrency = (paise) => {
                     <input type="checkbox" v-model="isTrial" @change="toggleTrialMode($event.target.checked)" class="h-4 w-4 rounded border-white/10 bg-slate-950/70 accent-orange-500">
                     <div>
                         <span class="text-sm font-semibold text-slate-200">Trial Plan</span>
-                        <p class="text-xs text-slate-400 mt-0.5">Trial access only â€” no billing. Max 14 days.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Trial access only - no billing. Max 14 days.</p>
                     </div>
                     <span v-if="isTrial" class="ml-auto rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Trial</span>
                 </label>
@@ -240,7 +240,7 @@ const formatCurrency = (paise) => {
                                 </td>
                                 <td class="px-4 py-4 text-xs text-slate-300">
                                     <template v-if="plan.is_trial">
-                                        <span class="text-slate-400">â€”</span>
+                                        <span class="text-slate-400">-</span>
                                     </template>
                                     <template v-else>
                                         Members: {{ plan.max_members || 'Unlimited' }}<br>

@@ -46,7 +46,8 @@ class StaffService
             $query->where('branch_id', $branchId);
         }
 
-        $staff = $query->orderBy('name')->paginate(20)->withQueryString();
+        $perPage = min(max((int) $request->get('per_page', 25), 10), 100);
+        $staff = $query->orderBy('name')->paginate($perPage)->withQueryString();
 
         return [
             'staff' => $staff,
@@ -54,6 +55,13 @@ class StaffService
             'branches' => Branch::forTenant($tenant->id)->active()->orderBy('name')->get(),
             'roles' => $this->assignableRoleSlugs($user->tenant_id),
             'statuses' => Staff::STATUSES,
+            'filters' => [
+                'search' => $request->get('search'),
+                'role' => $request->get('role'),
+                'branch_id' => $request->get('branch_id'),
+                'status' => $request->get('status'),
+                'per_page' => $perPage,
+            ],
             'canManage' => $this->canManage($user),
         ];
     }
@@ -171,6 +179,24 @@ class StaffService
         });
     }
 
+    public function resetPassword(User $user, Staff $staff): void
+    {
+        abort_unless($staff->user, 422);
+
+        DB::transaction(function () use ($user, $staff): void {
+            $staff->user->forceFill([
+                'password' => '123456',
+                'must_change_password' => true,
+            ])->save();
+
+            DB::table('sessions')->where('user_id', $staff->user_id)->delete();
+
+            $this->logOwnerAction($staff->tenant_id, $user, 'STAFF_PASSWORD_RESET', 'STAFF', $staff->id, $staff->name, [
+                'default_password' => true,
+            ]);
+        });
+    }
+
     public function delete(User $user, Staff $staff): array
     {
         $hasRecords = $staff->attendanceLogs()->exists() || $staff->loginActivities()->exists();
@@ -195,26 +221,44 @@ class StaffService
         return ['soft_deleted' => $hasRecords];
     }
 
-    public function profile(User $user, Staff $staff): array
+    public function profile(User $user, Staff $staff, ?Request $request = null): array
     {
         $this->ensureVisible($user, $staff);
 
-        $monthStart = now()->startOfMonth()->toDateString();
-        $monthEnd = now()->endOfMonth()->toDateString();
+        $month = preg_match('/^\d{4}-\d{2}$/', (string) $request?->get('month'))
+            ? $request->get('month')
+            : now()->format('Y-m');
+        $monthDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $monthStart = $monthDate->toDateString();
+        $monthEnd = $monthDate->copy()->endOfMonth()->toDateString();
         $attendanceLogs = $staff->attendanceLogs()
             ->whereBetween('attendance_date', [$monthStart, $monthEnd])
             ->orderByDesc('attendance_date')
-            ->get();
+            ->orderBy('checked_in_at')
+            ->get()
+            ->map(fn (StaffAttendanceLog $log) => [
+                'id' => $log->id,
+                'attendance_date' => $log->attendance_date?->format('d-m-Y'),
+                'checked_in_at' => $log->checked_in_at?->format('H:i'),
+                'checked_out_at' => $log->checked_out_at?->format('H:i'),
+                'hours_worked' => $log->hours_worked_minutes !== null ? round($log->hours_worked_minutes / 60, 2) : null,
+                'source' => $log->source,
+                'reason' => $log->reason,
+            ]);
 
         return [
             'staff' => $staff->load(['branch', 'user']),
             'loginActivities' => $staff->loginActivities()->latest('logged_in_at')->limit(10)->get(),
             'attendanceLogs' => $attendanceLogs,
+            'attendanceFilters' => [
+                'month' => $month,
+            ],
             'attendanceSummary' => [
                 'days_present' => $attendanceLogs->count(),
-                'days_absent' => max(0, now()->day - $attendanceLogs->count()),
-                'hours_worked' => round($attendanceLogs->sum('hours_worked_minutes') / 60, 1),
+                'days_absent' => max(0, (int) $monthDate->daysInMonth - $attendanceLogs->count()),
+                'hours_worked' => round($attendanceLogs->sum('hours_worked') ?? 0, 1),
             ],
+            'tab' => $request?->get('tab', 'details') ?? 'details',
             'canManage' => $this->canManage($user),
         ];
     }
@@ -222,28 +266,66 @@ class StaffService
     public function attendance(User $user, Request $request): array
     {
         $tenant = $user->tenant;
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to = $request->get('to', now()->endOfMonth()->toDateString());
+        $month = preg_match('/^\d{4}-\d{2}$/', (string) $request->get('month'))
+            ? $request->get('month')
+            : now()->format('Y-m');
+        $monthDate = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $from = $monthDate->toDateString();
+        $to = $monthDate->copy()->endOfMonth()->toDateString();
 
         $query = $this->buildAttendanceQuery($user, $request, $from, $to);
+        $summaryRows = (clone $query)->get();
 
-        $logs = $query->orderByDesc('attendance_date')->orderBy('checked_in_at')->paginate(25)->withQueryString();
-
-        $summaryBase = clone $query;
-        $summaryRows = $summaryBase->get();
+        $perPage = min(max((int) $request->get('per_page', 25), 10), 100);
+        $logs = $query
+            ->orderByDesc('attendance_date')
+            ->orderBy('checked_in_at')
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (StaffAttendanceLog $log) => [
+                'id' => $log->id,
+                'staff_name' => $log->staff?->name,
+                'role_label' => $log->staff?->role_label,
+                'branch_name' => $log->branch?->name,
+                'attendance_date' => $log->attendance_date?->format('d-m-Y'),
+                'checked_in_at' => $log->checked_in_at?->format('H:i'),
+                'checked_out_at' => $log->checked_out_at?->format('H:i'),
+                'hours_worked' => $log->hours_worked_minutes !== null ? round($log->hours_worked_minutes / 60, 2) : null,
+                'reason' => $log->reason,
+            ]);
 
         return [
             'logs' => $logs,
             'branches' => Branch::forTenant($tenant->id)->active()->orderBy('name')->get(),
             'staffOptions' => Staff::query()->forTenant($tenant->id)->visibleTo($user)->orderBy('name')->get(),
-            'from' => $from,
-            'to' => $to,
+            'filters' => [
+                'month' => $month,
+                'branch_id' => $request->get('branch_id'),
+                'staff_id' => $request->get('staff_id'),
+                'per_page' => $perPage,
+            ],
             'summary' => [
                 'days_present' => $summaryRows->count(),
                 'hours_worked' => round($summaryRows->sum('hours_worked_minutes') / 60, 1),
                 'leaves_marked' => $summaryRows->where('source', 'manual')->whereNotNull('reason')->count(),
             ],
             'canManage' => $this->canManage($user),
+        ];
+    }
+
+    public function attendanceForm(User $user, Request $request): array
+    {
+        $tenant = $user->tenant;
+
+        return [
+            'staffOptions' => Staff::query()
+                ->forTenant($tenant->id)
+                ->visibleTo($user)
+                ->with('branch')
+                ->orderBy('name')
+                ->get(['id', 'tenant_id', 'branch_id', 'name', 'role', 'phone', 'email']),
+            'selectedStaffId' => $request->get('staff_id'),
+            'today' => now()->toDateString(),
         ];
     }
 
@@ -265,7 +347,7 @@ class StaffService
             'checked_out_at' => $checkOut,
             'hours_worked_minutes' => $minutes,
             'source' => 'manual',
-            'reason' => $validated['reason'],
+            'reason' => $validated['reason'] ?? null,
             'recorded_by' => $user->id,
         ]);
 
@@ -451,8 +533,15 @@ class StaffService
 
     public function exportAttendanceCsv(User $user, Request $request): string
     {
-        $from = $request->get('from', now()->startOfMonth()->toDateString());
-        $to = $request->get('to', now()->endOfMonth()->toDateString());
+        if (preg_match('/^\d{4}-\d{2}$/', (string) $request->get('month'))) {
+            $monthDate = Carbon::createFromFormat('Y-m', $request->get('month'))->startOfMonth();
+            $from = $monthDate->toDateString();
+            $to = $monthDate->copy()->endOfMonth()->toDateString();
+        } else {
+            $from = $request->get('from', now()->startOfMonth()->toDateString());
+            $to = $request->get('to', now()->endOfMonth()->toDateString());
+        }
+
         $rows = $this->buildAttendanceQuery($user, $request, $from, $to)
             ->orderByDesc('attendance_date')
             ->orderBy('checked_in_at')
@@ -666,9 +755,12 @@ class StaffService
 
     private function decorateRole(Role $role): void
     {
+        $permissions = $this->permissionMapForRole($role->relationLoaded('permissions') ? $role : $role->load('permissions'));
+
+        $role->unsetRelation('permissions');
         $role->setAttribute('role', $role->name);
         $role->setAttribute('display_name', str($role->name)->replace('_', ' ')->title()->toString());
-        $role->setAttribute('permissions', $this->permissionMapForRole($role->relationLoaded('permissions') ? $role : $role->load('permissions')));
+        $role->setAttribute('permissions', $permissions);
     }
 
     private function syncUserRole(User $user, string $roleName, int $tenantId): void
@@ -716,4 +808,3 @@ class StaffService
             ->when($request->filled('staff_id'), fn ($q) => $q->where('staff_id', $request->integer('staff_id')));
     }
 }
-

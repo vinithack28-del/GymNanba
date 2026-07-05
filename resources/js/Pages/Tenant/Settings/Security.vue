@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -47,7 +47,7 @@ const props = defineProps({
                         <div v-for="session in sessions" :key="session.id" class="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/50 p-4">
                             <div>
                                 <p class="text-sm font-medium">{{ session.device }}</p>
-                                <p class="text-xs text-slate-400">{{ session.ip }} · {{ session.location }}</p>
+                                <p class="text-xs text-slate-400">{{ session.ip }} - {{ session.location }}</p>
                                 <p class="text-xs text-slate-400">Last active: {{ session.last_active }}</p>
                             </div>
                             <button class="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/20">Revoke</button>

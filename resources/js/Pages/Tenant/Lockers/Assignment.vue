@@ -13,7 +13,7 @@ const current = computed(() => props.lockerData?.current_assignment || null);
 const historyRows = computed(() => props.lockerData?.history || []);
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -71,7 +71,7 @@ const getStatusColor = (status) => {
                             </span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] app-muted">Location / Zone</p>
-                                <p class="mt-1 text-sm">{{ locker.location || 'â€”' }}</p>
+                                <p class="mt-1 text-sm">{{ locker.location || '-' }}</p>
                             </div>
                         </div>
 
@@ -81,7 +81,7 @@ const getStatusColor = (status) => {
                             </span>
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.08em] app-muted">Branch</p>
-                                <p class="mt-1 text-sm">{{ locker.branch?.name || lockerData?.branch_name || 'â€”' }}</p>
+                                <p class="mt-1 text-sm">{{ locker.branch?.name || lockerData?.branch_name || '-' }}</p>
                             </div>
                         </div>
 
@@ -114,10 +114,10 @@ const getStatusColor = (status) => {
                             </a>
                             <p v-else class="font-semibold">{{ current.member_name }}</p>
                             <p class="app-muted mt-1 text-xs">
-                                {{ current.member_code || 'No code' }} Â· {{ current.member_phone || 'No phone' }}
+                                {{ current.member_code || 'No code' }} Ã‚- {{ current.member_phone || 'No phone' }}
                             </p>
                             <p class="app-muted mt-2 text-xs">
-                                {{ current.from_date || 'â€”' }} â†’ {{ current.to_date || 'Ongoing' }}
+                                {{ current.from_date || '-' }} -> {{ current.to_date || 'Ongoing' }}
                             </p>
                             <span class="mt-2 inline-flex rounded-full bg-orange-500/10 px-2.5 py-1 text-xs font-bold text-orange-500">
                                 {{ current.days_so_far || 0 }} days
@@ -152,13 +152,13 @@ const getStatusColor = (status) => {
                             <tbody class="divide-y divide-white/10">
                                 <tr v-for="(item, index) in historyRows" :key="index" :class="item.is_current ? 'bg-orange-500/5' : ''">
                                     <td class="px-6 py-3">
-                                        <a v-if="item.member_url" :href="item.member_url" class="font-semibold hover:underline">{{ item.member_name || 'â€”' }}</a>
-                                        <p v-else class="font-semibold">{{ item.member_name || 'â€”' }}</p>
+                                        <a v-if="item.member_url" :href="item.member_url" class="font-semibold hover:underline">{{ item.member_name || '-' }}</a>
+                                        <p v-else class="font-semibold">{{ item.member_name || '-' }}</p>
                                         <p class="app-muted mt-0.5 text-xs">{{ item.member_code || '' }}</p>
                                         <span v-if="item.is_current" class="mt-1 inline-flex rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-bold text-orange-400">Current</span>
                                     </td>
-                                    <td class="px-4 py-3 app-muted">{{ item.from_date || 'â€”' }}</td>
-                                    <td class="px-4 py-3 app-muted">{{ item.to_date || 'â€”' }}</td>
+                                    <td class="px-4 py-3 app-muted">{{ item.from_date || '-' }}</td>
+                                    <td class="px-4 py-3 app-muted">{{ item.to_date || '-' }}</td>
                                     <td class="px-4 py-3 text-right font-semibold">{{ item.days || 0 }}</td>
                                 </tr>
                             </tbody>

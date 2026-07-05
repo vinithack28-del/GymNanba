@@ -8,12 +8,12 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const formatTime = (time) => {
-    return time || 'â€”';
+    return time || '-';
 };
 
 const getStatusColor = (status) => {
@@ -33,7 +33,7 @@ const getStatusColor = (status) => {
         
         <div class="flex flex-col gap-5">
             <Link href="/tenant/classes" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-orange-400">
-                <span>â†</span> Back to Classes
+                <span><-</span> Back to Classes
             </Link>
 
             <div class="grid gap-6 lg:grid-cols-[1fr_26rem] lg:grid-cols-1">
@@ -51,7 +51,7 @@ const getStatusColor = (status) => {
                     <div class="grid gap-4">
                         <div class="flex items-center justify-between">
                             <span class="text-slate-400">Trainer</span>
-                            <span class="font-medium">{{ classData?.trainer?.name || 'â€”' }}</span>
+                            <span class="font-medium">{{ classData?.trainer?.name || '-' }}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-400">Day</span>
@@ -63,7 +63,7 @@ const getStatusColor = (status) => {
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-400">Duration</span>
-                            <span class="font-medium">{{ classData?.duration || 'â€”' }}</span>
+                            <span class="font-medium">{{ classData?.duration || '-' }}</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-400">Capacity</span>
@@ -71,7 +71,7 @@ const getStatusColor = (status) => {
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-slate-400">Branch</span>
-                            <span class="font-medium">{{ classData?.branch?.name || 'â€”' }}</span>
+                            <span class="font-medium">{{ classData?.branch?.name || '-' }}</span>
                         </div>
                     </div>
 

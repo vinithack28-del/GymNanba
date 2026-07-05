@@ -7,7 +7,7 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -34,10 +34,10 @@ const getStatusColor = (status) => {
                 </div>
                 <div class="flex items-center gap-2">
                     <Link href="/tenant/classes/timetable" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                        ðŸ“… Timetable
+                        Ã°Å¸â€œ... Timetable
                     </Link>
                     <Link href="/tenant/classes/trainers" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                        ðŸ‘¨â€ðŸ« Trainers
+                        Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸ÂÂ« Trainers
                     </Link>
                     <Link href="/tenant/classes/create" class="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                         <span>+</span> Add Class
@@ -46,7 +46,7 @@ const getStatusColor = (status) => {
             </div>
 
             <div v-if="!classes || classes.length === 0" class="flex flex-col items-center gap-4 rounded-[2rem] border border-white/10 bg-white/5 py-20 text-center">
-                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">ðŸ‹ï¸</div>
+                <div class="flex h-[4.5rem] w-[4.5rem] items-center justify-center rounded-full border border-white/10 bg-slate-950/50 text-slate-400 text-2xl">Ã°Å¸Ââ€¹Ã¯Â¸Â</div>
                 <p class="text-lg font-bold">No classes found</p>
                 <p class="text-sm text-slate-400">Create your first class to get started.</p>
                 <Link href="/tenant/classes/create" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-orange-400">Add Class</Link>
@@ -71,9 +71,9 @@ const getStatusColor = (status) => {
                                     <p class="font-medium">{{ cls.name }}</p>
                                     <p class="text-xs text-slate-400">{{ cls.type }}</p>
                                 </td>
-                                <td class="px-4 py-3 text-slate-400">{{ cls.trainer?.name || 'â€”' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ cls.trainer?.name || '-' }}</td>
                                 <td class="px-4 py-3 text-slate-400">
-                                    {{ cls.day }} Â· {{ cls.time }}
+                                    {{ cls.day }} Ã‚- {{ cls.time }}
                                 </td>
                                 <td class="px-4 py-3 text-slate-400">
                                     {{ cls.booked_count || 0 }} / {{ cls.capacity }}

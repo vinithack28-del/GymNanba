@@ -29,7 +29,7 @@ class StaffController extends Controller
     public function create(Request $request){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return Inertia::render('Tenant/Staff/Form', [
+        return Inertia::render('Tenant/Staff/Create', [
             'branches'         => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles'            => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes'       => Staff::ID_PROOF_TYPES,
@@ -40,6 +40,10 @@ class StaffController extends Controller
     public function store(Request $request): RedirectResponse
     {
         abort_unless($this->staffService->canManage($request->user()), 403);
+
+        if ($branchId = $this->fixedBranchId($request)) {
+            $request->merge(['branch_id' => $branchId]);
+        }
 
         $validated = $this->validateStaff($request, null, true);
         $result = $this->staffService->create($request->user(), $validated, [
@@ -53,18 +57,19 @@ class StaffController extends Controller
     }
 
     public function show(Request $request, Staff $staff){
-        return Inertia::render('Tenant/Staff/Show', $this->staffService->profile($request->user(), $staff));
+        return Inertia::render('Tenant/Staff/Show', $this->staffService->profile($request->user(), $staff, $request));
     }
 
     public function edit(Request $request, Staff $staff){
         $this->staffService->ensureVisible($request->user(), $staff);
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return Inertia::render('Tenant/Staff/Form', [
+        return Inertia::render('Tenant/Staff/Edit', [
             'staff' => $staff->load('branch'),
             'branches' => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles' => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes' => Staff::ID_PROOF_TYPES,
+            'selectedBranchId' => session('gymos_selected_branch_id'),
         ]);
     }
 
@@ -72,6 +77,10 @@ class StaffController extends Controller
     {
         $this->staffService->ensureVisible($request->user(), $staff);
         abort_unless($this->staffService->canManage($request->user()), 403);
+
+        if ($branchId = $this->fixedBranchId($request)) {
+            $request->merge(['branch_id' => $branchId]);
+        }
 
         $validated = $this->validateStaff($request, $staff, false);
         $this->staffService->update($request->user(), $staff, $validated, [
@@ -90,6 +99,16 @@ class StaffController extends Controller
         $this->staffService->deactivate($request->user(), $staff);
 
         return back()->with('status', "{$staff->name} deactivated.");
+    }
+
+    public function resetPassword(Request $request, Staff $staff): RedirectResponse
+    {
+        $this->staffService->ensureVisible($request->user(), $staff);
+        abort_unless($this->staffService->canManage($request->user()), 403);
+
+        $this->staffService->resetPassword($request->user(), $staff);
+
+        return back()->with('status', "{$staff->name}'s password reset to 123456.");
     }
 
     public function destroy(Request $request, Staff $staff): RedirectResponse
@@ -112,7 +131,7 @@ class StaffController extends Controller
     public function roles(Request $request){
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        return Inertia::render('Tenant/Staff/Roles', [
+        return Inertia::render('Tenant/Staff/Permissions', [
             'roles'       => $this->staffService->rolePermissions($request->user()),
             'staffCounts' => $this->staffService->staffCountsByRole($request->user()),
         ]);
@@ -201,6 +220,11 @@ class StaffController extends Controller
         return Inertia::render('Tenant/Staff/Attendance', $this->staffService->attendance($request->user(), $request));
     }
 
+    public function createAttendance(Request $request): InertiaResponse
+    {
+        return Inertia::render('Tenant/Staff/AttendanceForm', $this->staffService->attendanceForm($request->user(), $request));
+    }
+
     public function storeAttendance(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -208,12 +232,14 @@ class StaffController extends Controller
             'attendance_date' => ['required', 'date', 'before_or_equal:today'],
             'checked_in_at' => ['required', 'date_format:H:i'],
             'checked_out_at' => ['required', 'date_format:H:i', 'after:checked_in_at'],
-            'reason' => ['required', 'string', 'max:300'],
+            'reason' => ['nullable', 'string', 'max:300'],
         ]);
 
         $this->staffService->addAttendance($request->user(), $validated);
 
-        return back()->with('status', 'Attendance entry added.');
+        return redirect()->route('tenant.staff.attendance', [
+            'month' => substr($validated['attendance_date'], 0, 7),
+        ])->with('status', 'Attendance entry added.');
     }
 
     private function validateStaff(Request $request, ?Staff $staff, bool $creating): array
@@ -246,5 +272,15 @@ class StaffController extends Controller
             'password' => [$creating ? 'nullable' : 'nullable', 'string', 'min:8', 'confirmed'],
         ]);
     }
-}
 
+    private function fixedBranchId(Request $request): ?int
+    {
+        if ($id = session('gymos_selected_branch_id')) {
+            return (int) $id;
+        }
+
+        $branches = Branch::forTenant($request->user()->tenant_id)->active()->pluck('id');
+
+        return $branches->count() === 1 ? (int) $branches->first() : null;
+    }
+}

@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../Layouts/AppLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -116,7 +116,7 @@ const formatDateTime = (date) => {
                             <div>
                                 <p class="text-sm font-semibold">{{ activity.action_type }}</p>
                                 <p class="mt-0.5 text-sm text-slate-300">{{ activity.target_name || t('admin.dashboard.platform_event', 'Platform event') }}</p>
-                                <p class="mt-1 text-xs text-slate-500">{{ activity.actor_name }} · {{ formatDateTime(activity.created_at) }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ activity.actor_name }} - {{ formatDateTime(activity.created_at) }}</p>
                             </div>
                             <span class="rounded-lg bg-white/5 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-sky-300">
                                 {{ activity.target_type }}

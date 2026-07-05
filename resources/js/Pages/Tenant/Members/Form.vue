@@ -118,6 +118,10 @@ const remainingAmount = computed(() => {
     return Math.max(planTotal.value - paidAmount.value, 0);
 });
 
+const hasBalanceDue = computed(() => {
+    return remainingAmount.value > 0.009;
+});
+
 const freezePlanError = computed(() => {
     if (!editing || form.status !== 'frozen' || !selectedPlan.value || selectedPlan.value.allow_freeze) {
         return '';
@@ -190,7 +194,14 @@ function removeSplit(index) {
 }
 
 function submit() {
-    form.is_partial = Number(form.due_amount || 0) > 0;
+    if (hasBalanceDue.value) {
+        form.due_amount = remainingAmount.value.toFixed(2);
+    } else {
+        form.due_amount = '';
+        form.due_date = '';
+    }
+
+    form.is_partial = hasBalanceDue.value;
 
     if (editing) {
         form.put(`/members/${props.member.id}`);
@@ -212,7 +223,7 @@ function submit() {
                     <p class="mt-2 text-sm text-slate-600">{{ pageSub }}</p>
                 </div>
                 <Link href="/members" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-                    <span>â†</span>
+                    <span><-</span>
                     <span>Back to members</span>
                 </Link>
             </div>
@@ -418,15 +429,15 @@ function submit() {
                                 </div>
                             </div>
 
-                            <div class="grid gap-4">
+                            <div v-if="hasBalanceDue" class="grid gap-4">
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Due amount</label>
-                                    <input v-model="form.due_amount" type="number" min="0" step="0.01" placeholder="0.00" :class="fieldClass('due_amount', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <input :value="remainingAmount.toFixed(2)" type="number" readonly :class="fieldClass('due_amount', 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition')">
                                     <p v-if="fieldError('due_amount')" class="field-error field-error-light">{{ fieldError('due_amount') }}</p>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-[13px] font-semibold text-slate-700">Due date</label>
-                                    <input v-model="form.due_date" type="date" :class="fieldClass('due_date', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
+                                    <input v-model="form.due_date" type="date" required :class="fieldClass('due_date', 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400')">
                                     <p v-if="fieldError('due_date')" class="field-error field-error-light">{{ fieldError('due_date') }}</p>
                                 </div>
                             </div>
@@ -478,4 +489,3 @@ function submit() {
         </div>
     </AppLayout>
 </template>
-

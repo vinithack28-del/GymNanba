@@ -99,7 +99,7 @@ const submit = () => {
                             <p v-if="fieldError('address')" class="field-error field-error-light">{{ fieldError('address') }}</p>
                         </div>
 
-                        <button type="submit" class="mt-6 block w-full rounded-xl bg-orange-500 py-3.5 text-base font-bold text-white transition-colors hover:bg-orange-600 active:scale-[0.98]" :disabled="form.processing">Submit Registration â†’</button>
+                        <button type="submit" class="mt-6 block w-full rounded-xl bg-orange-500 py-3.5 text-base font-bold text-white transition-colors hover:bg-orange-600 active:scale-[0.98]" :disabled="form.processing">Submit Registration -></button>
                     </form>
                 </div>
             </div>

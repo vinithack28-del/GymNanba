@@ -137,7 +137,7 @@ class Member extends Model
 
     public function getBalanceRupeesAttribute(): string
     {
-        return 'â‚¹' . number_format(abs($this->balance_paise) / 100, 2);
+        return 'Rs. ' . number_format(abs($this->balance_paise) / 100, 2);
     }
 
     public function getInitialsAttribute(): string

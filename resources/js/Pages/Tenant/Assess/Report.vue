@@ -9,7 +9,7 @@ const props = defineProps({
 });
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -65,8 +65,8 @@ const printReport = () => {
                             <p class="text-xs text-slate-400">Date</p>
                             <p class="font-medium">{{ formatDate(record.assessment_date) }}</p>
                             <p v-if="record.status" class="mt-2 text-xs text-slate-400">Status: {{ record.status?.replace('_', ' ')?.replace(/\b\w/g, l => l.toUpperCase()) }}</p>
-                            <p v-if="record.type === 'body_metrics'" class="mt-2 text-xs text-slate-400">BMI {{ record.payload?.bmi || 'â€”' }} Â· {{ record.payload?.bmi_category || 'â€”' }}</p>
-                            <p v-else-if="record.type === 'vitals'" class="mt-2 text-xs text-slate-400">HR {{ record.payload?.hr_bpm || 'â€”' }} bpm Â· BP {{ record.payload?.bp_systolic || 'â€”' }}/{{ record.payload?.bp_diastolic || 'â€”' }}</p>
+                            <p v-if="record.type === 'body_metrics'" class="mt-2 text-xs text-slate-400">BMI {{ record.payload?.bmi || '-' }} Ã‚- {{ record.payload?.bmi_category || '-' }}</p>
+                            <p v-else-if="record.type === 'vitals'" class="mt-2 text-xs text-slate-400">HR {{ record.payload?.hr_bpm || '-' }} bpm Ã‚- BP {{ record.payload?.bp_systolic || '-' }}/{{ record.payload?.bp_diastolic || '-' }}</p>
                             <p v-else-if="record.type?.startsWith('fitness_')" class="mt-2 text-xs text-slate-400">{{ record.title }}</p>
                         </div>
                         <div v-else class="text-xs text-slate-400">

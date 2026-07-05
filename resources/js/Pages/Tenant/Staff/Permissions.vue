@@ -1,10 +1,17 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
-    roles: Object,
-    staffCounts: Object,
+    roles: {
+        type: Array,
+        default: () => [],
+    },
+    staffCounts: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const roleColors = {
@@ -19,9 +26,29 @@ const getRoleStyle = (role) => {
     return roleColors[role] || { color: 'var(--app-brand)', light: 'color-mix(in srgb,var(--app-brand) 12%,transparent)', border: 'color-mix(in srgb,var(--app-brand) 30%,transparent)' };
 };
 
-const totalRoles = roles?.length || 0;
-const sysCount = roles?.filter(r => r.is_system).length || 0;
-const custCount = totalRoles - sysCount;
+const roles = computed(() => props.roles || []);
+const staffCounts = computed(() => props.staffCounts || {});
+const totalRoles = computed(() => roles.value.length);
+const sysCount = computed(() => roles.value.filter((role) => role.is_system).length);
+const custCount = computed(() => totalRoles.value - sysCount.value);
+
+const permissionCount = (permissions) => {
+    if (Array.isArray(permissions)) {
+        return permissions.length;
+    }
+
+    return Object.values(permissions || {}).reduce((total, actions) => {
+        if (!actions || typeof actions !== 'object') {
+            return total;
+        }
+
+        if (actions.name) {
+            return total + 1;
+        }
+
+        return total + Object.values(actions).filter(Boolean).length;
+    }, 0);
+};
 </script>
 
 <template>
@@ -34,7 +61,7 @@ const custCount = totalRoles - sysCount;
                     <h1 class="mt-2 text-3xl font-semibold">Staff Roles</h1>
                     <p class="mt-1 text-slate-300">Manage staff roles and permissions.</p>
                 </div>
-                <Link href="/tenant/staff/roles/create" class="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
+                <Link href="/staff/roles/create" class="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                     Add Role
                 </Link>
@@ -74,11 +101,11 @@ const custCount = totalRoles - sysCount;
                             </span>
                         </div>
                         <div class="flex items-center gap-4 text-xs text-slate-400">
-                            <span>{{ Object.keys(role.permissions || {}).length }} permissions</span>
+                            <span>{{ permissionCount(role.permissions) }} permissions</span>
                             <span>{{ staffCounts[role.role] || 0 }} staff</span>
                         </div>
                         <div class="flex gap-2 mt-auto">
-                            <Link :href="`/tenant/staff/roles/${role.id}/edit`" class="flex-1 rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-center text-sm font-medium text-slate-300 hover:bg-white/5">Edit</Link>
+                            <Link :href="`/staff/roles/${role.role}/edit`" class="flex-1 rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-center text-sm font-medium text-slate-300 hover:bg-white/5">Edit</Link>
                         </div>
                     </div>
                 </div>

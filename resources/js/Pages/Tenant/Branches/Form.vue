@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { computed, reactive, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -29,13 +29,13 @@ const days = {
 };
 
 const amenityIcons = {
-    pool: 'ðŸŠ',
-    steam: 'ðŸ’¨',
-    parking: 'ðŸ…¿',
-    locker: 'ðŸ”’',
-    cafeteria: 'â˜•',
-    ac: 'â„',
-    wifi: 'ðŸ“¶',
+    pool: 'Ã°Å¸ÂÅ ',
+    steam: 'Ã°Å¸â€™Â¨',
+    parking: 'Ã°Å¸...Â¿',
+    locker: 'Ã°Å¸â€â€™',
+    cafeteria: 'Ã¢Ëœ*',
+    ac: 'Ã¢Ââ€ž',
+    wifi: 'Ã°Å¸â€œÂ¶',
 };
 
 const defaultHours = {
@@ -394,7 +394,7 @@ const submit = () => {
                                 :class="{ 'is-selected': form.amenities.includes(key) }"
                             >
                                 <input v-model="form.amenities" type="checkbox" :value="key">
-                                <span class="branch-amenity-pill__icon">{{ amenityIcons[key] || 'âœ“' }}</span>
+                                <span class="branch-amenity-pill__icon">{{ amenityIcons[key] || 'Ã¢Å“â€œ' }}</span>
                                 <span>{{ label }}</span>
                             </label>
                         </div>

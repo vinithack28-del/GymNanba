@@ -202,6 +202,16 @@ body {
     color: var(--app-text);
 }
 
+.sidebar-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    height: 0;
+    width: 0;
+}
+
 .locker-drawer-backdrop {
     background: rgba(15, 23, 42, 0.28);
     backdrop-filter: blur(1px);

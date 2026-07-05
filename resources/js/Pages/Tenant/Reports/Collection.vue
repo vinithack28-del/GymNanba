@@ -9,8 +9,8 @@ const props = defineProps({
 });
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(0);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(0);
 };
 </script>
 
@@ -24,7 +24,7 @@ const formatCurrency = (paise) => {
                     <h1 class="text-xl font-semibold">Collection Report</h1>
                     <p class="mt-0.5 text-sm text-slate-400">Track dues, collections, and payment recovery.</p>
                 </div>
-                <Link href="/tenant/reports" class="text-sm text-slate-400">â† Reports</Link>
+                <Link href="/tenant/reports" class="text-sm text-slate-400"><- Reports</Link>
             </div>
 
             <div class="grid gap-4 grid-cols-2 lg:grid-cols-4">

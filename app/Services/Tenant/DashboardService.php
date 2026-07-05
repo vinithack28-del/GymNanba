@@ -243,7 +243,7 @@ class DashboardService
 
     private function money(int $paise): string
     {
-        return 'â‚¹' . number_format($paise / 100, 2);
+        return 'Rs. ' . number_format($paise / 100, 2);
     }
 }
 

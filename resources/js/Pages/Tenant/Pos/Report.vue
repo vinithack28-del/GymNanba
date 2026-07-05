@@ -12,8 +12,8 @@ const props = defineProps({
 const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 </script>
 
@@ -64,7 +64,7 @@ const formatCurrency = (paise) => {
                         <tbody class="divide-y divide-white/10 bg-white/5">
                             <tr v-for="product in productRows" :key="product.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-semibold">{{ product.name }}</td>
-                                <td class="px-4 py-3 text-slate-400">{{ product.sku || 'â€”' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ product.sku || '-' }}</td>
                                 <td class="px-4 py-3">{{ product.category }}</td>
                                 <td class="px-4 py-3 text-right">{{ product.stock_quantity }}</td>
                                 <td class="px-4 py-3 text-right">{{ product.low_stock_threshold }}</td>

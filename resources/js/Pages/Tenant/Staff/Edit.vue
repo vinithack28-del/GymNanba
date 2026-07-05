@@ -1,28 +1,58 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed, watch } from 'vue';
 
 const props = defineProps({
     staff: Object,
-    roles: Object,
-    branches: Object,
-    selectedBranchId: String,
+    roles: {
+        type: [Array, Object],
+        default: () => [],
+    },
+    branches: {
+        type: [Array, Object],
+        default: () => [],
+    },
+    selectedBranchId: {
+        type: [String, Number],
+        default: null,
+    },
 });
+
+const branchOptions = computed(() => Object.values(props.branches || {}));
+const fixedBranchId = computed(() => {
+    if (props.selectedBranchId) {
+        return String(props.selectedBranchId);
+    }
+
+    return branchOptions.value.length === 1 ? String(branchOptions.value[0].id) : '';
+});
+const showBranchSelect = computed(() => branchOptions.value.length > 1 && !fixedBranchId.value);
 
 const form = useForm({
     name: props.staff.name,
     phone: props.staff.phone,
     email: props.staff.email,
     role: props.staff.role,
-    branch_id: props.staff.branch_id || props.selectedBranchId || '',
+    branch_id: fixedBranchId.value || props.staff.branch_id || '',
     join_date: props.staff.join_date,
     address: props.staff.address,
     emergency_contact: props.staff.emergency_contact,
     emergency_phone: props.staff.emergency_phone,
 });
 
+watch(fixedBranchId, (branchId) => {
+    if (branchId) {
+        form.branch_id = branchId;
+    }
+}, { immediate: true });
+
 const submit = () => {
-    form.put(`/tenant/staff/${props.staff.id}`);
+    if (fixedBranchId.value) {
+        form.branch_id = fixedBranchId.value;
+    }
+
+    form.put(`/staff/${props.staff.id}`);
 };
 </script>
 
@@ -59,11 +89,11 @@ const submit = () => {
                                 <option v-for="role in roles" :key="role.role" :value="role.role">{{ role.display_name || role.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</option>
                             </select>
                         </div>
-                        <div>
+                        <div v-if="showBranchSelect">
                             <label class="mb-2 block text-sm font-medium">Branch <span class="text-red-400">*</span></label>
                             <select v-model="form.branch_id" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                                 <option value="">Select Branch</option>
-                                <option v-for="branch in branches" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
+                                <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">{{ branch.name }}</option>
                             </select>
                         </div>
                         <div>
@@ -92,7 +122,7 @@ const submit = () => {
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <Link href="/tenant/staff" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Cancel</Link>
+                    <Link href="/staff" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Cancel</Link>
                     <button type="submit" class="rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400" :disabled="form.processing">Update Staff</button>
                 </div>
             </form>

@@ -36,7 +36,7 @@ const submit = () => {
                     <p class="mt-1 text-slate-300">Create a new gym class.</p>
                 </div>
                 <Link href="/tenant/classes" class="flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/50 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    â† Back to Classes
+                    <- Back to Classes
                 </Link>
             </div>
 

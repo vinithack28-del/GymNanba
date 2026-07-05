@@ -74,7 +74,7 @@ const submit = () => {
                     <p class="mt-1 text-slate-300">{{ pageSub }}</p>
                 </div>
                 <Link href="/plans" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    <span>â†</span> Back to plans
+                    <span><-</span> Back to plans
                 </Link>
             </div>
 
@@ -116,7 +116,7 @@ const submit = () => {
                         <p v-if="form.errors.duration_type" class="mt-1 text-xs font-semibold text-red-400">{{ form.errors.duration_type }}</p>
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-medium">Price (â‚¹) <span class="text-red-400">*</span></label>
+                        <label class="mb-2 block text-sm font-medium">Price (Rs.) <span class="text-red-400">*</span></label>
                         <input v-model="form.price_rupees" type="number" min="0" step="0.01" placeholder="e.g. 1000" class="w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>

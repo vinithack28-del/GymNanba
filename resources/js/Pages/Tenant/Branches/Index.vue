@@ -25,13 +25,13 @@ const inactiveCount = computed(() => props.branches.filter((branch) => branch.st
 const flashError = computed(() => page.props.flash?.error || null);
 
 const amenityIcons = {
-    pool: 'ðŸŠ',
-    steam: 'ðŸ’¨',
-    parking: 'ðŸ…¿',
-    locker: 'ðŸ”’',
-    cafeteria: 'â˜•',
-    ac: 'â„',
-    wifi: 'ðŸ“¶',
+    pool: 'Ã°Å¸ÂÅ ',
+    steam: 'Ã°Å¸â€™Â¨',
+    parking: 'Ã°Å¸...Â¿',
+    locker: 'Ã°Å¸â€â€™',
+    cafeteria: 'Ã¢Ëœ*',
+    ac: 'Ã¢Ââ€ž',
+    wifi: 'Ã°Å¸â€œÂ¶',
 };
 
 const deactivateModalOpen = ref(false);
@@ -251,11 +251,11 @@ const submitDeactivate = () => {
                             <span class="branch-stat__label">Active</span>
                         </div>
                         <div class="branch-stat">
-                            <span class="branch-stat__value branch-stat__value--muted">â€”</span>
+                            <span class="branch-stat__value branch-stat__value--muted">-</span>
                             <span class="branch-stat__label">Check-ins Today</span>
                         </div>
                         <div class="branch-stat">
-                            <span class="branch-stat__value branch-stat__value--muted">â€”</span>
+                            <span class="branch-stat__value branch-stat__value--muted">-</span>
                             <span class="branch-stat__label">Revenue / Mo</span>
                         </div>
                     </div>
@@ -266,7 +266,7 @@ const submitDeactivate = () => {
                             :key="amenity"
                             class="branch-amenity"
                         >
-                            {{ amenityIcons[amenity] || 'â€¢' }} {{ amenityOpts[amenity] || amenity }}
+                            {{ amenityIcons[amenity] || '*' }} {{ amenityOpts[amenity] || amenity }}
                         </span>
                         <span v-if="!branchAmenities(branch).length" class="branch-amenity branch-amenity--empty">
                             No amenities

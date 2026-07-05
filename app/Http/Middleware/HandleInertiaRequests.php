@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Branch;
 use App\Models\PlatformLanguage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -41,6 +42,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $this->getUserPermissions($request),
             ],
             'locale' => app()->getLocale(),
             'translations' => [
@@ -64,6 +66,41 @@ class HandleInertiaRequests extends Middleware
                 ->orderBy('display_name')
                 ->get(['locale_code', 'display_name'])
                 ->toArray();
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    private function getUserPermissions(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        if ($user->isSuperAdmin() || $user->isGymOwner()) {
+            return ['*'];
+        }
+
+        if (! $user->tenant_id) {
+            return [];
+        }
+
+        try {
+            return DB::table('permissions as p')
+                ->join('role_has_permissions as rhp', 'rhp.permission_id', '=', 'p.id')
+                ->join('roles as r', 'r.id', '=', 'rhp.role_id')
+                ->join('model_has_roles as mhr', function ($join) use ($user): void {
+                    $join->on('mhr.role_id', '=', 'r.id')
+                        ->where('mhr.model_type', '=', $user::class)
+                        ->where('mhr.model_id', '=', $user->id)
+                        ->where('mhr.tenant_id', '=', $user->tenant_id);
+                })
+                ->distinct()
+                ->pluck('p.name')
+                ->values()
+                ->all();
         } catch (\Throwable) {
             return [];
         }
@@ -112,4 +149,3 @@ class HandleInertiaRequests extends Middleware
         }
     }
 }
-

@@ -74,7 +74,7 @@ const getDaysLeft = (expDate) => {
 };
 
 const getDaysLeftText = (days) => {
-    if (days === null) return 'â€”';
+    if (days === null) return '-';
     if (days < 0) return Math.abs(days) + 'd ago';
     if (days === 0) return 'Today';
     return days + 'd left';
@@ -141,7 +141,7 @@ const getDaysLeftColor = (days) => {
                             <tr v-if="tenants.data && tenants.data.length > 0" v-for="tenant in tenants.data" :key="tenant.id" class="hover:bg-white/5">
                                 <td class="px-3 py-2.5">
                                     <p class="font-semibold">{{ tenant.gym_name }}</p>
-                                    <p class="text-xs text-slate-400">{{ tenant.business_type }} Â· {{ tenant.city }}</p>
+                                    <p class="text-xs text-slate-400">{{ tenant.business_type }} Ã‚- {{ tenant.city }}</p>
                                 </td>
                                 <td class="px-3 py-2.5">
                                     <p>{{ tenant.owner_name }}</p>
@@ -151,7 +151,7 @@ const getDaysLeftColor = (days) => {
                                     <span class="app-panel rounded border border-white/10 px-2 py-1 text-xs font-mono app-muted">{{ tenant.subdomain }}.gymos.in</span>
                                 </td>
                                 <td class="px-3 py-2.5">
-                                    <p>{{ tenant.latest_sub?.plan?.name || 'â€”' }}</p>
+                                    <p>{{ tenant.latest_sub?.plan?.name || '-' }}</p>
                                     <p v-if="tenant.latest_sub?.status === 'partial'" class="text-xs text-amber-400">Part paid</p>
                                 </td>
                                 <td class="px-3 py-2.5">
@@ -159,7 +159,7 @@ const getDaysLeftColor = (days) => {
                                         <p class="text-sm">{{ new Date(tenant.latest_sub.end_date || tenant.latest_sub.trial_end_date).toLocaleDateString('en-GB').replaceAll('/', '-') }}</p>
                                         <p class="text-xs" :class="getDaysLeftColor(getDaysLeft(tenant.latest_sub.end_date || tenant.latest_sub.trial_end_date))">{{ getDaysLeftText(getDaysLeft(tenant.latest_sub.end_date || tenant.latest_sub.trial_end_date)) }}</p>
                                     </template>
-                                    <span v-else class="text-slate-400">â€”</span>
+                                    <span v-else class="text-slate-400">-</span>
                                 </td>
                                 <td class="px-3 py-2.5">
                                     <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider" :class="getBadgeClass(tenant.status)">{{ tenant.status }}</span>

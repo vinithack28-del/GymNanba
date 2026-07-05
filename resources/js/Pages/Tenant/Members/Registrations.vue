@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onUnmounted, ref, watch } from 'vue';
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
@@ -278,7 +278,7 @@ watch(
                                 <td class="px-4 py-3 text-xs text-slate-500">{{ reg.email || '-' }}</td>
                                 <td class="px-4 py-3 text-xs text-slate-500">
                                     {{ reg.gender ? reg.gender.charAt(0).toUpperCase() + reg.gender.slice(1) : '-' }}
-                                    <span v-if="reg.dob"> · {{ formatDate(reg.dob) }}</span>
+                                    <span v-if="reg.dob"> - {{ formatDate(reg.dob) }}</span>
                                 </td>
                                 <td class="px-4 py-3 text-xs text-slate-500">{{ formatDate(reg.created_at, { withTime: true }) }}</td>
                                 <td v-if="status === 'pending'" class="px-4 py-3 text-right">

@@ -105,7 +105,7 @@ const changePerPage = (perPage) => {
 };
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -415,7 +415,6 @@ watch(
                                         class="inline-flex items-center gap-1.5"
                                     >
                                         <span>{{ column.label }}</span>
-                                        <span class="text-[10px]" :class="currentSortBy === column.key ? 'opacity-100' : 'opacity-25'">â–¾</span>
                                     </Link>
                                     <span v-else>{{ column.label }}</span>
                                 </th>
@@ -437,10 +436,10 @@ watch(
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ member.phone }}</td>
-                                <td class="px-5 py-4 text-sm text-slate-800">{{ member.plan_name || 'â€”' }}</td>
+                                <td class="px-5 py-4 text-sm text-slate-800">{{ member.plan_name || '-' }}</td>
                                 <td class="px-5 py-4 text-sm text-slate-600">{{ formatDate(member.created_at) }}</td>
                                 <td class="px-5 py-4 text-sm" :class="member.effective_status === 'expired' ? 'text-red-500' : 'text-slate-600'">
-                                    {{ member.expiry_date ? formatDate(member.expiry_date) : 'â€”' }}
+                                    {{ member.expiry_date ? formatDate(member.expiry_date) : '-' }}
                                 </td>
                                 <td class="px-5 py-4">
                                     <button
@@ -474,7 +473,7 @@ watch(
                                 </td>
                                 <td class="px-5 py-4 text-sm">
                                     <span v-if="member.balance_paise < 0" class="font-semibold text-red-500">{{ member.balance_rupees }}</span>
-                                    <span v-else class="text-slate-500">â‚¹0.00</span>
+                                    <span v-else class="text-slate-500">Rs. 0.00</span>
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="relative inline-flex">
@@ -577,7 +576,7 @@ watch(
                             <h3 class="text-base font-semibold text-slate-900">Freeze Membership</h3>
                             <p class="mt-1 text-sm text-slate-500">Pause {{ freezeTarget.name }} for a fixed number of days.</p>
                         </div>
-                        <button type="button" @click="closeFreezeModal" class="text-slate-400 transition hover:text-slate-700">âœ•</button>
+                        <button type="button" @click="closeFreezeModal" class="text-slate-400 transition hover:text-slate-700">x</button>
                     </div>
 
                     <div class="space-y-4 px-6 py-5">
@@ -611,4 +610,3 @@ watch(
         </div>
     </AppLayout>
 </template>
-

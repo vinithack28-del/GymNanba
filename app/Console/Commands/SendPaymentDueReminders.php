@@ -36,7 +36,7 @@ class SendPaymentDueReminders extends Command
                         ->html(
                             "<p>Hi,</p>"
                             . "<p><strong>{$payment->member->name}</strong> ({$payment->member->phone}) has a pending payment of "
-                            . "<strong>â‚¹{$due}</strong> due today.</p>"
+                            . "<strong>Rs. {$due}</strong> due today.</p>"
                             . "<p>Receipt: <strong>{$payment->receipt_number}</strong></p>"
                             . "<p>Please follow up and collect the balance amount.</p>"
                             . "<p>â€” {$tenant->gym_name}</p>"

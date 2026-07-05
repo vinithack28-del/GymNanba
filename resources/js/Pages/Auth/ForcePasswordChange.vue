@@ -26,7 +26,7 @@ const fieldError = (field) => props.errors?.[field] || form.errors?.[field] || '
                     This account was created with a temporary password. Set a new password before continuing.
                 </p>
 
-                <form @submit.prevent="form.post(route('password.change.update'))" class="mt-8 space-y-5">
+                <form @submit.prevent="form.post('/password/change-required')" class="mt-8 space-y-5">
                     <div>
                         <label class="mb-2 block text-sm font-medium">Current password</label>
                         <input
@@ -69,4 +69,3 @@ const fieldError = (field) => props.errors?.[field] || form.errors?.[field] || '
         </div>
     </AppLayout>
 </template>
-

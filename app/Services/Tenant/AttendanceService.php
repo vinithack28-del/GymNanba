@@ -14,6 +14,7 @@ use App\Models\WalkInFollowup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AttendanceService
 {
@@ -48,15 +49,21 @@ class AttendanceService
             );
         }
 
-        $logs = $query->paginate(30)->withQueryString();
+        $perPage = min(max((int) $request->get('per_page', 25), 10), 100);
+        $logs = $query->paginate($perPage)->withQueryString();
 
         return [
             'logs'        => $logs,
             'stats'       => $this->checkinStats($user->tenant_id, $date, $branchId),
             'branches'    => Branch::forTenant($user->tenant_id)->active()->orderBy('name')->get(),
             'methods'     => AttendanceLog::METHODS,
-            'date'        => $date,
-            'branchId'    => $branchId,
+            'filters'     => [
+                'date' => $date,
+                'branch_id' => $branchId,
+                'method' => $method,
+                'search' => $search,
+                'per_page' => $perPage,
+            ],
             'canManage'   => $this->canManage($user),
             'canCheckin'  => $this->canCheckin($user),
         ];
@@ -69,9 +76,17 @@ class AttendanceService
             ->with('plan')
             ->findOrFail($validated['member_id']);
 
-        // Block inactive members
-        abort_if($member->status === 'inactive', 422, 'Member is inactive and cannot check in.');
-        abort_if($member->expiry_date && $member->expiry_date->isPast(), 422, 'Membership has expired. Renew before check-in.');
+        if ($member->status === 'inactive') {
+            throw ValidationException::withMessages([
+                'member_id' => 'Member is inactive and cannot check in.',
+            ]);
+        }
+
+        if ($member->expiry_date && $member->expiry_date->isPast()) {
+            throw ValidationException::withMessages([
+                'member_id' => 'Membership has expired. Renew before check-in.',
+            ]);
+        }
 
         // Check for already open check-in today
         $openToday = AttendanceLog::query()
@@ -82,23 +97,29 @@ class AttendanceService
             ->exists();
 
         if ($openToday && ! ($validated['force'] ?? false)) {
-            abort(409, 'Member already has an open check-in today.');
+            throw ValidationException::withMessages([
+                'member_id' => 'Member already has an open check-in today.',
+            ]);
         }
 
         if ($member->plan?->isSessionBased()) {
             $sessionLimit = (int) $member->plan->session_limit;
             $usedSessions = $this->memberUsedSessions($member);
 
-            abort_if(
-                $usedSessions >= $sessionLimit,
-                422,
-                "Session limit reached ({$usedSessions}/{$sessionLimit}). Renew before check-in."
-            );
+            if ($usedSessions >= $sessionLimit) {
+                throw ValidationException::withMessages([
+                    'member_id' => "Session limit reached ({$usedSessions}/{$sessionLimit}). Renew before check-in.",
+                ]);
+            }
         }
 
         $branchId = $this->resolveBranch($user, $validated['branch_id'] ?? null)
             ?? $user->branch_id
             ?? Branch::forTenant($user->tenant_id)->active()->value('id');
+        $checkedInBy = Staff::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id)
+            ->value('id');
 
         return AttendanceLog::query()->create([
             'tenant_id'     => $user->tenant_id,
@@ -107,7 +128,7 @@ class AttendanceService
             'method'        => $validated['method'] ?? 'manual',
             'checked_in_at' => now(),
             'reason'        => $validated['reason'] ?? null,
-            'checked_in_by' => $validated['checked_in_by'] ?? null,
+            'checked_in_by' => $checkedInBy,
             'created_at'    => now(),
         ]);
     }
@@ -506,7 +527,7 @@ class AttendanceService
             : null;
 
         $referenceSummary = collect($meta)
-            ->map(fn (array $row) => strtoupper($row['method']) . ': â‚¹' . number_format($row['amount_paise'] / 100, 2) . (filled($row['reference']) ? ' (' . $row['reference'] . ')' : ''))
+            ->map(fn (array $row) => strtoupper($row['method']) . ': Rs. ' . number_format($row['amount_paise'] / 100, 2) . (filled($row['reference']) ? ' (' . $row['reference'] . ')' : ''))
             ->implode(', ');
 
         return [$meta, $methodSummary, $referenceSummary !== '' ? mb_substr($referenceSummary, 0, 100) : null, $paidPaise];
@@ -627,4 +648,3 @@ class AttendanceService
         ];
     }
 }
-

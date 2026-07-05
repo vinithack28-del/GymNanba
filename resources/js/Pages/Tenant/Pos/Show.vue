@@ -8,12 +8,12 @@ const props = defineProps({
 });
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '').replaceAll('/', '-');
 };
 
@@ -55,7 +55,7 @@ const printReceipt = () => {
                         <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Staff</p>
                             <p class="mt-2 font-semibold">{{ sale.seller?.name || 'Owner / system' }}</p>
-                            <p class="mt-1 text-sm text-slate-400">{{ sale.branch?.name || 'â€”' }}</p>
+                            <p class="mt-1 text-sm text-slate-400">{{ sale.branch?.name || '-' }}</p>
                         </div>
                         <div class="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Method</p>

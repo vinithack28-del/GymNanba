@@ -28,12 +28,13 @@ class PasswordChangeController extends Controller
             return back()->withErrors(['current_password' => 'The current password is incorrect.']);
         }
 
-        $user?->update([
+        $user?->forceFill([
             'password' => $validated['password'],
             'must_change_password' => false,
-        ]);
+        ])->save();
 
-        return redirect()->route('dashboard')->with('status', 'Password updated successfully.');
+        $dashboardRoute = $user?->isSuperAdmin() ? 'admin.dashboard' : 'tenant.dashboard';
+
+        return redirect()->route($dashboardRoute)->with('status', 'Password updated successfully.');
     }
 }
-

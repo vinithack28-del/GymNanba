@@ -58,12 +58,12 @@ const props = defineProps({
                                         </span>
                                         <div>
                                             <p class="font-semibold">{{ trainer.name }}</p>
-                                            <p class="text-xs text-slate-400">{{ trainer.branch?.name || 'â€”' }}</p>
+                                            <p class="text-xs text-slate-400">{{ trainer.branch?.name || '-' }}</p>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.specialisation || 'â€”' }}</td>
-                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.phone || 'â€”' }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.specialisation || '-' }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-400">{{ trainer.phone || '-' }}</td>
                                 <td class="whitespace-nowrap px-4 py-3">{{ trainer.classes_count || 0 }}</td>
                                 <td class="whitespace-nowrap px-4 py-3">
                                     <span class="rounded-full px-2 py-0.5 text-xs font-semibold" :class="trainer.is_active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/15 text-slate-300'">

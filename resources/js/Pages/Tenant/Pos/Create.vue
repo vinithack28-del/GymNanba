@@ -43,7 +43,7 @@ const submit = () => {
                     <p class="mt-1 text-slate-300">{{ pageSub }}</p>
                 </div>
                 <Link href="/tenant/pos/products" class="flex items-center gap-2 rounded-full border border-white/10 bg-slate-950/50 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5">
-                    <span>â†</span> Back to Products
+                    <span><-</span> Back to Products
                 </Link>
             </div>
 
@@ -65,7 +65,7 @@ const submit = () => {
                         </select>
                     </div>
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-300">Price (â‚¹) <span class="text-red-400">*</span></label>
+                        <label class="mb-1 block text-sm font-medium text-slate-300">Price (Rs.) <span class="text-red-400">*</span></label>
                         <input v-model="form.price_paise" type="number" step="0.01" min="0" placeholder="0.00" class="w-full rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" required>
                     </div>
                     <div>

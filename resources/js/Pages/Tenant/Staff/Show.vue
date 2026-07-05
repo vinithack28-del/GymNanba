@@ -1,12 +1,17 @@
 <script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import AppConfirmDialog from '../../../Components/AppConfirmDialog.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps({
     staff: Object,
     tab: String,
     canManage: Boolean,
 });
+
+const resetDialogOpen = ref(false);
+const resetProcessing = ref(false);
 
 const roleColors = {
     receptionist: 'bg-cyan-500/10 text-cyan-300 border-cyan-400/20',
@@ -23,6 +28,25 @@ const getRoleClass = (role) => {
 const getInitials = (name) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 };
+
+const closeResetDialog = () => {
+    if (resetProcessing.value) {
+        return;
+    }
+
+    resetDialogOpen.value = false;
+};
+
+const resetPassword = () => {
+    resetProcessing.value = true;
+    router.post(`/staff/${props.staff.id}/reset-password`, {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            resetProcessing.value = false;
+            resetDialogOpen.value = false;
+        },
+    });
+};
 </script>
 
 <template>
@@ -33,11 +57,14 @@ const getInitials = (name) => {
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="mt-2 text-3xl font-semibold">{{ staff.name }}</h1>
-                    <p class="mt-1 text-slate-300">{{ staff.role_label }} Â· {{ staff.branch?.name || 'â€”' }}</p>
+                    <p class="mt-1 text-slate-300">{{ staff.role_label }} Ã‚- {{ staff.branch?.name || '-' }}</p>
                 </div>
                 <div class="flex gap-3">
-                    <Link v-if="canManage" :href="`/tenant/staff/${staff.id}/edit`" class="rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">Edit</Link>
-                    <Link href="/tenant/staff" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Back</Link>
+                    <Link v-if="canManage" :href="`/staff/${staff.id}/edit`" class="rounded-2xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-orange-400">Edit</Link>
+                    <button v-if="canManage" type="button" class="rounded-2xl border border-amber-400/30 bg-amber-500/10 px-5 py-2.5 text-sm font-semibold text-amber-300 transition hover:bg-amber-500/20" @click="resetDialogOpen = true">
+                        Reset Password
+                    </button>
+                    <Link href="/staff" class="rounded-2xl border border-white/10 bg-slate-950/50 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5">Back</Link>
                 </div>
             </div>
 
@@ -58,16 +85,16 @@ const getInitials = (name) => {
                             {{ staff.status.charAt(0).toUpperCase() + staff.status.slice(1) }}
                         </span>
                     </div>
-                    <p class="mt-1 text-sm text-slate-400">{{ staff.email }} Â· {{ staff.phone }}</p>
-                    <p class="text-sm text-slate-400">{{ staff.branch?.name || 'â€”' }} Â· Joined {{ staff.join_date }}</p>
+                    <p class="mt-1 text-sm text-slate-400">{{ staff.email }} Ã‚- {{ staff.phone }}</p>
+                    <p class="text-sm text-slate-400">{{ staff.branch?.name || '-' }} Ã‚- Joined {{ staff.join_date }}</p>
                 </div>
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <Link :href="`/tenant/staff/${staff.id}?tab=details`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'details' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Details</Link>
-                <Link :href="`/tenant/staff/${staff.id}?tab=logins`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'logins' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Logins</Link>
-                <Link :href="`/tenant/staff/${staff.id}?tab=attendance`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'attendance' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Attendance</Link>
-                <Link :href="`/tenant/staff/${staff.id}?tab=documents`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'documents' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Documents</Link>
+                <Link :href="`/staff/${staff.id}?tab=details`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'details' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Details</Link>
+                <Link :href="`/staff/${staff.id}?tab=logins`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'logins' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Logins</Link>
+                <Link :href="`/staff/${staff.id}?tab=attendance`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'attendance' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Attendance</Link>
+                <Link :href="`/staff/${staff.id}?tab=documents`" class="rounded-full px-5 py-2 text-sm font-semibold transition-colors" :class="tab === 'documents' ? 'bg-orange-500 text-slate-950' : 'border border-white/10 bg-slate-950/50 text-slate-300 hover:bg-white/5'">Documents</Link>
             </div>
 
             <div class="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -92,7 +119,7 @@ const getInitials = (name) => {
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Branch</p>
-                            <p class="text-sm font-medium">{{ staff.branch?.name || 'â€”' }}</p>
+                            <p class="text-sm font-medium">{{ staff.branch?.name || '-' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Join Date</p>
@@ -100,15 +127,15 @@ const getInitials = (name) => {
                         </div>
                         <div class="md:col-span-2">
                             <p class="text-xs text-slate-400">Address</p>
-                            <p class="text-sm font-medium">{{ staff.address || 'â€”' }}</p>
+                            <p class="text-sm font-medium">{{ staff.address || '-' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Emergency Contact</p>
-                            <p class="text-sm font-medium">{{ staff.emergency_contact || 'â€”' }}</p>
+                            <p class="text-sm font-medium">{{ staff.emergency_contact || '-' }}</p>
                         </div>
                         <div>
                             <p class="text-xs text-slate-400">Emergency Phone</p>
-                            <p class="text-sm font-medium">{{ staff.emergency_phone || 'â€”' }}</p>
+                            <p class="text-sm font-medium">{{ staff.emergency_phone || '-' }}</p>
                         </div>
                     </div>
                 </div>
@@ -126,6 +153,16 @@ const getInitials = (name) => {
                 </div>
             </div>
         </div>
+
+        <AppConfirmDialog
+            :open="resetDialogOpen"
+            title="Reset staff password"
+            :message="`Reset ${staff.name}'s password to 123456? They will be asked to change it after login.`"
+            confirm-label="Reset Password"
+            :processing="resetProcessing"
+            @cancel="closeResetDialog"
+            @confirm="resetPassword"
+        />
     </AppLayout>
 </template>
 

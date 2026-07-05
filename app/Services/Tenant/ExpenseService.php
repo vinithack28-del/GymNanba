@@ -14,41 +14,54 @@ class ExpenseService
 {
     // â”€â”€ Access control â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+    public function canView(): bool
+    {
+        return Auth::user()?->canAccess('expenses.view|expenses.manage') ?? false;
+    }
+
+    public function canManage(): bool
+    {
+        return Auth::user()?->canAccess('expenses.manage') ?? false;
+    }
+
     public function canAdd(): bool
     {
-        return in_array(Auth::user()->role, ['tenant_owner', 'accountant', 'branch_manager', 'branch_admin']);
+        return $this->canManage();
     }
 
     public function canEdit(Expense $expense): bool
     {
-        $user = Auth::user();
-        if (in_array($user->role, ['tenant_owner', 'accountant'])) {
-            return true;
+        if (! $this->canManage()) {
+            return false;
         }
-        if (in_array($user->role, ['branch_manager', 'branch_admin'])) {
-            $staff = Staff::where('user_id', $user->id)->where('tenant_id', $expense->tenant_id)->first();
-            return $staff?->branch_id === $expense->branch_id;
+
+        $scopedBranch = $this->scopedBranchId($expense->tenant_id);
+        if ($scopedBranch) {
+            return (int) $scopedBranch === (int) $expense->branch_id;
         }
-        return false;
+
+        return true;
     }
 
     public function canDelete(): bool
     {
-        return in_array(Auth::user()->role, ['tenant_owner', 'accountant']);
+        return $this->canManage();
     }
 
     public function canApprove(): bool
     {
-        return Auth::user()->role === 'tenant_owner';
+        return Auth::user()?->role === 'tenant_owner';
     }
 
     private function scopedBranchId(int $tenantId): ?int
     {
         $user = Auth::user();
-        if (in_array($user->role, ['branch_manager', 'branch_admin'])) {
-            return Staff::where('user_id', $user->id)->where('tenant_id', $tenantId)->value('branch_id');
+        if (! $user || $user->isGymOwner() || $user->isSuperAdmin()) {
+            return null;
         }
-        return null;
+
+        return $user->branch_id
+            ?: Staff::where('user_id', $user->id)->where('tenant_id', $tenantId)->value('branch_id');
     }
 
     // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -94,15 +107,33 @@ class ExpenseService
             });
         }
 
+        $perPage = min(max((int) $request->get('per_page', 25), 10), 100);
         $expenses = $query->orderByDesc('expenses.date')
             ->orderByDesc('expenses.id')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         $branches    = Branch::forTenant($tenantId)->active()->orderBy('name')->get();
         $summary     = $this->monthlySummary($tenantId, $scopedBranch ?? $request->branch_id);
+        $filters = [
+            'search' => $request->get('search'),
+            'category' => $request->get('category'),
+            'method' => $request->get('method'),
+            'status' => $request->get('status'),
+            'branch_id' => $request->get('branch_id'),
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'per_page' => $perPage,
+        ];
+        $categories = Expense::CATEGORIES;
+        $methods = Expense::METHODS;
+        $statuses = Expense::STATUSES;
+        $canAdd = $this->canAdd();
+        $canEdit = $this->canManage();
+        $canDelete = $this->canDelete();
+        $canApprove = $this->canApprove();
 
-        return compact('expenses', 'branches', 'summary');
+        return compact('expenses', 'branches', 'summary', 'filters', 'categories', 'methods', 'statuses', 'canAdd', 'canEdit', 'canDelete', 'canApprove');
     }
 
     // â”€â”€ Monthly summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -150,7 +181,13 @@ class ExpenseService
             ->orderBy('name')
             ->get(['id', 'name', 'role']);
 
-        return compact('branches', 'staffList');
+        return [
+            'branches' => $branches,
+            'staffList' => $staffList,
+            'categories' => Expense::CATEGORIES,
+            'methods' => Expense::METHODS,
+            'recurrence' => Expense::RECURRENCE,
+        ];
     }
 
     // â”€â”€ Store â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -287,4 +324,3 @@ class ExpenseService
         return implode("\n", $lines);
     }
 }
-

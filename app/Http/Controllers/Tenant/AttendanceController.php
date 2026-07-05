@@ -44,9 +44,7 @@ class AttendanceController extends Controller
             'force'     => ['nullable', 'boolean'],
         ]);
 
-        $log = $this->service->storeCheckin($request->user(), $validated + [
-            'checked_in_by' => $request->user()->id ?? null,
-        ]);
+        $log = $this->service->storeCheckin($request->user(), $validated);
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -169,4 +167,3 @@ class AttendanceController extends Controller
         ]);
     }
 }
-

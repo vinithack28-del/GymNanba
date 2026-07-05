@@ -26,13 +26,13 @@ const renewalSearch = ref('');
 let chartLoader = null;
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 
 const filteredExpiredMembers = ref(props.expiredMembers || []);
@@ -118,7 +118,7 @@ const initRevenueChart = () => {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { ticks: { callback: (value) => 'â‚¹' + (value / 100).toFixed(0) } },
+                y: { ticks: { callback: (value) => 'Rs. ' + (value / 100).toFixed(0) } },
             }
         }
     });
@@ -220,7 +220,7 @@ const initCheckinChart = () => {
                         <tbody>
                             <tr v-for="payment in recentPayments" :key="payment.id" class="border-b border-white/5">
                                 <td class="px-2 py-3">{{ payment.member?.name ?? 'Walk-in' }}</td>
-                                <td class="px-2 py-3 text-slate-400">{{ payment.plan?.name ?? 'â€”' }}</td>
+                                <td class="px-2 py-3 text-slate-400">{{ payment.plan?.name ?? '-' }}</td>
                                 <td class="px-2 py-3 text-right">{{ formatCurrency(payment.total_paise) }}</td>
                                 <td class="px-2 py-3 text-slate-400">{{ formatDate(payment.payment_date) }}</td>
                             </tr>
@@ -243,7 +243,7 @@ const initCheckinChart = () => {
                                     <p class="font-bold">{{ member.name }}</p>
                                     <p class="text-sm text-slate-400">
                                         {{ new Date(member.next_birthday).toLocaleDateString('en-GB').replaceAll('/', '-') }}
-                                        â€¢
+                                        *
                                         {{ member.birthday_bucket === 'today' ? 'Today' : 'This Week' }}
                                     </p>
                                 </div>
@@ -258,7 +258,7 @@ const initCheckinChart = () => {
                 <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
                     <div class="mb-4 flex items-start justify-between gap-3">
                         <div>
-                            <p class="text-lg font-bold">Expired â€“ Not Renewed</p>
+                            <p class="text-lg font-bold">Expired - Not Renewed</p>
                             <p class="text-sm text-slate-400">Expired plans with no renewal recorded yet.</p>
                         </div>
                         <Link href="/tenant/renewals?tab=expired" class="text-sm font-bold text-orange-400 hover:underline">View All</Link>
@@ -270,7 +270,7 @@ const initCheckinChart = () => {
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <p class="font-bold">{{ member.name }}</p>
-                                    <p class="text-sm text-slate-400">{{ member.plan?.name ?? member.plan_name ?? 'â€”' }} â€¢ Expired {{ formatDate(member.expiry_date) }}</p>
+                                    <p class="text-sm text-slate-400">{{ member.plan?.name ?? member.plan_name ?? '-' }} * Expired {{ formatDate(member.expiry_date) }}</p>
                                 </div>
                                 <Link :href="`/payments/collect?member_id=${member.id}`" class="rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-orange-400 hover:text-orange-400">Add Revenue</Link>
                             </div>
@@ -298,7 +298,7 @@ const initCheckinChart = () => {
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <p class="font-bold">{{ member.name }}</p>
-                                    <p class="text-sm text-slate-400">{{ member.plan?.name ?? member.plan_name ?? 'â€”' }} â€¢ Expires {{ formatDate(member.expiry_date) }}</p>
+                                    <p class="text-sm text-slate-400">{{ member.plan?.name ?? member.plan_name ?? '-' }} * Expires {{ formatDate(member.expiry_date) }}</p>
                                 </div>
                                 <Link :href="`/payments/collect?member_id=${member.id}`" class="rounded-lg border border-white/10 bg-slate-950 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-orange-400 hover:text-orange-400">Add Revenue</Link>
                             </div>

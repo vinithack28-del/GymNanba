@@ -51,7 +51,7 @@ const selectedPlan = computed(() => {
 });
 
 const expiryPreview = computed(() => {
-    if (!selectedPlan.value || !renewalForm.start_date) return 'â€”';
+    if (!selectedPlan.value || !renewalForm.start_date) return '-';
 
     if (Number(selectedPlan.value.session_limit || 0) > 0) {
         const sessions = Number(selectedPlan.value.session_limit);
@@ -70,7 +70,7 @@ const expiryPreview = computed(() => {
 });
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -82,7 +82,7 @@ const getDaysRemaining = (expiryDate) => {
 };
 
 const getDaysText = (days) => {
-    if (days === null) return 'â€”';
+    if (days === null) return '-';
     if (days < 0) return `${Math.abs(days)}d overdue`;
     if (days === 0) return 'Today';
     return `${days}d left`;
@@ -112,7 +112,7 @@ const getRenewStartDate = (member) => {
 };
 
 const formatCurrency = (amount) => {
-    return `â‚¹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `Rs. ${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const getPlanTotal = (plan) => {
@@ -266,7 +266,7 @@ const submitRenewal = () => {
                                 </td>
                                 <td class="px-4 py-3"><span class="font-mono text-xs text-slate-400">{{ member.member_code }}</span></td>
                                 <td class="px-4 py-3 text-slate-400">{{ member.phone }}</td>
-                                <td class="px-4 py-3">{{ member.plan_name || 'â€”' }}</td>
+                                <td class="px-4 py-3">{{ member.plan_name || '-' }}</td>
                                 <td class="px-4 py-3">
                                     <span v-if="isSessionMember(member)" class="rounded-full border border-sky-400/30 bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-300">
                                         {{ sessionStatus(member) }}
@@ -284,7 +284,7 @@ const submitRenewal = () => {
                                 </td>
                                 <td class="px-4 py-3">
                                     <span v-if="Number(member.balance_paise) < 0" class="font-semibold text-red-400">{{ member.balance_rupees }}</span>
-                                    <span v-else class="text-slate-400">â‚¹0.00</span>
+                                    <span v-else class="text-slate-400">Rs. 0.00</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <div class="flex items-center justify-end gap-2">

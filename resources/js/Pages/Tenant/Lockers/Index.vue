@@ -329,8 +329,8 @@ const toggleStatus = async (locker) => {
                         <tbody class="divide-y divide-white/10 bg-white/5">
                             <tr v-for="locker in lockerRows" :key="locker.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-bold text-orange-400">{{ locker.locker_number }}</td>
-                                <td class="px-4 py-3 text-slate-400">{{ locker.location || 'â€”' }}</td>
-                                <td class="px-4 py-3">{{ rowBranchName(locker) || 'â€”' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ locker.location || '-' }}</td>
+                                <td class="px-4 py-3">{{ rowBranchName(locker) || '-' }}</td>
                                 <td class="px-4 py-3">
                                     <span class="rounded-full px-2 py-1 text-xs font-bold" :class="rowAssignment(locker) ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'">
                                         {{ rowAssignment(locker) ? 'Occupied' : 'Available' }}
@@ -357,7 +357,7 @@ const toggleStatus = async (locker) => {
                                         <p class="font-semibold">{{ rowAssignment(locker).member.name }}</p>
                                         <p class="text-xs text-slate-400">{{ rowAssignment(locker).member.phone || rowAssignment(locker).member.member_code || '' }}</p>
                                     </div>
-                                    <span v-else class="text-slate-400">â€”</span>
+                                    <span v-else class="text-slate-400">-</span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-1.5">
@@ -438,7 +438,7 @@ const toggleStatus = async (locker) => {
 
                     <div v-if="drawerMode === 'edit'" class="rounded-xl border px-3 py-2.5">
                         <p class="text-xs font-bold uppercase tracking-wide app-muted">Branch</p>
-                        <p class="mt-1 font-semibold">{{ rowBranchName(selectedLocker) || 'â€”' }}</p>
+                        <p class="mt-1 font-semibold">{{ rowBranchName(selectedLocker) || '-' }}</p>
                     </div>
 
                     <div>

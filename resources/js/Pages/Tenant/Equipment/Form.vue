@@ -84,7 +84,7 @@ const submit = () => {
                         <input v-model="form.warranty_expiry" type="date" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400">
                     </div>
                     <div>
-                        <label class="mb-2 block text-sm font-medium">Purchase Price (â‚¹)</label>
+                        <label class="mb-2 block text-sm font-medium">Purchase Price (Rs.)</label>
                         <input v-model="form.purchase_price" type="number" min="0" step="1" class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 text-sm text-slate-300 outline-none focus:border-orange-400" placeholder="0">
                     </div>
                     <div class="md:col-span-2">

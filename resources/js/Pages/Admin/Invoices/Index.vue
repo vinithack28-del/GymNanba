@@ -165,7 +165,7 @@ const partPaymentAmountPaise = computed(() =>
 const formatCurrency = (paise) => `Rs. ${(Number(paise || 0) / 100).toFixed(2)}`;
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -298,7 +298,7 @@ const submitPartPayment = () => {
                                     class="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3 pr-11 text-sm text-slate-300 outline-none focus:border-orange-400"
                                     @focus="tenantDropdownOpen = true"
                                 >
-                                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">â–¾</span>
+                                <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">Ã¢-Â¾</span>
                                 <div v-if="tenantDropdownOpen" class="absolute left-0 right-0 top-full z-20 mt-2 max-h-52 overflow-y-auto rounded-2xl border app-panel-strong shadow-xl">
                                     <button
                                         v-for="tenant in filteredTenants"
@@ -320,7 +320,7 @@ const submitPartPayment = () => {
                         </div>
 
                         <div v-if="selectedTenantDue" class="rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-300">
-                            {{ t('admin.invoices.expiry', 'Expiry') }}: {{ formatDate(selectedTenantDue._sub?.end_date || selectedTenantDue._sub?.trial_end_date) }} Â· {{ t('status', 'Status') }}: {{ selectedTenantDue._sub?.status || 'â€”' }}
+                            {{ t('admin.invoices.expiry', 'Expiry') }}: {{ formatDate(selectedTenantDue._sub?.end_date || selectedTenantDue._sub?.trial_end_date) }} Ã‚- {{ t('status', 'Status') }}: {{ selectedTenantDue._sub?.status || '-' }}
                         </div>
 
                         <div>
@@ -374,14 +374,14 @@ const submitPartPayment = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (â‚¹)</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (Rs.)</label>
                                         <input v-model="split.amount" type="number" step="0.01" min="0.01" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                     <div>
                                         <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.reference', 'Reference') }}</label>
                                         <input v-model="split.reference" type="text" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
-                                    <button type="button" @click="removeRenewalSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">âœ•</button>
+                                    <button type="button" @click="removeRenewalSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">Ã¢Å“*</button>
                                 </div>
                             </div>
                             <button type="button" @click="addRenewalSplit" class="mt-2 w-full rounded-lg border border-dashed border-white/10 px-3 py-2 text-xs font-semibold text-slate-400 hover:border-orange-400 hover:text-orange-400">
@@ -427,7 +427,7 @@ const submitPartPayment = () => {
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-sm font-semibold">{{ tenant.gym_name }}</p>
-                                    <p class="mt-1 text-xs text-slate-400">{{ tenant._sub?.plan?.name || 'â€”' }}</p>
+                                    <p class="mt-1 text-xs text-slate-400">{{ tenant._sub?.plan?.name || '-' }}</p>
                                 </div>
                                 <span class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase" :class="getDueBadgeClass(getDaysLeft(tenant._sub?.end_date || tenant._sub?.trial_end_date))">
                                     {{ Math.abs(getDaysLeft(tenant._sub?.end_date || tenant._sub?.trial_end_date) || 0) }} {{ t('admin.invoices.day_left', 'd left') }}
@@ -477,14 +477,14 @@ const submitPartPayment = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (â‚¹)</label>
+                                        <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.amount', 'Amount') }} (Rs.)</label>
                                         <input v-model="split.amount" type="number" step="0.01" min="0.01" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
                                     <div>
                                         <label class="mb-1 block text-xs text-slate-400">{{ t('admin.invoices.reference', 'Reference') }}</label>
                                         <input v-model="split.reference" type="text" class="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-300 outline-none focus:border-orange-400">
                                     </div>
-                                    <button type="button" @click="removePartSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">âœ•</button>
+                                    <button type="button" @click="removePartSplit(index)" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-red-400 hover:bg-red-500/10">Ã¢Å“*</button>
                                 </div>
                             </div>
                         </div>
@@ -526,7 +526,7 @@ const submitPartPayment = () => {
                                     <template v-for="payment in payments.data" :key="payment.id">
                                         <tr class="hover:bg-white/5">
                                             <td class="px-3 py-2.5 font-semibold">{{ payment.tenant?.gym_name }}</td>
-                                            <td class="px-4 py-4 text-slate-400">{{ payment.subscription?.plan?.name || 'â€”' }}</td>
+                                            <td class="px-4 py-4 text-slate-400">{{ payment.subscription?.plan?.name || '-' }}</td>
                                             <td class="px-3 py-2.5">
                                                 <span class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase" :class="getPaymentTypeClass(payment.payment_type)">
                                                     {{ payment.payment_type?.replace('_', ' ') }}
@@ -534,12 +534,12 @@ const submitPartPayment = () => {
                                             </td>
                                             <td class="px-3 py-2.5 font-semibold">{{ formatCurrency(payment.amount_paise) }}</td>
                                             <td class="px-3 py-2.5 text-slate-400">{{ payment.payment_method }}</td>
-                                            <td class="px-4 py-4 font-mono text-xs text-slate-400">{{ payment.transaction_ref || 'â€”' }}</td>
+                                            <td class="px-4 py-4 font-mono text-xs text-slate-400">{{ payment.transaction_ref || '-' }}</td>
                                             <td class="px-3 py-2.5 text-slate-400">{{ formatDate(payment.paid_at) }}</td>
                                             <td class="px-3 py-2.5 text-xs text-slate-400">{{ payment.admin?.name || t('admin.invoices.system', 'System') }}</td>
                                         </tr>
                                         <tr v-if="payment.notes">
-                                            <td colspan="8" class="px-4 py-2 text-xs text-slate-400">â†³ {{ payment.notes }}</td>
+                                            <td colspan="8" class="px-4 py-2 text-xs text-slate-400">Ã¢â€ Â³ {{ payment.notes }}</td>
                                         </tr>
                                     </template>
                                 </template>

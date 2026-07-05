@@ -482,7 +482,7 @@ const submit = () => {
                             <select v-model="form.plan_id" :class="fieldClass('plan_id', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" required>
                                 <option value="">Select plan</option>
                                 <option v-for="plan in props.plans" :key="plan.id" :value="String(plan.id)">
-                                    {{ plan.is_trial ? `${plan.name} Â· Trial (${plan.trial_days} days)` : `${plan.name} Â· ${formatPlanPrice(plan.price_paise)} / ${plan.billing_cycle}` }}
+                                    {{ plan.is_trial ? `${plan.name} Ã‚- Trial (${plan.trial_days} days)` : `${plan.name} Ã‚- ${formatPlanPrice(plan.price_paise)} / ${plan.billing_cycle}` }}
                                 </option>
                             </select>
                             <p v-if="fieldError('plan_id')" class="field-error">{{ fieldError('plan_id') }}</p>
@@ -492,7 +492,7 @@ const submit = () => {
                             <label class="mb-1.5 block text-xs font-semibold uppercase tracking-[0.08em] text-slate-300">Trial End Date</label>
                             <input v-model="form.trial_end_date" type="date" :class="fieldClass('trial_end_date', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')">
                             <p v-if="fieldError('trial_end_date')" class="field-error">{{ fieldError('trial_end_date') }}</p>
-                            <p class="mt-2 text-xs text-slate-400">Trial plan selected{{ selectedPlanTrialDays ? ` Â· default ${selectedPlanTrialDays} days` : '' }}.</p>
+                            <p class="mt-2 text-xs text-slate-400">Trial plan selected{{ selectedPlanTrialDays ? ` Ã‚- default ${selectedPlanTrialDays} days` : '' }}.</p>
                         </div>
 
                         <div class="md:col-span-2">
@@ -523,7 +523,7 @@ const submit = () => {
                                         <p v-if="paymentSplitError(index, 'method')" class="field-error">{{ paymentSplitError(index, 'method') }}</p>
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Amount (â‚¹)</label>
+                                        <label class="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Amount (Rs.)</label>
                                         <input v-model="split.amount" type="number" step="0.01" min="0" :class="paymentSplitFieldClass(index, 'amount', 'w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-white outline-none focus:border-orange-400')" placeholder="0.00">
                                         <p v-if="paymentSplitError(index, 'amount')" class="field-error">{{ paymentSplitError(index, 'amount') }}</p>
                                     </div>
@@ -534,7 +534,7 @@ const submit = () => {
                                     </div>
                                     <div class="flex items-end">
                                         <button type="button" @click="removePaymentSplit(index)" class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-red-400 transition hover:bg-white/10" title="Remove">
-                                            âœ•
+                                            Ã¢Å“*
                                         </button>
                                     </div>
                                 </div>
@@ -575,26 +575,26 @@ const submit = () => {
                         <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Business</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || '-' }}</span></div>
                             </div>
                         </div>
 
                         <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Routing & Plan</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Trial End Date:</span><span class="font-semibold text-right">{{ form.trial_end_date || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Trial End Date:</span><span class="font-semibold text-right">{{ form.trial_end_date || '-' }}</span></div>
                             </div>
                         </div>
 
@@ -604,12 +604,12 @@ const submit = () => {
                                 <div v-for="(owner, index) in reviewOwners" :key="`review-owner-${index}`" class="rounded-lg border border-white/10 bg-white/5 p-2.5 text-sm">
                                     <div class="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">{{ index === 0 ? 'Primary Owner' : `Additional Owner ${index}` }}</div>
                                     <div class="grid gap-2 md:grid-cols-3">
-                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || 'â€”' }}</span></div>
-                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || 'â€”' }}</span></div>
-                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || 'â€”' }}</span></div>
+                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || '-' }}</span></div>
+                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || '-' }}</span></div>
+                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || '-' }}</span></div>
                                     </div>
                                 </div>
-                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">â€”</div>
+                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">-</div>
                             </div>
                         </div>
 
@@ -619,14 +619,14 @@ const submit = () => {
                             <div v-else class="mt-3 grid gap-3 text-sm">
                                 <div class="flex justify-between gap-3"><span class="text-slate-400">Paying Now:</span><span class="font-semibold text-right">{{ formatPlanPrice(paymentTotalPaise) }}</span></div>
                                 <div class="flex justify-between gap-3"><span class="text-slate-400">Balance:</span><span class="font-semibold text-right">{{ formatPlanPrice(paymentBalancePaise) }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Payment Date:</span><span class="font-semibold text-right">{{ form.payment_paid_at || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Payment Notes:</span><span class="font-semibold text-right">{{ form.payment_notes || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Payment Date:</span><span class="font-semibold text-right">{{ form.payment_paid_at || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Payment Notes:</span><span class="font-semibold text-right">{{ form.payment_notes || '-' }}</span></div>
                                 <div class="grid gap-2">
                                     <div v-for="(split, index) in reviewPaymentSplits" :key="`review-split-${index}`" class="rounded-xl border border-white/10 bg-white/5 p-3">
                                         <div class="grid gap-2 md:grid-cols-3">
-                                            <div><span class="text-slate-400">Method:</span> <span class="font-semibold">{{ split.method || 'â€”' }}</span></div>
-                                            <div><span class="text-slate-400">Amount:</span> <span class="font-semibold">{{ split.amount ? formatPlanPrice(Math.round(Number(split.amount || 0) * 100)) : 'â€”' }}</span></div>
-                                            <div><span class="text-slate-400">Reference:</span> <span class="font-semibold">{{ split.reference || 'â€”' }}</span></div>
+                                            <div><span class="text-slate-400">Method:</span> <span class="font-semibold">{{ split.method || '-' }}</span></div>
+                                            <div><span class="text-slate-400">Amount:</span> <span class="font-semibold">{{ split.amount ? formatPlanPrice(Math.round(Number(split.amount || 0) * 100)) : '-' }}</span></div>
+                                            <div><span class="text-slate-400">Reference:</span> <span class="font-semibold">{{ split.reference || '-' }}</span></div>
                                         </div>
                                     </div>
                                     <div v-if="!reviewPaymentSplits.length" class="font-semibold">No payment entered.</div>
@@ -637,7 +637,7 @@ const submit = () => {
 
                     <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                         <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Internal Notes</p>
-                        <p class="mt-2 text-sm font-semibold">{{ form.notes || 'â€”' }}</p>
+                        <p class="mt-2 text-sm font-semibold">{{ form.notes || '-' }}</p>
                     </div>
                 </section>
 

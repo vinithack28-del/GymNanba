@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
@@ -64,13 +64,13 @@ const submit = () => {
                             <label class="mb-2 block text-xs text-slate-400">Logo</label>
                             <img v-if="tenant.logo_url" :src="tenant.logo_url" alt="Logo" class="mb-2 h-16 w-16 rounded-xl border border-white/10 object-cover">
                             <input type="file" @input="form.logo = $event.target.files[0]" accept=".jpg,.jpeg,.png,.svg" class="block text-xs text-slate-400">
-                            <p class="mt-1 text-xs text-slate-400">JPG/PNG/SVG · max 2 MB</p>
+                            <p class="mt-1 text-xs text-slate-400">JPG/PNG/SVG - max 2 MB</p>
                         </div>
                         <div class="flex-1">
                             <label class="mb-2 block text-xs text-slate-400">Cover Photo</label>
                             <img v-if="tenant.cover_photo_url" :src="tenant.cover_photo_url" alt="Cover" class="mb-2 h-20 w-full max-w-xs rounded-xl border border-white/10 object-cover">
                             <input type="file" @input="form.cover_photo = $event.target.files[0]" accept=".jpg,.jpeg,.png" class="block text-xs text-slate-400">
-                            <p class="mt-1 text-xs text-slate-400">JPG/PNG · max 5 MB</p>
+                            <p class="mt-1 text-xs text-slate-400">JPG/PNG - max 5 MB</p>
                         </div>
                     </div>
                 </div>

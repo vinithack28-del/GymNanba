@@ -20,12 +20,12 @@ const latestSub = props.tenant.subscriptions?.sort((a, b) => b.id - a.id)[0];
 const totalPaid = props.tenant.payments?.reduce((sum, p) => sum + p.amount_paise, 0) || 0;
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
 const formatDateTime = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '').replaceAll('/', '-');
 };
 
@@ -34,7 +34,7 @@ const formatCurrency = (paise) => {
 };
 
 const timeAgo = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     const now = new Date();
     const past = new Date(date);
     const seconds = Math.floor((now - past) / 1000);
@@ -100,7 +100,7 @@ const timeAgo = (date) => {
                         </div>
                         <div>
                             <h2 class="text-xl font-bold">{{ tenant.gym_name }}</h2>
-                            <p class="mt-1 text-sm text-slate-400">{{ tenant.business_type }} Â· {{ tenant.city }}, {{ tenant.state }}</p>
+                            <p class="mt-1 text-sm text-slate-400">{{ tenant.business_type }} Ã‚- {{ tenant.city }}, {{ tenant.state }}</p>
                             <p class="mt-1 font-mono text-xs text-slate-500">{{ tenant.primary_domain }}</p>
                         </div>
                     </div>
@@ -117,7 +117,7 @@ const timeAgo = (date) => {
                     </div>
                     <div>
                         <p class="text-xs uppercase tracking-[0.22em] text-slate-400">Plan</p>
-                        <p class="mt-1 text-sm font-semibold">{{ latestSub?.plan?.name || 'â€”' }}</p>
+                        <p class="mt-1 text-sm font-semibold">{{ latestSub?.plan?.name || '-' }}</p>
                         <p class="mt-0.5 text-xs text-slate-400">{{ latestSub ? `${formatCurrency(latestSub.price_paise)} / ${latestSub.plan.billing_cycle}` : '' }}</p>
                     </div>
                     <div>
@@ -143,7 +143,7 @@ const timeAgo = (date) => {
                                 <div class="grid gap-3 text-sm">
                                     <div class="flex justify-between gap-3"><span class="text-slate-400">Name:</span><span class="font-semibold">{{ owner.name }}</span></div>
                                     <div class="flex justify-between gap-3"><span class="text-slate-400">Email:</span><span class="font-semibold">{{ owner.email }}</span></div>
-                                    <div class="flex justify-between gap-3"><span class="text-slate-400">Phone:</span><span class="font-semibold">{{ owner.phone || 'â€”' }}</span></div>
+                                    <div class="flex justify-between gap-3"><span class="text-slate-400">Phone:</span><span class="font-semibold">{{ owner.phone || '-' }}</span></div>
                                 </div>
                             </div>
                             <div v-else class="text-sm text-slate-400">No owners found.</div>
@@ -155,7 +155,7 @@ const timeAgo = (date) => {
                         <div class="grid grid-cols-2 gap-0">
                             <div class="border-b border-r border-white/10 p-3">
                                 <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">GST Number</p>
-                                <p class="text-sm font-semibold font-mono">{{ tenant.gst_number || 'â€”' }}</p>
+                                <p class="text-sm font-semibold font-mono">{{ tenant.gst_number || '-' }}</p>
                             </div>
                             <div class="border-b border-white/10 p-3">
                                 <p class="text-xs font-semibold uppercase tracking-[0.07em] text-slate-400 mb-1">Language</p>

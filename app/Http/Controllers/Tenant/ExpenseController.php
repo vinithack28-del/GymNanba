@@ -23,7 +23,7 @@ class ExpenseController extends Controller
     // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function index(Request $request){
-        abort_unless($this->svc->canAdd(), 403);
+        abort_unless($this->svc->canView(), 403);
         if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
             $request->merge(['branch_id' => $id]);
         }
@@ -79,6 +79,7 @@ class ExpenseController extends Controller
         abort_unless($this->svc->canEdit($expense), 403);
 
         $data = $this->svc->formData($this->tenantId());
+        $data['selectedBranchId'] = session('gymos_selected_branch_id');
         return Inertia::render('Tenant/Expenses/Edit', array_merge($data, compact('expense')));
     }
 
@@ -160,7 +161,7 @@ class ExpenseController extends Controller
 
     public function export(Request $request): Response
     {
-        abort_unless($this->svc->canAdd(), 403);
+        abort_unless($this->svc->canView(), 403);
         $csv = $this->svc->exportCsv($request, $this->tenantId());
 
         return response($csv, 200, [
@@ -169,4 +170,3 @@ class ExpenseController extends Controller
         ]);
     }
 }
-

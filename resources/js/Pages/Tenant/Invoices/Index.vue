@@ -14,12 +14,12 @@ const props = defineProps({
 const invoiceRows = computed(() => props.invoices?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -105,8 +105,8 @@ const getStatusColor = (status) => {
                             <tr v-for="invoice in invoiceRows" :key="invoice.id" class="hover:bg-white/5">
                                 <td class="px-4 py-3 font-mono font-bold text-orange-400">{{ invoice.invoice_number }}</td>
                                 <td class="px-4 py-3">{{ formatDate(invoice.invoice_date) }}</td>
-                                <td class="px-4 py-3">{{ invoice.member?.name || 'â€”' }}</td>
-                                <td class="px-4 py-3 text-slate-400">{{ invoice.description || 'â€”' }}</td>
+                                <td class="px-4 py-3">{{ invoice.member?.name || '-' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ invoice.description || '-' }}</td>
                                 <td class="px-4 py-3 text-right">{{ formatCurrency(invoice.subtotal_paise) }}</td>
                                 <td class="px-4 py-3 text-right">{{ formatCurrency(invoice.gst_paise) }}</td>
                                 <td class="px-4 py-3 text-right font-bold">{{ formatCurrency(invoice.total_paise) }}</td>

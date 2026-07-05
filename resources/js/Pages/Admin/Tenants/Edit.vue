@@ -106,7 +106,7 @@ const formatPlanPrice = (pricePaise) => {
 };
 
 const formatDate = (date) => {
-    if (!date) return 'â€”';
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('en-GB').replaceAll('/', '-');
 };
 
@@ -388,25 +388,25 @@ const submit = () => {
                         <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Business</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Gym Name:</span><span class="font-semibold text-right">{{ form.gym_name || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Type:</span><span class="font-semibold text-right">{{ form.business_type || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Business Phone:</span><span class="font-semibold text-right">{{ form.phone || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">City:</span><span class="font-semibold text-right">{{ form.city || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">State:</span><span class="font-semibold text-right">{{ form.state || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">GST Number:</span><span class="font-semibold text-right">{{ form.gst_number || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Address:</span><span class="font-semibold text-right">{{ form.address || '-' }}</span></div>
                             </div>
                         </div>
 
                         <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Routing & Plan</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Subdomain:</span><span class="font-semibold text-right">{{ form.subdomain || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Domain Mode:</span><span class="font-semibold text-right">{{ form.domain_mode || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Custom Domain:</span><span class="font-semibold text-right">{{ form.custom_domain || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Database Mode:</span><span class="font-semibold text-right">{{ form.database_mode || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan:</span><span class="font-semibold text-right">{{ selectedPlan ? selectedPlan.name : '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Plan Price:</span><span class="font-semibold text-right">{{ selectedPlan ? formatPlanPrice(selectedPlan.price_paise) : '-' }}</span></div>
                             </div>
                         </div>
 
@@ -416,20 +416,20 @@ const submit = () => {
                                 <div v-for="(owner, index) in reviewOwners" :key="`review-owner-${index}`" class="rounded-lg border border-white/10 bg-white/5 p-2.5 text-sm">
                                     <div class="mb-2 text-xs uppercase tracking-[0.18em] text-slate-400">{{ index === 0 ? 'Primary Owner' : `Additional Owner ${index}` }}</div>
                                     <div class="grid gap-2 md:grid-cols-3">
-                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || 'â€”' }}</span></div>
-                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || 'â€”' }}</span></div>
-                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || 'â€”' }}</span></div>
+                                        <div><span class="text-slate-400">Name:</span> <span class="font-semibold">{{ owner.name || '-' }}</span></div>
+                                        <div><span class="text-slate-400">Email:</span> <span class="font-semibold">{{ owner.email || '-' }}</span></div>
+                                        <div><span class="text-slate-400">Phone:</span> <span class="font-semibold">{{ owner.phone || '-' }}</span></div>
                                     </div>
                                 </div>
-                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">â€”</div>
+                                <div v-if="!reviewOwners.length" class="text-sm font-semibold">-</div>
                             </div>
                         </div>
 
                         <div class="rounded-xl border border-white/10 bg-slate-950/50 p-3 md:col-span-2">
                             <p class="text-xs uppercase tracking-[0.18em] text-slate-400">Status & Notes</p>
                             <div class="mt-3 grid gap-3 text-sm">
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Status:</span><span class="font-semibold text-right capitalize">{{ form.status || 'â€”' }}</span></div>
-                                <div class="flex justify-between gap-3"><span class="text-slate-400">Notes:</span><span class="font-semibold text-right">{{ form.notes || 'â€”' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Status:</span><span class="font-semibold text-right capitalize">{{ form.status || '-' }}</span></div>
+                                <div class="flex justify-between gap-3"><span class="text-slate-400">Notes:</span><span class="font-semibold text-right">{{ form.notes || '-' }}</span></div>
                             </div>
                         </div>
                     </div>

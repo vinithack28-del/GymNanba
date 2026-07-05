@@ -9,10 +9,11 @@ const props = defineProps({
 });
 
 const user = computed(() => page.props.auth?.user);
+const userPermissions = computed(() => page.props.auth?.permissions || []);
 const tenant = computed(() => page.props.auth?.user?.tenant);
 const isSuperAdmin = computed(() => user.value?.role === 'super_admin');
 const isGymOwner = computed(() => user.value?.role === 'tenant_owner');
-const isStaffMember = computed(() => user.value?.role === 'staff');
+const isStaffMember = computed(() => Boolean(user.value) && !isSuperAdmin.value && !isGymOwner.value);
 const isPosRole = computed(() => user.value?.role === 'pos');
 const translations = computed(() => page.props.translations?.common || {});
 
@@ -403,16 +404,27 @@ const initNavigation = () => {
     });
 };
 
-watch([currentPath, translations], () => {
+watch([currentPath, translations, userPermissions], () => {
     initNavigation();
 }, { immediate: true });
 
-const checkPermission = (permissionString) => {
-    if (!user.value || !permissionString) return true;
-    // For now, return true for all permissions since we don't have the permission checking logic
-    // This can be enhanced later if permissions are passed from the backend
-    return true;
-};
+function checkPermission(permissionString) {
+    if (!user.value || !permissionString) {
+        return true;
+    }
+
+    if (isSuperAdmin.value || isGymOwner.value || userPermissions.value.includes('*')) {
+        return true;
+    }
+
+    const allowed = new Set(userPermissions.value);
+
+    return permissionString
+        .split('|')
+        .map((permission) => permission.trim())
+        .filter(Boolean)
+        .some((permission) => allowed.has(permission));
+}
 
 const getIcon = (name) => {
     const icons = {
@@ -445,19 +457,19 @@ const getIcon = (name) => {
 const quickActions = computed(() => {
     if (isSuperAdmin.value) return [];
     return [
-        { label: t('quick_actions.add_member', 'Add Member'), route: '/members/create', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
-        { label: t('quick_actions.add_enquiry', 'Add Enquiry'), route: '/walkins?purpose=inquiry', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
-        { label: t('quick_actions.member_attendance', 'Member Attendance'), route: '/attendance/checkins', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
-        { label: t('quick_actions.staff_attendance', 'Staff Attendance'), route: '/staff/attendance', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
-    ];
+        { label: t('quick_actions.add_member', 'Add Member'), route: '/members/create', permission: 'members.add', icon: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/>' },
+        { label: t('quick_actions.add_enquiry', 'Add Enquiry'), route: '/walkins?purpose=inquiry', permission: 'attendance.check_in', icon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
+        { label: t('quick_actions.member_attendance', 'Member Attendance'), route: '/attendance/checkins', permission: 'attendance.check_in', icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>' },
+        { label: t('quick_actions.staff_attendance', 'Staff Attendance'), route: '/staff/attendance', permission: 'staff.view|staff.manage', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 11l2 2 4-4"/>' },
+    ].filter((action) => checkPermission(action.permission));
 });
 </script>
 
 <template>
-    <div class="min-h-screen app-theme-shell">
+    <div class="flex h-screen min-h-screen flex-col overflow-hidden app-theme-shell">
         <Head :title="`${title} | GymNanba`" />
         
-        <header class="sticky top-0 z-30 border-b app-topbar px-3 py-1.5 backdrop-blur lg:px-4">
+        <header class="shrink-0 border-b app-topbar px-3 py-1.5 backdrop-blur lg:px-4">
             <div class="flex min-h-9 w-full items-center justify-between gap-2.5">
                 <div class="flex min-w-0 items-center gap-2">
                     <div class="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-orange-500">
@@ -562,8 +574,8 @@ const quickActions = computed(() => {
             </div>
         </header>
 
-        <div class="flex min-h-[calc(100vh-45px)] w-full flex-col lg:min-h-[calc(100vh-45px)] lg:flex-row">
-            <aside class="border-b app-sidebar px-2 py-2 backdrop-blur lg:min-h-[calc(100vh-45px)] lg:w-[196px] xl:w-[208px] lg:border-b-0 lg:border-r lg:overflow-y-auto">
+        <div class="flex min-h-0 flex-1 w-full flex-col overflow-hidden lg:flex-row">
+            <aside class="sidebar-scroll max-h-[42vh] shrink-0 overflow-y-auto border-b app-sidebar px-2 py-2 backdrop-blur lg:h-full lg:max-h-none lg:w-[196px] xl:w-[208px] lg:border-b-0 lg:border-r">
                 <nav class="text-[12.5px]">
                     <div v-for="(section, sIdx) in navSections" :key="sIdx" class="mb-2">
                         <p v-if="section.heading" class="tenant-sidebar-heading mb-1 px-2 text-[9px] font-bold uppercase tracking-[0.14em]">{{ section.heading }}</p>
@@ -600,7 +612,7 @@ const quickActions = computed(() => {
                 </nav>
             </aside>
 
-            <main class="min-w-0 flex-1 overflow-auto px-4 py-4 lg:px-6 lg:py-5 xl:px-8 xl:py-6">
+            <main class="min-h-0 min-w-0 flex-1 overflow-auto px-4 py-4 lg:px-6 lg:py-5 xl:px-8 xl:py-6">
                 <div v-if="headerAction" class="mb-4 flex justify-end">
                     <component :is="headerAction" />
                 </div>
@@ -618,4 +630,3 @@ const quickActions = computed(() => {
         </div>
     </div>
 </template>
-

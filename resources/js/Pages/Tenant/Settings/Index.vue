@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import AppLayout from '../../../Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
@@ -63,7 +63,7 @@ const submitPassword = () => {
                             <div class="flex-1">
                                 <label class="mb-1 block text-xs font-medium text-slate-400">Avatar</label>
                                 <input type="file" @input="profileForm.avatar = $event.target.files[0]" accept=".jpg,.jpeg,.png" class="block text-xs text-slate-400">
-                                <p class="mt-1 text-xs text-slate-400">JPG/PNG · max 2 MB</p>
+                                <p class="mt-1 text-xs text-slate-400">JPG/PNG - max 2 MB</p>
                             </div>
                         </div>
                         <div class="grid gap-4 grid-cols-1 sm:grid-cols-2">

@@ -14,8 +14,8 @@ const props = defineProps({
 const productRows = computed(() => props.products?.data || []);
 
 const formatCurrency = (paise) => {
-    if (!paise) return 'â‚¹0';
-    return 'â‚¹' + (paise / 100).toFixed(2);
+    if (!paise) return 'Rs. 0';
+    return 'Rs. ' + (paise / 100).toFixed(2);
 };
 </script>
 

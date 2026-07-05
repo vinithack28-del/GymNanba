@@ -228,7 +228,7 @@ const statusStyle = (status) => {
                     <div class="plan-card__price">
                         <span class="plan-card__amount">{{ formatPricePrecise(plan.price_paise) }}</span>
                         <span v-if="plan.gst_applicable && plan.gst_rate > 0" class="plan-card__gst">
-                            +{{ Number(plan.gst_rate).toFixed(0) }}% GST â†’ {{ formatPricePrecise(totalPricePaise(plan)) }} total
+                            +{{ Number(plan.gst_rate).toFixed(0) }}% GST -> {{ formatPricePrecise(totalPricePaise(plan)) }} total
                         </span>
                     </div>
 
@@ -266,7 +266,7 @@ const statusStyle = (status) => {
                             <path d="M18 6 6 18" />
                             <path d="m6 6 12 12" />
                         </svg>
-                        <span v-if="plan.allow_freeze">Freeze allowed Â· {{ plan.max_freeze_days }}d/yr</span>
+                        <span v-if="plan.allow_freeze">Freeze allowed Ã‚- {{ plan.max_freeze_days }}d/yr</span>
                         <span v-else>Freeze not allowed</span>
                     </div>
 
