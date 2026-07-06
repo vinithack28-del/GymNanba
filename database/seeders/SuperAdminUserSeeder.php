@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class SuperAdminUserSeeder extends Seeder
 {
@@ -16,16 +17,23 @@ class SuperAdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'superadmin@gymnanba.com'],
+        $password = env('SUPER_ADMIN_PASSWORD', Str::random(16));
+
+        $user = User::updateOrCreate(
+            ['email' => env('SUPER_ADMIN_EMAIL', 'superadmin@gymnanba.com')],
             [
                 'tenant_id' => null,
                 'name' => 'Super Admin',
                 'preferred_language' => 'en-IN',
                 'role' => 'super_admin',
                 'email_verified_at' => Carbon::now(),
-                'password' => 'SuperAdmin@123',
+                'password' => $password,
             ],
         );
+
+        if ($user->wasRecentlyCreated && ! env('SUPER_ADMIN_PASSWORD')) {
+            $this->command?->warn("Generated super-admin password: {$password}");
+            $this->command?->warn('Set SUPER_ADMIN_PASSWORD in .env to use a fixed password.');
+        }
     }
 }

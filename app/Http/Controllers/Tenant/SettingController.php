@@ -288,6 +288,11 @@ class SettingController extends Controller
 
     private function saveWhatsapp(Request $request, Integration $integration): void
     {
+        $request->validate([
+            'phone_number_id' => ['required', 'string', 'max:50'],
+            'verify_token'    => ['required', 'string', 'max:255'],
+            'api_token'       => ['nullable', 'string', 'max:500'],
+        ]);
         $integration->config = [
             'phone_number_id' => $request->phone_number_id,
             'verify_token'    => $request->verify_token,
@@ -299,6 +304,12 @@ class SettingController extends Controller
 
     private function saveRazorpay(Request $request, Integration $integration): void
     {
+        $request->validate([
+            'key_id'         => ['required', 'string', 'max:100'],
+            'test_mode'      => ['nullable', 'boolean'],
+            'key_secret'     => ['nullable', 'string', 'max:255'],
+            'webhook_secret' => ['nullable', 'string', 'max:255'],
+        ]);
         $integration->config = [
             'key_id'    => $request->key_id,
             'test_mode' => (bool) $request->test_mode,
@@ -313,6 +324,13 @@ class SettingController extends Controller
 
     private function saveBiometric(Request $request, Integration $integration): void
     {
+        $request->validate([
+            'device_type'   => ['required', 'string', 'in:zkteco,hikvision,other'],
+            'ip_address'    => ['required', 'ip'],
+            'port'          => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'device_serial' => ['nullable', 'string', 'max:100'],
+            'sync_schedule' => ['nullable', 'string', 'max:50'],
+        ]);
         $integration->config = [
             'device_type'   => $request->device_type,
             'ip_address'    => $request->ip_address,
@@ -324,6 +342,10 @@ class SettingController extends Controller
 
     private function saveTally(Request $request, Integration $integration): void
     {
+        $request->validate([
+            'export_format' => ['required', 'string', 'in:xml,json'],
+            'auto_sync'     => ['nullable', 'boolean'],
+        ]);
         $integration->config = [
             'export_format' => $request->export_format,
             'auto_sync'     => (bool) $request->auto_sync,

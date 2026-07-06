@@ -298,7 +298,12 @@ class ReportService
             ->map(fn ($r) => ['label' => ucfirst($r->gender ?: 'Unknown'), 'cnt' => (int) $r->cnt]);
 
         // By age group (PostgreSQL)
-        $branchClause = $branchId ? "AND branch_id = {$branchId}" : '';
+        $ageParams = [$tenantId];
+        $ageBranchSql = '';
+        if ($branchId) {
+            $ageBranchSql = 'AND branch_id = ?';
+            $ageParams[] = $branchId;
+        }
         $byAge = collect(DB::select(
             "SELECT
                 CASE
@@ -312,10 +317,10 @@ class ReportService
                 END as age_group,
                 COUNT(*) as cnt
              FROM members
-             WHERE tenant_id = ? {$branchClause}
+             WHERE tenant_id = ? {$ageBranchSql}
              GROUP BY age_group
              ORDER BY cnt DESC",
-            [$tenantId]
+            $ageParams
         ))->map(fn ($r) => ['label' => $r->age_group, 'cnt' => (int) $r->cnt]);
 
         // By branch
@@ -337,14 +342,21 @@ class ReportService
             ->orderBy('month')
             ->get();
 
+        $churnParams = [$tenantId];
+        $churnBranchSql = '';
+        if ($branchId) {
+            $churnBranchSql = 'AND branch_id = ?';
+            $churnParams[] = $branchId;
+        }
+        $churnParams[] = now()->subYear()->startOfMonth()->toDateString();
         $churnedByMonth = collect(DB::select(
             "SELECT TO_CHAR(expiry_date, 'YYYY-MM') as month, COUNT(*) as cnt
              FROM members
-             WHERE tenant_id = ? AND status != 'active' {$branchClause}
+             WHERE tenant_id = ? AND status != 'active' {$churnBranchSql}
                AND expiry_date >= ?
              GROUP BY TO_CHAR(expiry_date, 'YYYY-MM')
              ORDER BY month",
-            [$tenantId, now()->subYear()->startOfMonth()->toDateString()]
+            $churnParams
         ))->pluck('cnt', 'month');
 
         $monthlyComparison = $monthlyNew->map(fn ($r) => [
@@ -407,7 +419,12 @@ class ReportService
             ->get();
 
         // Peak hours heatmap (PG DOW: 0=Sun â€¦ 6=Sat â†’ remap to 0=Mon)
-        $branchClause = $branchId ? "AND branch_id = {$branchId}" : '';
+        $heatmapParams = [$tenantId, $range['from'], $range['to']];
+        $heatmapBranchSql = '';
+        if ($branchId) {
+            $heatmapBranchSql = 'AND branch_id = ?';
+            $heatmapParams[] = $branchId;
+        }
         $heatmapRaw = DB::select(
             "SELECT
                 EXTRACT(DOW FROM checked_in_at)::int AS dow,
@@ -416,9 +433,9 @@ class ReportService
              FROM attendance_logs
              WHERE tenant_id = ?
                AND checked_in_at BETWEEN ? AND ?
-               {$branchClause}
+               {$heatmapBranchSql}
              GROUP BY dow, hour",
-            [$tenantId, $range['from'], $range['to']]
+            $heatmapParams
         );
 
         $heatmap = array_fill(0, 7, array_fill(0, 24, 0));
@@ -455,17 +472,23 @@ class ReportService
         ]);
 
         // Class attendance summary
+        $classParams = [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()];
+        $classBranchSql = '';
+        if ($branchId) {
+            $classBranchSql = 'AND c.branch_id = ?';
+            $classParams[] = $branchId;
+        }
         $classSummary = collect(DB::select(
             "SELECT c.name, COUNT(b.id) as booked
              FROM classes c
              LEFT JOIN class_bookings b ON b.class_id = c.id AND b.status = 'confirmed'
              WHERE c.tenant_id = ?
                AND c.class_date BETWEEN ? AND ?
-               {$branchClause}
+               {$classBranchSql}
              GROUP BY c.id, c.name
              ORDER BY booked DESC
              LIMIT 20",
-            [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()]
+            $classParams
         ));
 
         return [
@@ -493,7 +516,12 @@ class ReportService
     {
         $range    = $this->resolveRange($request);
         $branchId = $this->resolveBranchId($request);
-        $branchClause = $branchId ? "AND s.branch_id = {$branchId}" : '';
+        $staffBranchSql = '';
+        $staffAttParams = [$range['from']->toDateString(), $range['to']->toDateString(), $tenantId];
+        if ($branchId) {
+            $staffBranchSql = 'AND s.branch_id = ?';
+            $staffAttParams[] = $branchId;
+        }
 
         $attendanceSummary = collect(DB::select(
             "SELECT
@@ -505,12 +533,18 @@ class ReportService
              LEFT JOIN staff_attendance_logs sal
                  ON sal.staff_id = s.id
                  AND sal.attendance_date BETWEEN ? AND ?
-             WHERE s.tenant_id = ? AND s.status = 'active' {$branchClause}
+             WHERE s.tenant_id = ? AND s.status = 'active' {$staffBranchSql}
              GROUP BY s.id, s.name, s.role
              ORDER BY s.name",
-            [$range['from']->toDateString(), $range['to']->toDateString(), $tenantId]
+            $staffAttParams
         ));
 
+        $trainerParams = [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()];
+        $trainerBranchSql = '';
+        if ($branchId) {
+            $trainerBranchSql = 'AND c.branch_id = ?';
+            $trainerParams[] = $branchId;
+        }
         $classesByTrainer = collect(DB::select(
             "SELECT
                 u.name as trainer_name,
@@ -521,15 +555,21 @@ class ReportService
              JOIN users u ON u.id = c.trainer_id
              WHERE c.tenant_id = ?
                AND c.class_date BETWEEN ? AND ?
-               " . ($branchId ? "AND c.branch_id = {$branchId}" : '') . "
+               {$trainerBranchSql}
              GROUP BY c.trainer_id, u.name
              ORDER BY scheduled DESC",
-            [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()]
+            $trainerParams
         ))->map(function ($r) {
             $r->pct_held = $r->scheduled > 0 ? round(($r->held / $r->scheduled) * 100) : 0;
             return $r;
         });
 
+        $feesParams = [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()];
+        $feesBranchSql = '';
+        if ($branchId) {
+            $feesBranchSql = 'AND p.branch_id = ?';
+            $feesParams[] = $branchId;
+        }
         $feesCollected = collect(DB::select(
             "SELECT
                 COALESCE(s.name, u.name) as name,
@@ -542,12 +582,18 @@ class ReportService
              WHERE p.tenant_id = ?
                AND p.status = 'active'
                AND p.payment_date BETWEEN ? AND ?
-               " . ($branchId ? "AND p.branch_id = {$branchId}" : '') . "
+               {$feesBranchSql}
              GROUP BY p.collected_by, u.name, s.name, s.role
              ORDER BY total DESC",
-            [$tenantId, $range['from']->toDateString(), $range['to']->toDateString()]
+            $feesParams
         ));
 
+        $posParams = [$tenantId, $range['from'], $range['to']];
+        $posBranchSql = '';
+        if ($branchId) {
+            $posBranchSql = 'AND ps.branch_id = ?';
+            $posParams[] = $branchId;
+        }
         $posSales = collect(DB::select(
             "SELECT
                 COALESCE(s.name, u.name) as name,
@@ -559,10 +605,10 @@ class ReportService
              WHERE ps.tenant_id = ?
                AND ps.refunded_at IS NULL
                AND ps.created_at BETWEEN ? AND ?
-               " . ($branchId ? "AND ps.branch_id = {$branchId}" : '') . "
+               {$posBranchSql}
              GROUP BY ps.sold_by, u.name, s.name
              ORDER BY total DESC",
-            [$tenantId, $range['from'], $range['to']]
+            $posParams
         ));
 
         return [

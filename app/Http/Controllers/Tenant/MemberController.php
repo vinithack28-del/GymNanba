@@ -325,6 +325,7 @@ class MemberController extends Controller
         $plan = null;
         if (!empty($validated['plan_id'])) {
             $plan = GymMembershipPlan::find($validated['plan_id']);
+            abort_unless($plan && $plan->tenant_id === $tenant->id, 422);
         }
 
         // Resolve frozen_until and expiry adjustment when status changes to/from frozen
