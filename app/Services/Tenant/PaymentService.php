@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class PaymentService
@@ -193,7 +194,15 @@ class PaymentService
 
             $tenant = Tenant::find($tenantId);
             if ($tenant) {
-                (new \App\Services\Tenant\InvoiceService())->createFromPayment($payment, $tenant);
+                try {
+                    (new \App\Services\Tenant\InvoiceService())->createFromPayment($payment, $tenant);
+                } catch (\Throwable $e) {
+                    Log::error('Auto-invoice creation failed for payment', [
+                        'payment_id' => $payment->id,
+                        'tenant_id' => $tenantId,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             return $payment;

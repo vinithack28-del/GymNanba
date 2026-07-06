@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\PlatformLanguage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -66,7 +67,9 @@ class HandleInertiaRequests extends Middleware
                 ->orderBy('display_name')
                 ->get(['locale_code', 'display_name'])
                 ->toArray();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Failed to load portal languages', ['error' => $e->getMessage()]);
+
             return [];
         }
     }
@@ -101,7 +104,12 @@ class HandleInertiaRequests extends Middleware
                 ->pluck('p.name')
                 ->values()
                 ->all();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Failed to load user permissions', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return [];
         }
     }
@@ -144,7 +152,12 @@ class HandleInertiaRequests extends Middleware
                     'is_primary' => (bool) $branch->is_primary,
                 ])->values()->all(),
             ];
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Failed to load branch context', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }

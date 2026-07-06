@@ -13,6 +13,7 @@ use App\Services\Tenancy\TenantDatabaseManager;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TenantService
 {
@@ -202,7 +203,17 @@ class TenantService
             return $tenant;
         });
 
-        $this->tenantDatabaseManager->provision($tenant);
+        try {
+            $this->tenantDatabaseManager->provision($tenant);
+        } catch (\Throwable $e) {
+            Log::error('Tenant database provisioning failed after creation', [
+                'tenant_id' => $tenant->id,
+                'database_name' => $tenant->database_name,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
 
         return $tenant;
     }
@@ -369,7 +380,17 @@ class TenantService
         );
 
         if ($requiresProvisioning) {
-            $this->tenantDatabaseManager->provision($tenant);
+            try {
+                $this->tenantDatabaseManager->provision($tenant);
+            } catch (\Throwable $e) {
+                Log::error('Tenant database provisioning failed during update', [
+                    'tenant_id' => $tenant->id,
+                    'database_name' => $tenant->database_name,
+                    'error' => $e->getMessage(),
+                ]);
+
+                throw $e;
+            }
         }
 
         return $tenant;

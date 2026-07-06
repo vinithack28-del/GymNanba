@@ -142,7 +142,7 @@ class InvoiceService
             'description' => $planName,
             'qty'         => 1,
             'rate_paise'  => $payment->amount_paise,
-            'gst_rate'    => $payment->gst_paise > 0
+            'gst_rate'    => ($payment->gst_paise > 0 && $payment->amount_paise > 0)
                 ? round(($payment->gst_paise / $payment->amount_paise) * 100)
                 : 0,
             'amount_paise' => $payment->amount_paise,

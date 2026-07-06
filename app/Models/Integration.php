@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 
 class Integration extends Model
 {
@@ -46,7 +47,13 @@ class Integration extends Model
         }
         try {
             return Crypt::decryptString($secrets[$field]);
-        } catch (\Exception) {
+        } catch (\Exception $e) {
+            Log::warning('Integration secret decryption failed', [
+                'integration_id' => $this->id,
+                'field' => $field,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
