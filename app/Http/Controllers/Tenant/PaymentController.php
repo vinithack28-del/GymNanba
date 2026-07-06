@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Services\Tenant\PaymentService;
@@ -13,12 +14,9 @@ use Inertia\Inertia;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly PaymentService $svc) {}
+    use InteractsWithTenant;
 
-    private function tenantId(): int
-    {
-        return request()->user()->tenant->id;
-    }
+    public function __construct(private readonly PaymentService $svc) {}
 
     // â”€â”€ Collect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -26,7 +24,7 @@ class PaymentController extends Controller
         abort_unless($this->svc->canCollect(), 403);
 
         $data = $this->svc->collectPage($this->tenantId());
-        $data['selectedBranchId'] = session('gymos_selected_branch_id');
+        $data['selectedBranchId'] = $this->selectedBranchId();
 
         if ($request->filled('member_id')) {
             $member = \App\Models\Member::where('tenant_id', $this->tenantId())
@@ -70,9 +68,7 @@ class PaymentController extends Controller
     // â”€â”€ History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function history(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         $data = $this->svc->history($request, $this->tenantId());
 
         return Inertia::render('Tenant/Payments/History', $data);
@@ -96,7 +92,7 @@ class PaymentController extends Controller
     public function void(Request $request, Payment $payment): RedirectResponse
     {
         abort_unless($this->svc->canVoid(), 403);
-        abort_if($payment->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($payment);
 
         $request->validate([
             'void_reason' => ['required', 'in:' . implode(',', Payment::VOID_REASONS)],

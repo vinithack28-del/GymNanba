@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Services\Tenant\ReportService;
 use Illuminate\Http\Request;
@@ -10,11 +11,13 @@ use Inertia\Inertia;
 
 class ReportController extends Controller
 {
+    use InteractsWithTenant;
+
     public function __construct(private readonly ReportService $svc) {}
 
-    private function tenantId(): int
+    private function gymSlug(): string
     {
-        return request()->user()->tenant->id;
+        return str_replace(' ', '_', strtolower(request()->user()->tenant->gym_name ?? 'gym'));
     }
 
     // â”€â”€ Landing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -41,11 +44,7 @@ class ReportController extends Controller
         abort_unless($this->svc->canRevenue(), 403);
         $range = $this->svc->resolveRange($request);
         $csv   = $this->svc->exportRevenueCsv($request, $this->tenantId());
-        $gym   = str_replace(' ', '_', strtolower(request()->user()->tenant->gym_name ?? 'gym'));
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"gymos_revenue_{$gym}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv\"",
-        ]);
+        return $this->csvDownload($csv, "gymos_revenue_{$this->gymSlug()}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv");
     }
 
     // â”€â”€ Members â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -61,11 +60,7 @@ class ReportController extends Controller
         abort_unless($this->svc->canMembers(), 403);
         $range = $this->svc->resolveRange($request);
         $csv   = $this->svc->exportMembersCsv($request, $this->tenantId());
-        $gym   = str_replace(' ', '_', strtolower(request()->user()->tenant->gym_name ?? 'gym'));
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"gymos_members_{$gym}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv\"",
-        ]);
+        return $this->csvDownload($csv, "gymos_members_{$this->gymSlug()}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv");
     }
 
     // â”€â”€ Attendance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -81,11 +76,7 @@ class ReportController extends Controller
         abort_unless($this->svc->canAttendance(), 403);
         $range = $this->svc->resolveRange($request);
         $csv   = $this->svc->exportAttendanceCsv($request, $this->tenantId());
-        $gym   = str_replace(' ', '_', strtolower(request()->user()->tenant->gym_name ?? 'gym'));
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"gymos_attendance_{$gym}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv\"",
-        ]);
+        return $this->csvDownload($csv, "gymos_attendance_{$this->gymSlug()}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv");
     }
 
     // â”€â”€ Staff â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -101,11 +92,7 @@ class ReportController extends Controller
         abort_unless($this->svc->canStaff(), 403);
         $range = $this->svc->resolveRange($request);
         $csv   = $this->svc->exportStaffCsv($request, $this->tenantId());
-        $gym   = str_replace(' ', '_', strtolower(request()->user()->tenant->gym_name ?? 'gym'));
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"gymos_staff_{$gym}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv\"",
-        ]);
+        return $this->csvDownload($csv, "gymos_staff_{$this->gymSlug()}_{$range['from']->toDateString()}_{$range['to']->toDateString()}.csv");
     }
 }
 

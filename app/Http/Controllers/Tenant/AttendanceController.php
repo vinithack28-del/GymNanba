@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\WalkIn;
@@ -15,14 +16,14 @@ use Inertia\Inertia;
 
 class AttendanceController extends Controller
 {
+    use InteractsWithTenant;
+
     public function __construct(private readonly AttendanceService $service) {}
 
     // â”€â”€ Check-ins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function checkins(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
 
         if ($request->get('view') === 'sheet') {
             $data = $this->service->sheetView($request->user(), $request);
@@ -91,18 +92,13 @@ class AttendanceController extends Controller
         $csv  = $this->service->exportCheckinsCsv($request->user(), $request);
         $date = $request->get('date', now()->toDateString());
 
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"checkins-{$date}.csv\"",
-        ]);
+        return $this->csvDownload($csv, "checkins-{$date}.csv");
     }
 
     // â”€â”€ Walk-ins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function walkins(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         $data = $this->service->listWalkins($request->user(), $request);
 
         return Inertia::render('Tenant/Attendance/Walkins', $data);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceLog;
 use App\Models\Branch;
@@ -13,19 +14,14 @@ use Inertia\Inertia;
 
 class RenewalController extends Controller
 {
+    use InteractsWithTenant;
+
     public function index(Request $request){
         $tenant = $request->user()->tenant;
         $today  = now()->toDateString();
 
-        $selectedBranchId = session('gymos_selected_branch_id');
-        $selectedBranch   = null;
-        if ($selectedBranchId) {
-            $selectedBranch = Branch::forTenant($tenant->id)->active()->find($selectedBranchId);
-            if (!$selectedBranch) {
-                session()->forget('gymos_selected_branch_id');
-                $selectedBranchId = null;
-            }
-        }
+        $selectedBranch   = $this->resolveSelectedBranch($tenant->id);
+        $selectedBranchId = $selectedBranch?->id;
 
         $base = fn () => Member::forTenant($tenant->id)
             ->with('plan')

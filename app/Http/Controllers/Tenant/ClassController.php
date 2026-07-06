@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\ClassBooking;
 use App\Models\GymClass;
@@ -13,14 +14,14 @@ use Inertia\Inertia;
 
 class ClassController extends Controller
 {
+    use InteractsWithTenant;
+
     public function __construct(private readonly ClassService $service) {}
 
     // â”€â”€ Timetable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function timetable(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         return Inertia::render('Tenant/Classes/Timetable', $this->service->timetable($request->user(), $request));
     }
 
@@ -28,7 +29,7 @@ class ClassController extends Controller
 
     public function create(Request $request){
         $data = $this->service->formData($request->user());
-        $data['selectedBranchId'] = session('gymos_selected_branch_id');
+        $data['selectedBranchId'] = $this->selectedBranchId();
         return Inertia::render('Tenant/Classes/Form', $data);
     }
 

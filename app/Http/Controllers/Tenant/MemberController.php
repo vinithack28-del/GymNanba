@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\GymMembershipPlan;
@@ -19,6 +20,8 @@ use Inertia\Inertia;
 
 class MemberController extends Controller
 {
+    use InteractsWithTenant;
+
     public function __construct(private readonly PaymentService $paymentService) {}
 
     public function index(Request $request){
@@ -26,15 +29,8 @@ class MemberController extends Controller
         $today  = now()->toDateString();
 
         // Resolve active branch filter from session
-        $selectedBranchId = session('gymos_selected_branch_id');
-        $selectedBranch   = null;
-        if ($selectedBranchId) {
-            $selectedBranch = Branch::forTenant($tenant->id)->active()->find($selectedBranchId);
-            if (!$selectedBranch) {
-                session()->forget('gymos_selected_branch_id');
-                $selectedBranchId = null;
-            }
-        }
+        $selectedBranch   = $this->resolveSelectedBranch($tenant->id);
+        $selectedBranchId = $selectedBranch?->id;
 
         $base = fn () => Member::forTenant($tenant->id)
             ->when($selectedBranchId, fn ($q) => $q->where('branch_id', $selectedBranchId));
@@ -104,7 +100,7 @@ class MemberController extends Controller
         $tenant = $request->user()->tenant;
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
-        $selectedBranchId = session('gymos_selected_branch_id');
+        $selectedBranchId = $this->selectedBranchId();
 
         $prefill = null;
         if ($walkinId = $request->get('walkin_id')) {
@@ -150,7 +146,7 @@ class MemberController extends Controller
         $tenant = $request->user()->tenant;
         $plans    = GymMembershipPlan::forTenant($tenant->id)->active()->orderBy('name')->get();
         $branches = Branch::forTenant($tenant->id)->active()->orderByRaw('is_primary DESC, name ASC')->get();
-        $selectedBranchId = session('gymos_selected_branch_id');
+        $selectedBranchId = $this->selectedBranchId();
         return Inertia::render('Tenant/Members/Form', compact('member', 'plans', 'branches', 'selectedBranchId'));
     }
 
