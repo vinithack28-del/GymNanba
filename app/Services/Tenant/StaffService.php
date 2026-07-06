@@ -16,6 +16,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -628,8 +629,12 @@ class StaffService
                 "Welcome to GymOS.\nLogin URL: ".route('login')."\nEmail: {$staff->email}\nTemporary password: {$password}\nPlease change your password after first login.",
                 fn ($message) => $message->to($staff->email)->subject('Your GymOS staff login')
             );
-        } catch (\Throwable) {
-            // Keep staff creation non-blocking when mail is unavailable.
+        } catch (\Throwable $e) {
+            Log::warning('Staff welcome email failed', [
+                'staff_id' => $staff->id,
+                'email' => $staff->email,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

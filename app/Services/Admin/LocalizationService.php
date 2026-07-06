@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Models\PlatformLanguage;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -40,7 +41,9 @@ class LocalizationService
                 ->where('is_active', true)
                 ->orderBy('display_name')
                 ->get();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('Failed to fetch active languages', ['error' => $e->getMessage()]);
+
             return collect();
         }
     }
@@ -56,7 +59,12 @@ class LocalizationService
                 ->where('locale_code', $localeCode)
                 ->where('is_active', true)
                 ->first();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('Failed to find active locale', [
+                'locale_code' => $localeCode,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }

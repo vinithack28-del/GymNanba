@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Payment;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendPaymentDueReminders extends Command
@@ -46,6 +47,11 @@ class SendPaymentDueReminders extends Command
                 $payment->update(['reminder_sent' => true]);
                 $this->info("Reminder sent for {$payment->receipt_number} ({$payment->member->name})");
             } catch (\Throwable $e) {
+                Log::error('Payment due reminder failed', [
+                    'receipt_number' => $payment->receipt_number,
+                    'member' => $payment->member?->name,
+                    'error' => $e->getMessage(),
+                ]);
                 $this->error("Failed for {$payment->receipt_number}: " . $e->getMessage());
             }
         }

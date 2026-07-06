@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\PlatformLanguage;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -38,7 +39,13 @@ class SetLocale
                 ->where('locale_code', $locale)
                 ->where('is_active', true)
                 ->value('locale_code') ?? $fallbackLocale;
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            Log::warning('Locale resolution failed, using fallback', [
+                'locale' => $locale,
+                'fallback' => $fallbackLocale,
+                'error' => $e->getMessage(),
+            ]);
+
             return $fallbackLocale;
         }
     }

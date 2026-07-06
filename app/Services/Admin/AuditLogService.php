@@ -8,6 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuditLogService
 {
@@ -27,25 +28,34 @@ class AuditLogService
         ?Request $request = null,
         ?User $user = null,
     ): void {
-        if (! DB::getSchemaBuilder()->hasTable('admin_audit_logs')) {
-            return;
+        try {
+            if (! DB::getSchemaBuilder()->hasTable('admin_audit_logs')) {
+                return;
+            }
+
+            $request ??= request();
+            $user ??= $request->user();
+
+            AdminAuditLog::query()->create([
+                'actor_admin_id' => $user?->id,
+                'actor_name' => $user?->name ?? 'System',
+                'actor_ip' => $request->ip(),
+                'action_type' => $actionType,
+                'target_type' => $targetType,
+                'target_id' => $targetId,
+                'target_name' => $targetName,
+                'difference' => $difference,
+                'user_agent' => $request->userAgent(),
+                'created_at' => Carbon::now(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Audit log write failed', [
+                'action_type' => $actionType,
+                'target_type' => $targetType,
+                'target_id' => $targetId,
+                'error' => $e->getMessage(),
+            ]);
         }
-
-        $request ??= request();
-        $user ??= $request->user();
-
-        AdminAuditLog::query()->create([
-            'actor_admin_id' => $user?->id,
-            'actor_name' => $user?->name ?? 'System',
-            'actor_ip' => $request->ip(),
-            'action_type' => $actionType,
-            'target_type' => $targetType,
-            'target_id' => $targetId,
-            'target_name' => $targetName,
-            'difference' => $difference,
-            'user_agent' => $request->userAgent(),
-            'created_at' => Carbon::now(),
-        ]);
     }
 }
 
