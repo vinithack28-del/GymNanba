@@ -249,22 +249,25 @@ function paymentMethodLabel(payment) {
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-2 border-t border-slate-200 px-6 py-4">
-                        <Link :href="`/payments/collect?member_id=${member.id}`" class="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500">
-                            Collect Payment
-                        </Link>
-                        <Link :href="`/members/${member.id}/edit`" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
-                            Edit Member
-                        </Link>
-                    </div>
                 </div>
 
                 <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-                    <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
                         <h3 class="text-[15px] font-semibold text-slate-900">Payment History</h3>
-                        <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
-                            {{ paymentRows.length }} {{ paymentRows.length === 1 ? 'record' : 'records' }}
-                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <Link :href="`/payments/collect?member_id=${member.id}`" class="inline-flex items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500">
+                                Collect Payment
+                            </Link>
+                            <Link v-if="member.plan?.is_transferable && member.effective_status === 'active'" :href="`/transfers/create/${member.id}`" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                                Transfer Plan
+                            </Link>
+                            <Link v-if="member.plan?.is_upgradable && member.effective_status === 'active'" :href="`/upgrades/create/${member.id}`" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                                Upgrade Plan
+                            </Link>
+                            <Link :href="`/members/${member.id}/edit`" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                                Edit Member
+                            </Link>
+                        </div>
                     </div>
 
                     <div v-if="paymentRows.length === 0" class="px-6 py-14 text-center text-sm text-slate-500">

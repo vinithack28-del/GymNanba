@@ -19,6 +19,7 @@ const props = defineProps({
 
 const page = usePage();
 const archivePlanId = ref(null);
+const viewMode = ref('card'); // 'card' or 'list'
 
 const currentSearch = computed(() => {
     const url = new URL(page.url || '/plans', 'http://localhost');
@@ -127,6 +128,10 @@ const statusStyle = (status) => {
 
     return { background: 'rgba(226,75,74,0.10)', color: '#E24B4A' };
 };
+
+const toggleView = () => {
+    viewMode.value = viewMode.value === 'card' ? 'list' : 'card';
+};
 </script>
 
 <template>
@@ -157,6 +162,23 @@ const statusStyle = (status) => {
                         </svg>
                         <input v-model="searchInput" type="text" placeholder="Search plans...">
                     </form>
+
+                    <button type="button" class="plan-view-toggle" @click="toggleView" :title="viewMode === 'card' ? 'Switch to list view' : 'Switch to card view'">
+                        <svg v-if="viewMode === 'card'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <line x1="8" y1="6" x2="21" y2="6" />
+                            <line x1="8" y1="12" x2="21" y2="12" />
+                            <line x1="8" y1="18" x2="21" y2="18" />
+                            <line x1="3" y1="6" x2="3.01" y2="6" />
+                            <line x1="3" y1="12" x2="3.01" y2="12" />
+                            <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </button>
 
                     <Link v-if="canAdd" href="/plans/create" class="plan-create-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -194,7 +216,7 @@ const statusStyle = (status) => {
                 <Link v-if="canAdd" href="/plans/create" class="plan-create-btn">Create plan</Link>
             </div>
 
-            <div v-else class="plan-grid">
+            <div v-else-if="viewMode === 'card'" class="plan-grid">
                 <article
                     v-for="plan in plans"
                     :key="plan.id"
@@ -293,6 +315,117 @@ const statusStyle = (status) => {
                         <button v-else type="button" class="plan-action plan-action--disabled" disabled>
                             Archive
                         </button>
+                    </div>
+                </article>
+            </div>
+
+            <div v-else class="plan-list">
+                <div class="plan-list__header">
+                    <div class="plan-list__cell plan-list__cell--name">Plan Name</div>
+                    <div class="plan-list__cell plan-list__cell--duration">Duration</div>
+                    <div class="plan-list__cell plan-list__cell--price">Price</div>
+                    <div class="plan-list__cell plan-list__cell--status">Status</div>
+                    <div class="plan-list__cell plan-list__cell--members">Members</div>
+                    <div class="plan-list__cell plan-list__cell--freeze">Freeze</div>
+                    <div class="plan-list__cell plan-list__cell--actions">Actions</div>
+                </div>
+                <article
+                    v-for="plan in plans"
+                    :key="plan.id"
+                    class="plan-list__row"
+                    :class="{ 'plan-list__row--archived': plan.status === 'archived' }"
+                >
+                    <div class="plan-list__cell plan-list__cell--name">
+                        <div class="plan-list__name-wrapper">
+                            <div class="plan-list__icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                                    <rect x="5" y="3" width="14" height="18" rx="2" />
+                                    <path d="M9 7h6" />
+                                    <path d="M9 11h6" />
+                                    <path d="M9 15h4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="plan-list__name">{{ plan.name }}</div>
+                                <p v-if="plan.description" class="plan-list__description">{{ plan.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--duration">
+                        <span class="plan-list__duration">{{ durationLabel(plan) }}</span>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--price">
+                        <div class="plan-list__price-wrapper">
+                            <span class="plan-list__amount">{{ formatPricePrecise(plan.price_paise) }}</span>
+                            <span v-if="plan.gst_applicable && plan.gst_rate > 0" class="plan-list__gst">
+                                +{{ Number(plan.gst_rate).toFixed(0) }}% GST
+                            </span>
+                        </div>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--status">
+                        <span class="plan-list__status" :style="statusStyle(plan.status)">
+                            {{ plan.status.charAt(0).toUpperCase() + plan.status.slice(1) }}
+                        </span>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--members">
+                        <div class="plan-list__members-wrapper">
+                            <span class="plan-list__member-count plan-list__member-count--active">{{ plan.active_members_count || 0 }}</span>
+                            <span class="plan-list__member-count">{{ plan.total_members_count || 0 }}</span>
+                        </div>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--freeze">
+                        <span class="plan-list__freeze" :class="{ 'plan-list__freeze--off': !plan.allow_freeze }">
+                            {{ plan.allow_freeze ? `${plan.max_freeze_days}d/yr` : 'Not allowed' }}
+                        </span>
+                    </div>
+                    <div class="plan-list__cell plan-list__cell--actions">
+                        <div class="plan-list__actions">
+                            <Link v-if="plan.status !== 'archived' && canEdit" :href="`/plans/${plan.id}/edit`" class="locker-icon-btn locker-icon-btn-edit" title="Edit plan" aria-label="Edit plan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                </svg>
+                            </Link>
+                            <button v-else type="button" class="locker-icon-btn locker-icon-btn-edit" disabled title="Edit plan" aria-label="Edit plan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                </svg>
+                            </button>
+
+                            <button type="button" class="locker-icon-btn" @click="duplicatePlan(plan.id)" title="Duplicate plan" aria-label="Duplicate plan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                            </button>
+
+                            <button
+                                v-if="plan.status !== 'archived' && canDelete"
+                                type="button"
+                                class="locker-icon-btn text-red-400"
+                                @click="archivePlan(plan.id)"
+                                title="Archive plan"
+                                aria-label="Archive plan"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="M19 6l-1 14H6L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </button>
+                            <button v-else type="button" class="locker-icon-btn text-red-400" disabled title="Archive plan" aria-label="Archive plan">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="M19 6l-1 14H6L5 6" />
+                                    <path d="M10 11v6" />
+                                    <path d="M14 11v6" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </article>
             </div>
@@ -405,6 +538,31 @@ const statusStyle = (status) => {
 .plan-create-btn svg {
     height: 0.9rem;
     width: 0.9rem;
+}
+
+.plan-view-toggle {
+    align-items: center;
+    background: var(--app-panel-strong);
+    border: 1px solid var(--app-border);
+    border-radius: 0.9rem;
+    color: var(--app-text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 2.8rem;
+    justify-content: center;
+    min-width: 2.8rem;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.plan-view-toggle:hover {
+    background: var(--app-panel);
+    color: var(--app-text);
+}
+
+.plan-view-toggle svg {
+    height: 1rem;
+    width: 1rem;
 }
 
 .plan-archive-warning {
@@ -726,6 +884,297 @@ const statusStyle = (status) => {
     .plan-search input {
         min-width: 0;
         width: 100%;
+    }
+}
+
+/* List View Styles */
+.plan-list {
+    background: var(--app-panel);
+    border: 1px solid var(--app-border);
+    border-radius: 1.55rem;
+    overflow: hidden;
+}
+
+.plan-list__header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 1.2fr;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: var(--app-panel-strong);
+    border-bottom: 1px solid var(--app-border);
+}
+
+.plan-list__cell {
+    align-items: center;
+    display: flex;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--app-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.plan-list__row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 0.8fr 0.8fr 0.8fr 1.2fr;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--app-border) 60%, transparent);
+    transition: background 0.2s ease;
+}
+
+.plan-list__row:last-child {
+    border-bottom: none;
+}
+
+.plan-list__row:hover {
+    background: color-mix(in srgb, var(--app-panel-strong) 50%, transparent);
+}
+
+.plan-list__row--archived {
+    opacity: 0.68;
+}
+
+.plan-list__cell--name {
+    align-items: flex-start;
+}
+
+.plan-list__name-wrapper {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.plan-list__icon {
+    align-items: center;
+    background: color-mix(in srgb, #f8e1d5 45%, transparent);
+    border: 1px solid color-mix(in srgb, #d9a789 68%, transparent);
+    border-radius: 0.7rem;
+    color: #dd7f47;
+    display: inline-flex;
+    flex: none;
+    height: 1.85rem;
+    justify-content: center;
+    width: 1.85rem;
+}
+
+.plan-list__icon svg {
+    height: 0.8rem;
+    width: 0.8rem;
+}
+
+.plan-list__name {
+    color: var(--app-text);
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-transform: none;
+}
+
+.plan-list__description {
+    color: var(--app-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.4;
+    margin: 0.15rem 0 0 0;
+    text-transform: none;
+}
+
+.plan-list__duration {
+    background: color-mix(in srgb, var(--app-panel-strong) 90%, transparent);
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    color: var(--app-text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+}
+
+.plan-list__price-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.plan-list__amount {
+    color: var(--app-text);
+    font-size: 0.88rem;
+    font-weight: 800;
+}
+
+.plan-list__gst {
+    color: var(--app-text-muted);
+    font-size: 0.65rem;
+}
+
+.plan-list__status {
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    white-space: nowrap;
+}
+
+.plan-list__members-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.plan-list__member-count {
+    color: var(--app-text);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.plan-list__member-count--active {
+    color: #1d9e75;
+}
+
+.plan-list__freeze {
+    color: #378add;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.plan-list__freeze--off {
+    color: #e24b4a;
+}
+
+.plan-list__actions {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.plan-list__action {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--app-border);
+    border-radius: 0.6rem;
+    color: #516a8d;
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    min-height: 2rem;
+    min-width: 2rem;
+    padding: 0.4rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.plan-list__action svg {
+    height: 0.95rem;
+    width: 0.95rem;
+}
+
+.plan-list__action:hover {
+    background: var(--app-panel-strong);
+    border-color: var(--app-border);
+}
+
+.plan-list__action--warn {
+    color: #516a8d;
+}
+
+.plan-list__action--disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+/* Icon button styles matching Equipment view */
+.locker-icon-btn {
+    align-items: center;
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--app-border) 70%, transparent);
+    border-radius: 0.5rem;
+    color: var(--app-text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    height: 2rem;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.15s ease;
+    width: 2rem;
+}
+
+.locker-icon-btn svg {
+    height: 0.9rem;
+    width: 0.9rem;
+}
+
+.locker-icon-btn:hover:not(:disabled) {
+    background: var(--app-panel-strong);
+    border-color: var(--app-border);
+    color: var(--app-text);
+}
+
+.locker-icon-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.locker-icon-btn-edit {
+    color: #378add;
+}
+
+.locker-icon-btn-edit:hover:not(:disabled) {
+    background: rgba(55, 138, 221, 0.1);
+    border-color: rgba(55, 138, 221, 0.3);
+    color: #378add;
+}
+
+.locker-icon-btn.text-red-400 {
+    color: #ef4444;
+}
+
+.locker-icon-btn.text-red-400:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+@media (max-width: 1024px) {
+    .plan-list__header,
+    .plan-list__row {
+        grid-template-columns: 1.5fr 0.8fr 0.8fr 0.7fr 0.7fr 0.7fr 1fr;
+        gap: 0.5rem;
+        padding: 0.7rem 0.75rem;
+    }
+
+    .plan-list__cell {
+        font-size: 0.68rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .plan-list__header {
+        display: none;
+    }
+
+    .plan-list__row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 1rem;
+    }
+
+    .plan-list__cell {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
+    }
+
+    .plan-list__cell--name {
+        width: 100%;
+    }
+
+    .plan-list__actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .plan-list__action {
+        flex: 1;
     }
 }
 </style>

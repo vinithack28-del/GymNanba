@@ -5,6 +5,8 @@ use App\Http\Controllers\Tenant\BranchController;
 use App\Http\Controllers\Tenant\MemberController;
 use App\Http\Controllers\Tenant\MemberRegistrationController;
 use App\Http\Controllers\Tenant\MembershipPlanController;
+use App\Http\Controllers\Tenant\PlanTransferController;
+use App\Http\Controllers\Tenant\PlanUpgradeController;
 use App\Http\Controllers\Tenant\PosController;
 use App\Http\Controllers\Tenant\RenewalController;
 use App\Http\Controllers\Tenant\AttendanceController;
@@ -323,6 +325,24 @@ Route::middleware(['auth', 'password_changed'])->group(function (): void {
             Route::post('/{locker}/assign', [LockerController::class, 'assign'])->name('assign');
             Route::post('/{locker}/reassign', [LockerController::class, 'reassign'])->name('reassign');
             Route::post('/{locker}/release', [LockerController::class, 'release'])->name('release');
+        });
+
+        Route::prefix('transfers')->name('transfers.')->group(function (): void {
+            Route::get('/', [PlanTransferController::class, 'index'])->name('index');
+            Route::get('/create/{member}', [PlanTransferController::class, 'create'])->name('create');
+            Route::post('/', [PlanTransferController::class, 'store'])->name('store');
+            Route::get('/{transfer}', [PlanTransferController::class, 'show'])->name('show');
+            Route::post('/{transfer}/complete', [PlanTransferController::class, 'complete'])->name('complete');
+            Route::post('/{transfer}/cancel', [PlanTransferController::class, 'cancel'])->name('cancel');
+        });
+
+        Route::prefix('upgrades')->name('upgrades.')->group(function (): void {
+            Route::get('/', [PlanUpgradeController::class, 'index'])->name('index');
+            Route::get('/create/{member}', [PlanUpgradeController::class, 'create'])->name('create');
+            Route::post('/', [PlanUpgradeController::class, 'store'])->name('store');
+            Route::get('/{upgrade}', [PlanUpgradeController::class, 'show'])->name('show');
+            Route::post('/{upgrade}/complete', [PlanUpgradeController::class, 'complete'])->name('complete');
+            Route::post('/{upgrade}/cancel', [PlanUpgradeController::class, 'cancel'])->name('cancel');
         });
 
         Route::prefix('settings')->name('settings.')->group(function (): void {

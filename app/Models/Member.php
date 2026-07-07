@@ -77,6 +77,21 @@ class Member extends Model
         return $this->hasMany(LockerAssignment::class);
     }
 
+    public function transfersAsSource(): HasMany
+    {
+        return $this->hasMany(MembershipPlanTransfer::class, 'source_member_id');
+    }
+
+    public function transfersAsTarget(): HasMany
+    {
+        return $this->hasMany(MembershipPlanTransfer::class, 'target_member_id');
+    }
+
+    public function upgrades(): HasMany
+    {
+        return $this->hasMany(MembershipPlanUpgrade::class, 'member_id');
+    }
+
     public function getEffectiveStatusAttribute(): string
     {
         if ($this->status === 'inactive') {

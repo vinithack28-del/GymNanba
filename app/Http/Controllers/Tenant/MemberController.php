@@ -88,7 +88,7 @@ class MemberController extends Controller
 
         $member->load([
             'branch:id,name',
-            'plan:id,name,allow_freeze,max_freeze_days,duration_type,duration_value,duration_days',
+            'plan:id,name,allow_freeze,max_freeze_days,duration_type,duration_value,duration_days,is_transferable,is_upgradable',
         ])->append(['effective_status', 'status_label', 'balance_rupees', 'initials']);
 
         $payments = Payment::with(['plan', 'splits', 'collectedBy'])

@@ -207,10 +207,10 @@ class MembershipPlanController extends Controller
                     ->ignore($excludeId),
             ],
             'description'    => 'nullable|string|max:500',
-            'validity_mode'  => 'nullable|in:duration,sessions',
+            'validity_mode'  => 'nullable|in:duration,sessions,both',
             'duration_type'  => [Rule::requiredIf($validityMode !== 'sessions'), 'nullable', 'in:days,months'],
             'duration_value' => [Rule::requiredIf($validityMode !== 'sessions'), 'nullable', 'integer', 'min:1', "max:{$maxDuration}"],
-            'session_limit'  => [Rule::requiredIf($validityMode === 'sessions'), 'nullable', 'integer', 'min:1', 'max:10000'],
+            'session_limit'  => [Rule::requiredIf($validityMode === 'sessions' || $validityMode === 'both'), 'nullable', 'integer', 'min:1', 'max:10000'],
             'price_paise'    => 'required|integer|min:0|max:99999900',
             'gst_applicable' => 'boolean',
             'gst_rate'       => [Rule::requiredIf($request->boolean('gst_applicable')), 'nullable', 'numeric', 'min:0', 'max:100'],
@@ -218,6 +218,18 @@ class MembershipPlanController extends Controller
             'grace_days'     => 'nullable|integer|min:0|max:30',
             'allow_freeze'   => 'boolean',
             'max_freeze_days'=> 'nullable|integer|min:1|max:90',
+            // Transfer fields
+            'is_transferable' => 'boolean',
+            'has_transfer_fee' => 'boolean',
+            'transfer_fee_amount' => [Rule::requiredIf($request->boolean('has_transfer_fee')), 'nullable', 'integer', 'min:0', 'max:99999900'],
+            'transfer_fee_gst_applicable' => 'boolean',
+            'transfer_notes' => 'nullable|string|max:500',
+            // Upgrade fields
+            'is_upgradable' => 'boolean',
+            'has_upgrade_charge' => 'boolean',
+            'upgrade_charge_type' => [Rule::requiredIf($request->boolean('has_upgrade_charge')), 'nullable', 'in:full_new_plan,difference_amount,custom_amount'],
+            'upgrade_custom_amount' => [Rule::requiredIf(fn() => $request->boolean('has_upgrade_charge') && $request->input('upgrade_charge_type') === 'custom_amount'), 'nullable', 'integer', 'min:0', 'max:99999900'],
+            'upgrade_notes' => 'nullable|string|max:500',
             'status'         => 'required|in:active,inactive',
             'tags'           => 'nullable|array|max:10',
             'tags.*'         => 'string|max:30',
@@ -233,8 +245,23 @@ class MembershipPlanController extends Controller
             : 0;
         $validated['duration_type'] = $validityMode === 'sessions' ? 'days' : ($validated['duration_type'] ?? 'days');
         $validated['duration_value'] = $validityMode === 'sessions' ? 1 : (int) ($validated['duration_value'] ?? 1);
-        $validated['session_limit'] = $validityMode === 'sessions' ? (int) $validated['session_limit'] : null;
+        $validated['session_limit'] = ($validityMode === 'sessions' || $validityMode === 'both') ? (int) $validated['session_limit'] : null;
         unset($validated['validity_mode']);
+
+        // Transfer fields
+        $validated['is_transferable'] = $request->boolean('is_transferable');
+        $validated['has_transfer_fee'] = $request->boolean('has_transfer_fee');
+        $validated['transfer_fee_amount'] = $validated['has_transfer_fee']
+            ? (int) ($validated['transfer_fee_amount'] ?? 0)
+            : null;
+        $validated['transfer_fee_gst_applicable'] = $request->boolean('transfer_fee_gst_applicable');
+
+        // Upgrade fields
+        $validated['is_upgradable'] = $request->boolean('is_upgradable');
+        $validated['has_upgrade_charge'] = $request->boolean('has_upgrade_charge');
+        $validated['upgrade_custom_amount'] = ($validated['has_upgrade_charge'] && ($validated['upgrade_charge_type'] ?? null) === 'custom_amount')
+            ? (int) ($validated['upgrade_custom_amount'] ?? 0)
+            : null;
 
         return $validated;
     }

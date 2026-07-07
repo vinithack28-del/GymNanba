@@ -73,7 +73,21 @@ class RenewalController extends Controller
             $sessionLimit = (int) ($member->plan?->session_limit ?? 0);
             $member->setAttribute('used_sessions', $usedSessions);
             $member->setAttribute('session_limit', $sessionLimit);
-            $member->setAttribute('renewal_due_type', $sessionLimit > 0 && $usedSessions >= $sessionLimit ? 'sessions' : 'duration');
+            
+            // Determine renewal due type
+            if ($member->plan?->isBothBased()) {
+                $sessionsExhausted = $sessionLimit > 0 && $usedSessions >= $sessionLimit;
+                $durationExpired = $member->expiry_date && $member->expiry_date->isPast();
+                if ($sessionsExhausted && $durationExpired) {
+                    $member->setAttribute('renewal_due_type', 'both');
+                } elseif ($sessionsExhausted) {
+                    $member->setAttribute('renewal_due_type', 'sessions');
+                } else {
+                    $member->setAttribute('renewal_due_type', 'duration');
+                }
+            } else {
+                $member->setAttribute('renewal_due_type', $sessionLimit > 0 && $usedSessions >= $sessionLimit ? 'sessions' : 'duration');
+            }
 
             return $member->append(['initials', 'balance_rupees']);
         });

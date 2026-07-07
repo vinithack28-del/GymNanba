@@ -107,8 +107,11 @@ class AttendanceService
             $usedSessions = $this->memberUsedSessions($member);
 
             if ($usedSessions >= $sessionLimit) {
+                $expiryReason = $member->plan->isBothBased()
+                    ? "Session limit reached ({$usedSessions}/{$sessionLimit}) or duration expired. Renew before check-in."
+                    : "Session limit reached ({$usedSessions}/{$sessionLimit}). Renew before check-in.";
                 throw ValidationException::withMessages([
-                    'member_id' => "Session limit reached ({$usedSessions}/{$sessionLimit}). Renew before check-in.",
+                    'member_id' => $expiryReason,
                 ]);
             }
         }

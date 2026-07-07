@@ -29,18 +29,35 @@ class GymMembershipPlan extends Model
         'tags',
         'allow_freeze',
         'max_freeze_days',
+        'is_transferable',
+        'has_transfer_fee',
+        'transfer_fee_amount',
+        'transfer_fee_gst_applicable',
+        'transfer_notes',
+        'is_upgradable',
+        'has_upgrade_charge',
+        'upgrade_charge_type',
+        'upgrade_custom_amount',
+        'upgrade_notes',
         'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'gst_applicable' => 'boolean',
-            'allow_freeze'   => 'boolean',
-            'inclusions'     => 'array',
-            'tags'           => 'array',
-            'gst_rate'       => 'float',
-            'session_limit'  => 'integer',
+            'gst_applicable'            => 'boolean',
+            'allow_freeze'              => 'boolean',
+            'is_transferable'           => 'boolean',
+            'has_transfer_fee'          => 'boolean',
+            'transfer_fee_gst_applicable' => 'boolean',
+            'is_upgradable'              => 'boolean',
+            'has_upgrade_charge'        => 'boolean',
+            'inclusions'                => 'array',
+            'tags'                      => 'array',
+            'gst_rate'                  => 'float',
+            'session_limit'             => 'integer',
+            'transfer_fee_amount'       => 'integer',
+            'upgrade_custom_amount'     => 'integer',
         ];
     }
 
@@ -59,6 +76,16 @@ class GymMembershipPlan extends Model
     public function members(): HasMany
     {
         return $this->hasMany(Member::class, 'plan_id');
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(MembershipPlanTransfer::class, 'membership_plan_id');
+    }
+
+    public function upgrades(): HasMany
+    {
+        return $this->hasMany(MembershipPlanUpgrade::class, 'new_member_plan_id');
     }
 
     // â”€â”€ Accessors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -109,8 +136,20 @@ class GymMembershipPlan extends Model
         return (int) ($this->session_limit ?? 0) > 0;
     }
 
+    public function isBothBased(): bool
+    {
+        return (int) ($this->session_limit ?? 0) > 0 && (int) ($this->duration_value ?? 0) > 0;
+    }
+
     public function getPlanValidityLabelAttribute(): string
     {
+        if ($this->isBothBased()) {
+            $sessions = (int) $this->session_limit;
+            $duration = $this->duration_label;
+
+            return "{$duration} + {$sessions} " . ($sessions === 1 ? 'session' : 'sessions');
+        }
+
         if ($this->isSessionBased()) {
             $sessions = (int) $this->session_limit;
 
@@ -152,7 +191,7 @@ class GymMembershipPlan extends Model
 
     public function computeExpiryDate(string $startDate): ?string
     {
-        if ($this->isSessionBased()) {
+        if ($this->isSessionBased() && !$this->isBothBased()) {
             return null;
         }
 
