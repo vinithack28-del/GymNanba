@@ -179,13 +179,15 @@ class StaffService
         });
     }
 
-    public function resetPassword(User $user, Staff $staff): void
+    public function resetPassword(User $user, Staff $staff): string
     {
         abort_unless($staff->user, 422);
 
-        DB::transaction(function () use ($user, $staff): void {
+        $temporaryPassword = Str::random(12);
+
+        DB::transaction(function () use ($user, $staff, $temporaryPassword): void {
             $staff->user->forceFill([
-                'password' => '123456',
+                'password' => $temporaryPassword,
                 'must_change_password' => true,
             ])->save();
 
@@ -195,6 +197,8 @@ class StaffService
                 'default_password' => true,
             ]);
         });
+
+        return $temporaryPassword;
     }
 
     public function delete(User $user, Staff $staff): array

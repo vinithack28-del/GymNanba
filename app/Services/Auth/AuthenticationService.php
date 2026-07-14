@@ -7,6 +7,7 @@ use App\Models\StaffLoginActivity;
 use App\Services\Admin\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticationService
@@ -20,16 +21,22 @@ class AuthenticationService
      */
     public function login(LoginRequest $request): void
     {
+        $request->ensureIsNotRateLimited();
+
         $credentials = $request->validated();
 
         if (! Auth::attempt([
             'email' => $credentials['email'],
             'password' => $credentials['password'],
         ], $request->boolean('remember'))) {
+            RateLimiter::hit($request->throttleKey());
+
             throw ValidationException::withMessages([
                 'email' => 'The provided credentials do not match our records.',
             ]);
         }
+
+        RateLimiter::clear($request->throttleKey());
 
         if (Auth::user()?->staffProfile && Auth::user()?->staffProfile?->status !== 'active') {
             Auth::logout();

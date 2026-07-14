@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class BranchController extends Controller
@@ -265,11 +266,7 @@ class BranchController extends Controller
             return null;
         }
 
-        $localPart   = strstr($branch->email, '@', true) ?: $branch->email;
-        $emailPrefix = substr($localPart, 0, 4);
-        $digitsOnly  = preg_replace('/\D/', '', $branch->phone ?? '');
-        $phoneSuffix = substr($digitsOnly, -4);
-        $password    = $emailPrefix . $phoneSuffix;
+        $password = Str::random(12);
 
         User::create([
             'tenant_id' => $tenantId,

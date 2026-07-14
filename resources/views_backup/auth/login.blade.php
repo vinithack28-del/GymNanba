@@ -112,45 +112,7 @@
                         </button>
                     </form>
 
-                    <div class="mt-8">
-                        <p class="app-muted text-sm font-medium">{{ __('auth.default_login_details') }}</p>
-                        <div class="mt-3 overflow-hidden rounded-2xl border border-[var(--app-border)]">
-                            <table class="w-full table-fixed divide-y divide-white/10 text-left text-sm">
-                                <thead class="app-panel-strong text-slate-300">
-                                    <tr>
-                                        <th class="w-[22%] px-3 py-3 font-medium">Role</th>
-                                        <th class="w-[36%] px-3 py-3 font-medium">Email</th>
-                                        <th class="w-[27%] px-3 py-3 font-medium">Password</th>
-                                        <th class="w-[15%] px-3 py-3 font-medium text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-white/10 bg-transparent text-slate-200">
-                                    <tr>
-                                        <td class="px-3 py-3 align-middle font-medium break-words">Superadmin</td>
-                                        <td class="px-3 py-3 align-middle text-slate-300 break-words text-[13px] leading-5">superadmin@gymnanba.com</td>
-                                        <td class="px-3 py-3 align-middle font-mono text-[12px] leading-5 tracking-[0.02em] text-orange-200 break-all">SuperAdmin@123</td>
-                                        <td class="px-3 py-3 text-center align-middle">
-                                            <button
-                                                type="button"
-                                                class="credential-fill inline-flex items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-brand-soft)] p-2 transition hover:opacity-90"
-                                                data-email="superadmin@gymnanba.com"
-                                                data-password="SuperAdmin@123"
-                                                title="Copy and fill login details"
-                                                aria-label="Copy and fill superadmin login details"
-                                            >
-                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="app-muted mt-2 text-xs">{{ __('auth.credential_help') }}</p>
-                        <p id="credential-feedback" class="mt-3 text-xs text-emerald-300"></p>
-                    </div>
+                    {{-- Demo credentials removed for security. Use SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD env vars. --}}
                 </section>
                 </div>
             </main>
@@ -167,37 +129,7 @@
                 });
             }
 
-            document.querySelectorAll('.credential-fill').forEach((button) => {
-                button.addEventListener('click', async () => {
-                    const email = button.dataset.email ?? '';
-                    const password = button.dataset.password ?? '';
-                    const emailInput = document.getElementById('email');
-                    const passwordInput = document.getElementById('password');
-                    const feedback = document.getElementById('credential-feedback');
 
-                    if (emailInput) {
-                        emailInput.value = email;
-                        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-
-                    if (passwordInput) {
-                        passwordInput.value = password;
-                        passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-
-                    try {
-                        await navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`);
-
-                        if (feedback) {
-                            feedback.textContent = 'Superadmin credentials copied and filled into the form.';
-                        }
-                    } catch (error) {
-                        if (feedback) {
-                            feedback.textContent = 'Superadmin credentials filled into the form.';
-                        }
-                    }
-                });
-            });
         </script>
     </body>
 </html>

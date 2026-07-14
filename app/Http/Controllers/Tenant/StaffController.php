@@ -106,9 +106,9 @@ class StaffController extends Controller
         $this->staffService->ensureVisible($request->user(), $staff);
         abort_unless($this->staffService->canManage($request->user()), 403);
 
-        $this->staffService->resetPassword($request->user(), $staff);
+        $temporaryPassword = $this->staffService->resetPassword($request->user(), $staff);
 
-        return back()->with('status', "{$staff->name}'s password reset to 123456.");
+        return back()->with('status', "{$staff->name}'s password has been reset. Temporary password: {$temporaryPassword} — they must change it on next login.");
     }
 
     public function destroy(Request $request, Staff $staff): RedirectResponse
