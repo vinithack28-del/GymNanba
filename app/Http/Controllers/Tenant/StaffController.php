@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Staff;
@@ -15,14 +16,14 @@ use Inertia\Response as InertiaResponse;
 
 class StaffController extends Controller
 {
+    use InteractsWithTenant;
+
     public function __construct(private readonly StaffService $staffService)
     {
     }
 
     public function index(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         return Inertia::render('Tenant/Staff/Index', $this->staffService->list($request->user(), $request));
     }
 
@@ -33,7 +34,7 @@ class StaffController extends Controller
             'branches'         => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles'            => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes'       => Staff::ID_PROOF_TYPES,
-            'selectedBranchId' => session('gymos_selected_branch_id'),
+            'selectedBranchId' => $this->selectedBranchId(),
         ]);
     }
 
@@ -69,7 +70,7 @@ class StaffController extends Controller
             'branches' => Branch::forTenant($request->user()->tenant_id)->active()->orderBy('name')->get(),
             'roles' => $this->staffService->roleOptions($request->user()->tenant_id),
             'proofTypes' => Staff::ID_PROOF_TYPES,
-            'selectedBranchId' => session('gymos_selected_branch_id'),
+            'selectedBranchId' => $this->selectedBranchId(),
         ]);
     }
 
@@ -206,9 +207,7 @@ class StaffController extends Controller
 
     public function attendance(Request $request): InertiaResponse|StreamedResponse
     {
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         if ($request->get('export') === 'csv') {
             $csv = $this->staffService->exportAttendanceCsv($request->user(), $request);
 
@@ -275,8 +274,8 @@ class StaffController extends Controller
 
     private function fixedBranchId(Request $request): ?int
     {
-        if ($id = session('gymos_selected_branch_id')) {
-            return (int) $id;
+        if ($id = $this->selectedBranchId()) {
+            return $id;
         }
 
         $branches = Branch::forTenant($request->user()->tenant_id)->active()->pluck('id');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Services\Tenant\InvoiceService;
@@ -12,19 +13,14 @@ use Inertia\Inertia;
 
 class InvoiceController extends Controller
 {
-    public function __construct(private readonly InvoiceService $svc) {}
+    use InteractsWithTenant;
 
-    private function tenantId(): int
-    {
-        return request()->user()->tenant->id;
-    }
+    public function __construct(private readonly InvoiceService $svc) {}
 
     // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function index(Request $request){
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         $data = $this->svc->list($request, $this->tenantId());
         return Inertia::render('Tenant/Invoices/Index', $data);
     }
@@ -34,7 +30,7 @@ class InvoiceController extends Controller
     public function create(){
         abort_unless($this->svc->canCreate(), 403);
         $data = $this->svc->createPageData($this->tenantId());
-        $data['selectedBranchId'] = session('gymos_selected_branch_id');
+        $data['selectedBranchId'] = $this->selectedBranchId();
         return Inertia::render('Tenant/Invoices/Create', $data);
     }
 
@@ -73,7 +69,7 @@ class InvoiceController extends Controller
     public function void(Request $request, Invoice $invoice): RedirectResponse
     {
         abort_unless($this->svc->canVoid(), 403);
-        abort_if($invoice->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($invoice);
 
         $request->validate([
             'void_reason' => ['required', 'in:' . implode(',', Invoice::VOID_REASONS)],

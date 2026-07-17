@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Http\Controllers\Concerns\InteractsWithTenant;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Services\Tenant\ExpenseService;
@@ -13,20 +14,15 @@ use Inertia\Inertia;
 
 class ExpenseController extends Controller
 {
-    public function __construct(private readonly ExpenseService $svc) {}
+    use InteractsWithTenant;
 
-    private function tenantId(): int
-    {
-        return request()->user()->tenant->id;
-    }
+    public function __construct(private readonly ExpenseService $svc) {}
 
     // â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function index(Request $request){
         abort_unless($this->svc->canView(), 403);
-        if (!$request->filled('branch_id') && $id = session('gymos_selected_branch_id')) {
-            $request->merge(['branch_id' => $id]);
-        }
+        $this->applySelectedBranch($request);
         $data = $this->svc->list($request, $this->tenantId());
         return Inertia::render('Tenant/Expenses/Index', $data);
     }
@@ -36,7 +32,7 @@ class ExpenseController extends Controller
     public function create(){
         abort_unless($this->svc->canAdd(), 403);
         $data = $this->svc->formData($this->tenantId());
-        $data['selectedBranchId'] = session('gymos_selected_branch_id');
+        $data['selectedBranchId'] = $this->selectedBranchId();
         return Inertia::render('Tenant/Expenses/Create', $data);
     }
 
@@ -75,17 +71,17 @@ class ExpenseController extends Controller
     // â”€â”€ Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     public function edit(Expense $expense){
-        abort_if($expense->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($expense);
         abort_unless($this->svc->canEdit($expense), 403);
 
         $data = $this->svc->formData($this->tenantId());
-        $data['selectedBranchId'] = session('gymos_selected_branch_id');
+        $data['selectedBranchId'] = $this->selectedBranchId();
         return Inertia::render('Tenant/Expenses/Edit', array_merge($data, compact('expense')));
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse
     {
-        abort_if($expense->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($expense);
         abort_unless($this->svc->canEdit($expense), 403);
 
         $request->validate([
@@ -117,7 +113,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense): RedirectResponse
     {
-        abort_if($expense->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($expense);
         abort_unless($this->svc->canDelete(), 403);
 
         $expense->delete();
@@ -130,7 +126,7 @@ class ExpenseController extends Controller
 
     public function approve(Expense $expense): RedirectResponse
     {
-        abort_if($expense->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($expense);
         abort_unless($this->svc->canApprove(), 403);
 
         $this->svc->approve($expense, $this->tenantId());
@@ -140,7 +136,7 @@ class ExpenseController extends Controller
 
     public function reject(Request $request, Expense $expense): RedirectResponse
     {
-        abort_if($expense->tenant_id !== $this->tenantId(), 404);
+        $this->abortIfNotTenant($expense);
         abort_unless($this->svc->canApprove(), 403);
 
         $request->validate(['rejection_reason' => ['required', 'string', 'max:500']]);
@@ -164,9 +160,6 @@ class ExpenseController extends Controller
         abort_unless($this->svc->canView(), 403);
         $csv = $this->svc->exportCsv($request, $this->tenantId());
 
-        return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="expenses_' . now()->format('Y-m-d') . '.csv"',
-        ]);
+        return $this->csvDownload($csv, 'expenses_' . now()->format('Y-m-d') . '.csv');
     }
 }
